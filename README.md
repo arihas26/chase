@@ -34,16 +34,7 @@
 </p>
 
 <p align="center">
-
-| Test         | chase  | dart:io | Shelf  | Dart Frog | chase vs dart:io |
-|--------------|--------|---------|--------|-----------|------------------|
-| Plain Text   | 72,187 | 72,391  | 42,206 | 41,006    | 99.7%            |
-| JSON         | 66,233 | 68,908  | 38,863 | 38,135    | 96.1%            |
-| Route Params | 65,681 | 60,256  | 36,721 | 36,695    | 109%             |
-| Query Params | 63,154 | 65,237  | 36,534 | 35,483    | 96.8%            |
-| Large JSON   | 8,053  | 8,110   | 7,812  | 7,643     | 99.3%            |
-| Middleware   | 63,308 | 71,117  | 37,937 | 37,093    | 89.0%            |
-
+  <a href="docs/en/benchmarks.md">View detailed benchmarks</a>
 </p>
 
 ## Table of Contents
