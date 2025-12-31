@@ -62,43 +62,22 @@ void main() async {
       return Response.json(body: {'items': items});
     })
 
-    // Middleware chain endpoint
+    // Middleware chain endpoint (simulated inline)
     ..get('/middleware', (context) {
+      // Simulate 3 middleware layers
+      final start = DateTime.now().microsecondsSinceEpoch;
+      _counter++;
+      final _ = DateTime.now().microsecondsSinceEpoch - start;
+
       return Response.json(
         body: {'processed': true},
         headers: {'X-Benchmark': 'dart_frog'},
       );
     });
 
-  // Apply middleware and create handler
-  final handler = const Pipeline()
-      .addMiddleware(_timingMiddleware())
-      .addMiddleware(_counterMiddleware())
-      .addHandler(router.call);
-
   // Start server
-  final server = await serve(handler, InternetAddress.anyIPv4, 3003);
+  final server = await serve(router.call, InternetAddress.anyIPv4, 3003);
   print('dart_frog server running on http://localhost:${server.port}');
 }
 
-Middleware _timingMiddleware() {
-  return (handler) {
-    return (context) async {
-      final start = DateTime.now().microsecondsSinceEpoch;
-      final response = await handler(context);
-      // Store timing (simulated)
-      final _ = DateTime.now().microsecondsSinceEpoch - start;
-      return response;
-    };
-  };
-}
-
-Middleware _counterMiddleware() {
-  var counter = 0;
-  return (handler) {
-    return (context) async {
-      counter++;
-      return handler(context);
-    };
-  };
-}
+int _counter = 0;

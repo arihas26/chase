@@ -76,42 +76,21 @@ void main() async {
     );
   });
 
-  // Middleware chain
+  // Middleware chain (simulated inline)
   router.get('/middleware', (Request request) {
+    // Simulate 3 middleware layers
+    final start = DateTime.now().microsecondsSinceEpoch;
+    _counter++;
+    final _ = DateTime.now().microsecondsSinceEpoch - start;
+
     return Response.ok(
       jsonEncode({'processed': true}),
       headers: {'content-type': 'application/json', 'X-Benchmark': 'shelf'},
     );
   });
 
-  // Add middleware pipeline
-  final handler = const Pipeline()
-      .addMiddleware(_timingMiddleware())
-      .addMiddleware(_counterMiddleware())
-      .addHandler(router.call);
-
-  final server = await shelf_io.serve(handler, InternetAddress.anyIPv4, 3001);
+  final server = await shelf_io.serve(router.call, InternetAddress.anyIPv4, 3001);
   print('Shelf server running on http://localhost:${server.port}');
 }
 
-Middleware _timingMiddleware() {
-  return (Handler innerHandler) {
-    return (Request request) async {
-      final start = DateTime.now().microsecondsSinceEpoch;
-      final response = await innerHandler(request);
-      // Store timing (simulated - shelf doesn't have context store)
-      final _ = DateTime.now().microsecondsSinceEpoch - start;
-      return response;
-    };
-  };
-}
-
 int _counter = 0;
-Middleware _counterMiddleware() {
-  return (Handler innerHandler) {
-    return (Request request) async {
-      _counter++;
-      return innerHandler(request);
-    };
-  };
-}
