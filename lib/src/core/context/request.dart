@@ -39,6 +39,7 @@ class Req {
   Uint8List? _cachedBytes;
   String? _cachedText;
   Object? _cachedJson;
+  bool _jsonParsed = false;
   Map<String, String>? _cachedForm;
   Map<String, String>? _cachedCookies;
   MultipartBody? _cachedMultipart;
@@ -416,8 +417,13 @@ class Req {
   }
 
   /// Parses the body as JSON (cached).
+  ///
+  /// The result is cached, so subsequent calls return the same value
+  /// without re-parsing. This works correctly even when the JSON body
+  /// is `null`.
   Future<Object?> json() async {
-    if (_cachedJson != null) return _cachedJson;
+    if (_jsonParsed) return _cachedJson;
+    _jsonParsed = true;
     final body = await text();
     final decoded = jsonDecode(body);
     _cachedJson = decoded;
