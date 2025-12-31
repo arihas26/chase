@@ -17,7 +17,7 @@ chaseは高速です。以下の結果をご覧ください。
 
 ### 結果
 
-![Benchmark Results](../../assets/benchmark-result.png)
+<img src="../../assets/benchmark-result.png" alt="Benchmark Results" width="600">
 
 | テスト | chase | dart:io | Shelf | Dart Frog | chase vs dart:io |
 |--------|-------|---------|-------|-----------|------------------|
