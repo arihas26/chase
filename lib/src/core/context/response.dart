@@ -55,6 +55,7 @@ class Res {
     _sent = true;
     _raw
       ..statusCode = status
+      ..headers.contentType = ContentType.text
       ..write(body);
     await _raw.close();
   }
