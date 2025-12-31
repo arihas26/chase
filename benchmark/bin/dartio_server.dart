@@ -69,7 +69,9 @@ void main() async {
         await request.response.close();
       } else if (path == '/middleware') {
         // Simulated middleware chain
+        final start = DateTime.now().microsecondsSinceEpoch;
         counter++;
+        final _ = DateTime.now().microsecondsSinceEpoch - start;
         request.response
           ..headers.contentType = ContentType.json
           ..headers.set('X-Benchmark', 'dart:io')

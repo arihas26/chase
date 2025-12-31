@@ -97,8 +97,11 @@ void main() async {
 Middleware _timingMiddleware() {
   return (Handler innerHandler) {
     return (Request request) async {
-      // Just simulate timing
-      return innerHandler(request);
+      final start = DateTime.now().microsecondsSinceEpoch;
+      final response = await innerHandler(request);
+      // Store timing (simulated - shelf doesn't have context store)
+      final _ = DateTime.now().microsecondsSinceEpoch - start;
+      return response;
     };
   };
 }

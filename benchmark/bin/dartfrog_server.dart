@@ -84,8 +84,11 @@ void main() async {
 Middleware _timingMiddleware() {
   return (handler) {
     return (context) async {
-      // Simulate timing
-      return handler(context);
+      final start = DateTime.now().microsecondsSinceEpoch;
+      final response = await handler(context);
+      // Store timing (simulated)
+      final _ = DateTime.now().microsecondsSinceEpoch - start;
+      return response;
     };
   };
 }
