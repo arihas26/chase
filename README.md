@@ -1,9 +1,15 @@
-# chase
+<p align="center">
+  <img src="assets/chase-logo.png" alt="Chase Logo" width="400">
+</p>
 
-A fast, lightweight web framework for Dart inspired by [Hono](https://hono.dev/).
+<p align="center">
+  A fast, lightweight web framework for Dart inspired by <a href="https://hono.dev/">Hono</a>.
+</p>
 
-[![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.10+-blue.svg" alt="Dart"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
 ## Features
 
@@ -82,8 +88,8 @@ app.put('/users/:id').handle(updateUser);
 app.patch('/users/:id').handle(patchUser);
 app.delete('/users/:id').handle(deleteUser);
 
-// All methods
-app.all('/any').handle((ctx) => ctx.res.text('Any method'));
+// Custom method
+app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
 ```
 
 ### Route Parameters
