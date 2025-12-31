@@ -1,7 +1,7 @@
 name: chase_metrics
 description: Prometheus-style metrics plugin for Chase framework.
 version: 0.0.1
-repository: https://github.com/arihas26/chase/tree/main/plugins/chase_metrics
+repository: https://github.com/arihas26/chase/tree/main/packages/chase_metrics
 publish_to: none  # Remove when ready to publish
 
 environment:

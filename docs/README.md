@@ -11,7 +11,7 @@
 
 - [GitHub Repository](https://github.com/arihas26/chase)
 - [Main README](../README.md)
-- [Plugins](../plugins/)
+- [Packages](../packages/)
 
 ## Looking for Chaser?
 
