@@ -33,7 +33,7 @@ import 'package:chase/src/core/exception/http_exception.dart';
 ///   final token = ctx.req.bearerToken;
 /// });
 /// ```
-class Request {
+class Req {
   final HttpRequest _raw;
   final Map<String, String> _params;
   Uint8List? _cachedBytes;
@@ -43,7 +43,7 @@ class Request {
   Map<String, String>? _cachedCookies;
   MultipartBody? _cachedMultipart;
 
-  Request(this._raw, [Map<String, String>? params]) : _params = params ?? {};
+  Req(this._raw, [Map<String, String>? params]) : _params = params ?? {};
 
   // ---------------------------------------------------------------------------
   // Basic Request Info

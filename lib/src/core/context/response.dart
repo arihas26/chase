@@ -21,11 +21,11 @@ import 'package:chase/src/core/http/text_streaming.dart';
 ///   await ctx.res.close();
 /// });
 /// ```
-class Response {
+class Res {
   final HttpResponse _raw;
   bool _sent = false;
 
-  Response(this._raw);
+  Res(this._raw);
 
   /// Returns true if response has already been sent.
   bool get isSent => _sent;

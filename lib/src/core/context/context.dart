@@ -10,21 +10,21 @@ import 'package:chase/src/core/context/response.dart';
 /// - Response via [res]
 /// - Arbitrary context data via [get] and [set]
 class Context {
-  final Request _req;
-  final Response _res;
+  final Req _req;
+  final Res _res;
 
   /// General-purpose storage for sharing data between middleware and handlers.
   final Map<String, dynamic> _store = {};
 
   Context(HttpRequest req, HttpResponse res, [Map<String, String>? params])
-      : _req = Request(req, params),
-        _res = Response(res);
+      : _req = Req(req, params),
+        _res = Res(res);
 
   /// The HTTP request.
-  Request get req => _req;
+  Req get req => _req;
 
   /// The HTTP response.
-  Response get res => _res;
+  Res get res => _res;
 
   // ---------------------------------------------------------------------------
   // Context Store (for middleware data sharing)
