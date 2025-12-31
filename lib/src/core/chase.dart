@@ -395,8 +395,13 @@ class ChaseGroup extends _ChaseBase<ChaseGroup> {
       ._addRoute(method, path, _buildMiddlewareChain(_middlewares, handler));
 
   @override
-  Handler _buildMiddlewareChain(List<Middleware> middlewares, Handler handler) =>
-      _parent._buildMiddlewareChain(middlewares, handler);
+  Handler _buildMiddlewareChain(List<Middleware> middlewares, Handler handler) {
+    if (middlewares.isEmpty) return handler;
+
+    return middlewares.reversed.fold(handler, (next, mw) {
+      return (ctx) => mw.handle(ctx, () => next(ctx));
+    });
+  }
 }
 
 // =============================================================================
