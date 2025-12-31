@@ -1,0 +1,29 @@
+# Dart
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Coverage
+coverage/
+
+# Generated
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AI
+CLAUDE.md
+.serena/
+.claude/
+.dart_tool/
+.dart-tool/
