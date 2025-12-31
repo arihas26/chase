@@ -52,6 +52,9 @@ class Context {
   /// Returns null if the key doesn't exist or if the value
   /// is not of the expected type.
   ///
+  /// In debug mode, an assertion will fail if the key exists but
+  /// the type doesn't match, helping to catch type mismatches early.
+  ///
   /// Example:
   /// ```dart
   /// final user = ctx.get<User>('user');
@@ -59,6 +62,11 @@ class Context {
   /// ```
   T? get<T>(String key) {
     final value = _store[key];
+    assert(
+      value == null || value is T,
+      'Context type mismatch: key "$key" has type ${value.runtimeType}, '
+      'but expected $T',
+    );
     return value is T ? value : null;
   }
 }
