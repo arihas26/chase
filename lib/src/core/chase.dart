@@ -310,7 +310,7 @@ class Chase extends _ChaseBase<Chase> {
         await response.writeTo(ctx.req.$raw.response);
       case String text:
         await ctx.res.text(text);
-      case Map<String, dynamic> json:
+      case Map json:
         await ctx.res.json(json);
       case List list:
         await ctx.res.json(list);
