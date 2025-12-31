@@ -3,12 +3,17 @@
 </p>
 
 <p align="center">
-  A fast, lightweight web framework for Dart inspired by <a href="https://hono.dev/">Hono</a>.
+  A fast, lightweight web framework for Dart.
 </p>
 
 <p align="center">
   <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.10+-blue.svg" alt="Dart"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">
+  <a href="../../README.md">English</a>
+  <a href="docs/ja/README.md">日本語</a>
 </p>
 
 ## Features
