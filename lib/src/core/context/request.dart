@@ -286,14 +286,19 @@ class Req {
   }
 
   /// Parses a string value to the specified type.
+  ///
+  /// Supported types: [String], [int], [double], [num], [bool], [dynamic], [Object].
+  /// Returns `null` for unsupported types instead of throwing.
   T? _parseValue<T>(String value) {
     if (T == String) return value as T;
     if (T == int) return int.tryParse(value) as T?;
     if (T == double) return double.tryParse(value) as T?;
     if (T == num) return num.tryParse(value) as T?;
     if (T == bool) return _parseBool(value) as T?;
-    // Default: return as String if T is dynamic/Object
-    return value as T?;
+    // For dynamic/Object, return the string value
+    if (T == dynamic || T == Object) return value as T;
+    // Unsupported type - return null instead of throwing
+    return null;
   }
 
   /// Parses a boolean string value.
