@@ -1,0 +1,12 @@
+# Japanese translations
+greeting: こんにちは
+welcome: ようこそ、{name}さん！
+
+# Pluralization (Japanese doesn't distinguish singular/plural)
+items:
+  other: "{count}個のアイテム"
+
+# Nested keys
+nested:
+  deep:
+    key: ネストされた値

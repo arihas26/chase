@@ -1,0 +1,14 @@
+{
+  "greeting": "Hello",
+  "welcome": "Welcome, {name}!",
+  "items": {
+    "zero": "No items",
+    "one": "1 item",
+    "other": "{count} items"
+  },
+  "nested": {
+    "deep": {
+      "key": "Nested value"
+    }
+  }
+}

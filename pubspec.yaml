@@ -1,0 +1,20 @@
+name: chase
+description: A fast, lightweight web framework for Dart.
+version: 0.1.0
+repository: https://github.com/arihas26/chase
+homepage: https://github.com/arihas26/chase
+issue_tracker: https://github.com/arihas26/chase/issues
+
+environment:
+  sdk: ^3.10.7
+
+# Add regular dependencies here.
+dependencies:
+  path: ^1.9.0
+  dart_jsonwebtoken: ^2.14.1
+  crypto: ^3.0.3
+  yaml: ^3.1.2
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
