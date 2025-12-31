@@ -27,6 +27,11 @@
 - 🌍 **多言語対応** - 組み込みのi18nサポート
 - 🧪 **テスト** - ファーストクラスのテストユーティリティ
 
+## パフォーマンス
+<p align="center">
+  <img src="../../assets/benchmark-result.png" alt="Benchmark Results" width="600">
+</p>
+
 ## 目次
 
 - [インストール](#インストール)

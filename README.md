@@ -27,6 +27,12 @@
 - 🌍 **i18n** - Built-in internationalization
 - 🧪 **Testing** - First-class testing utilities
 
+## Performance
+
+<p align="center">
+  <img src="assets/benchmark-result.png" alt="Benchmark Results" width="600">
+</p>
+
 ## Table of Contents
 
 - [Installation](#installation)
