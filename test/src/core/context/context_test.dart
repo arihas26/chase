@@ -136,6 +136,42 @@ void main() {
     expect(() => ctx.req.params['id'] = '2', throwsUnsupportedError);
   });
 
+  group('Context store (set/get)', () {
+    test('set and get stores and retrieves values', () {
+      final ctx = Context(_FakeRequest(), _RecordingResponse());
+
+      ctx.set('userId', 123);
+      ctx.set('username', 'alice');
+
+      expect(ctx.get<int>('userId'), 123);
+      expect(ctx.get<String>('username'), 'alice');
+    });
+
+    test('get returns null for missing key', () {
+      final ctx = Context(_FakeRequest(), _RecordingResponse());
+
+      expect(ctx.get<String>('missing'), isNull);
+    });
+
+    test('set overwrites previous value', () {
+      final ctx = Context(_FakeRequest(), _RecordingResponse());
+
+      ctx.set('key', 'first');
+      ctx.set('key', 'second');
+
+      expect(ctx.get<String>('key'), 'second');
+    });
+
+    test('stores complex objects', () {
+      final ctx = Context(_FakeRequest(), _RecordingResponse());
+      final user = {'id': 1, 'name': 'Alice'};
+
+      ctx.set('user', user);
+
+      expect(ctx.get<Map<String, dynamic>>('user'), user);
+    });
+  });
+
   group('param<T>', () {
     test('returns String value', () {
       final ctx = Context(_FakeRequest(), _RecordingResponse(), {'name': 'alice'});
