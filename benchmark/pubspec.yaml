@@ -1,0 +1,18 @@
+name: chase_benchmarks
+description: Performance benchmarks for Chase web framework
+publish_to: none
+
+environment:
+  sdk: ^3.10.7
+
+dependencies:
+  chase:
+    git:
+      url: https://github.com/arihas26/chase.git
+      ref: main
+  shelf: ^1.4.0
+  shelf_router: ^1.1.0
+  dart_frog: ^1.2.0
+
+dev_dependencies:
+  lints: ^6.0.0
