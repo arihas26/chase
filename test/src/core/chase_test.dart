@@ -1,5 +1,5 @@
 import 'package:chase/chase.dart';
-import 'package:chase/src/core/router.dart';
+import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
 
 /// A mock router that records all route registrations for testing.
@@ -183,36 +183,149 @@ void main() {
     });
   });
 
-  group('Integration', () {
-    test('grouped routes work with actual app', () async {
+  group('HTTP Methods', () {
+    test('patch registers PATCH route', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      app.patch('/users/1').handle((c) => c);
+
+      expect(router.routes, [(method: 'PATCH', path: '/users/1')]);
+    });
+
+    test('head registers HEAD route', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      app.head('/users').handle((c) => c);
+
+      expect(router.routes, [(method: 'HEAD', path: '/users')]);
+    });
+
+    test('options registers OPTIONS route', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      app.options('/users').handle((c) => c);
+
+      expect(router.routes, [(method: 'OPTIONS', path: '/users')]);
+    });
+
+    test('route registers custom method', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      app.route('CUSTOM', '/endpoint').handle((c) => c);
+
+      expect(router.routes, [(method: 'CUSTOM', path: '/endpoint')]);
+    });
+  });
+
+  group('Lifecycle', () {
+    test('onStart callback is called when server starts', () async {
+      final app = Chase();
+      var startCalled = false;
+
+      app.onStart(() {
+        startCalled = true;
+      });
+
+      app.get('/').handle((ctx) => 'ok');
+
+      final client = await TestClient.start(app);
+      addTearDown(() => client.close());
+
+      expect(startCalled, isTrue);
+    });
+
+    test('multiple onStart callbacks are called in order', () async {
+      final app = Chase();
+      final calls = <int>[];
+
+      app.onStart(() => calls.add(1));
+      app.onStart(() => calls.add(2));
+      app.onStart(() => calls.add(3));
+
+      app.get('/').handle((ctx) => 'ok');
+
+      final client = await TestClient.start(app);
+      addTearDown(() => client.close());
+
+      expect(calls, [1, 2, 3]);
+    });
+
+    test('isRunning returns correct state', () async {
+      final app = Chase();
+      app.get('/').handle((ctx) => 'ok');
+
+      expect(app.isRunning, isFalse);
+
+      final client = await TestClient.start(app);
+
+      expect(app.isRunning, isTrue);
+
+      await client.close();
+
+      expect(app.isRunning, isFalse);
+    });
+  });
+
+  group('Not Found', () {
+    test('default 404 handler returns Not Found', () async {
+      final app = Chase();
+      app.get('/exists').handle((ctx) => 'ok');
+
+      final client = await TestClient.start(app);
+      addTearDown(() => client.close());
+
+      final res = await client.get('/does-not-exist');
+
+      expect(res.status, 404);
+      expect(await res.body, '404 Not Found');
+    });
+
+    test('custom notFound handler is used', () async {
       final app = Chase();
 
-      var apiHelloCalled = false;
-      var apiV1VersionCalled = false;
+      app.notFound((ctx) {
+        return {'error': 'Custom not found', 'path': ctx.req.path};
+      });
+
+      app.get('/exists').handle((ctx) => 'ok');
+
+      final client = await TestClient.start(app);
+      addTearDown(() => client.close());
+
+      final res = await client.get('/missing');
+
+      expect(res.status, 200);
+      expect(await res.body, contains('Custom not found'));
+      expect(await res.body, contains('/missing'));
+    });
+  });
+
+  group('Integration', () {
+    test('grouped routes work with actual HTTP requests', () async {
+      final app = Chase();
 
       app.routes('/api', (api) {
-        api.get('/hello').handle((ctx) async {
-          apiHelloCalled = true;
-          await ctx.res.text('Hello from API');
-        });
+        api.get('/hello').handle((ctx) => 'Hello from API');
 
         api.routes('/v1', (v1) {
-          v1.get('/version').handle((ctx) async {
-            apiV1VersionCalled = true;
-            await ctx.res.text('v1.0.0');
-          });
+          v1.get('/version').handle((ctx) => 'v1.0.0');
         });
       });
 
-      // Verify routes are registered correctly by checking if handlers get called
-      // We can't directly access _router, but we can verify the behavior works
+      final client = await TestClient.start(app);
+      addTearDown(() => client.close());
 
-      expect(apiHelloCalled, isFalse);
-      expect(apiV1VersionCalled, isFalse);
+      final res1 = await client.get('/api/hello');
+      expect(res1.status, 200);
+      expect(await res1.body, 'Hello from API');
 
-      // Note: This is a simplified test. For full integration testing,
-      // you would start the server with app.start() and make actual HTTP requests.
-      // Here we're just verifying that the route grouping API works correctly.
+      final res2 = await client.get('/api/v1/version');
+      expect(res2.status, 200);
+      expect(await res2.body, 'v1.0.0');
     });
   });
 }
