@@ -195,7 +195,7 @@ class Chase extends _ChaseBase<Chase> {
   /// * [SocketException] if the port is already in use.
   Future<HttpServer> start({
     int port = 6060,
-    dynamic host,
+    Object? host,
     bool shared = false,
   }) async {
     if (_dev) {
