@@ -43,6 +43,7 @@ class Chase extends _ChaseBase<Chase> {
   HttpServer? _server;
   ErrorHandler? _errorHandler;
   Handler? _notFoundHandler;
+  Handler? _cachedNotFoundHandler;
   final List<FutureOr<void> Function()> _onStartCallbacks = [];
   final List<FutureOr<void> Function()> _onStopCallbacks = [];
 
@@ -211,6 +212,10 @@ class Chase extends _ChaseBase<Chase> {
       await plugin.onStart(this);
     }
 
+    // Cache not found handler (with middleware chain if applicable)
+    final notFoundBase = _notFoundHandler ?? _defaultNotFoundHandler;
+    _cachedNotFoundHandler = _buildMiddlewareChain(_middlewares, notFoundBase);
+
     final bindHost = host ?? InternetAddress.anyIPv4;
     _server = await HttpServer.bind(bindHost, port, shared: shared);
     print('Server running on http://localhost:$port/');
@@ -268,12 +273,12 @@ class Chase extends _ChaseBase<Chase> {
 
   Future<void> _handleRequest(HttpRequest req) async {
     final route = _router.match(req.method, req.uri.path);
-    final handler = route?.handler ?? _defaultNotFoundHandler;
+    // Handler already has middleware chain built at registration time
+    final handler = route?.handler ?? _cachedNotFoundHandler ?? _defaultNotFoundHandler;
     final ctx = Context(req, req.response, route?.params);
 
     try {
-      final finalHandler = _buildMiddlewareChain(_middlewares, handler);
-      final result = await finalHandler(ctx);
+      final result = await handler(ctx);
       await _sendResponse(ctx, result);
     } catch (e, st) {
       if (ctx.res.isSent) return;
@@ -318,9 +323,9 @@ class Chase extends _ChaseBase<Chase> {
     }
   }
 
-  Handler get _defaultNotFoundHandler => _notFoundHandler ?? (ctx) async {
+  static Future<void> _defaultNotFoundHandler(Context ctx) async {
     await ctx.res.notFound();
-  };
+  }
 
   // ---------------------------------------------------------------------------
   // Route Registration (Internal)
@@ -329,7 +334,9 @@ class Chase extends _ChaseBase<Chase> {
   @override
   void _addRoute(String method, String path, Handler handler) {
     _routes.add((method: method, path: path));
-    _router.add(method, path, handler);
+    // Build middleware chain at registration time for better performance
+    final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
+    _router.add(method, path, wrappedHandler);
   }
 
   @override

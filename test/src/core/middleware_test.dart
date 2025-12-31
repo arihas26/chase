@@ -328,9 +328,9 @@ void main() {
       final match = router.match('GET', '/');
       expect(match, isNotNull);
 
-      final chain = _buildTestChain([globalMw], match!.handler);
+      // Global middleware is already applied at route registration time
       final ctx = _createMockContext();
-      await chain(ctx);
+      await match!.handler(ctx);
 
       expect(tracker, ['Global-before', 'Route-before', 'handler', 'Route-after', 'Global-after']);
     });
