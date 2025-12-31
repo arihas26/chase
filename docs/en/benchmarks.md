@@ -17,9 +17,7 @@ Comparison with other Dart web frameworks on the same machine.
 
 ### Results
 
-<p align="center">
-  <img src="../../assets/benchmark-result.png" alt="Benchmark Results" width="600">
-</p>
+![Benchmark Results](../../assets/benchmark-result.png)
 
 | Test | chase | dart:io | Shelf | Dart Frog | chase vs dart:io |
 |------|-------|---------|-------|-----------|------------------|
