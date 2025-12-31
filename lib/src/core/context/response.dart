@@ -24,6 +24,9 @@ import 'package:chase/src/core/http/text_streaming.dart';
 class Res {
   final HttpResponse _raw;
   bool _sent = false;
+  Streaming? _cachedStreaming;
+  TextStreaming? _cachedTextStreaming;
+  Sse? _cachedSse;
 
   Res(this._raw);
 
@@ -476,7 +479,7 @@ class Res {
   ///   await streaming.done;
   /// });
   /// ```
-  Streaming stream() => Streaming(_raw);
+  Streaming stream() => _cachedStreaming ??= Streaming(_raw);
 
   /// Creates a text streaming instance for the current response.
   ///
@@ -495,7 +498,7 @@ class Res {
   ///   await streaming.close();
   /// });
   /// ```
-  TextStreaming textStream() => TextStreaming(_raw);
+  TextStreaming textStream() => _cachedTextStreaming ??= TextStreaming(_raw);
 
   /// Creates a Server-Sent Events (SSE) instance for the current response.
   ///
@@ -515,7 +518,7 @@ class Res {
   ///   await sse.close();
   /// });
   /// ```
-  Sse sse() => Sse(_raw);
+  Sse sse() => _cachedSse ??= Sse(_raw);
 
   // ---------------------------------------------------------------------------
   // Internal: For framework use only
