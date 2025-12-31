@@ -318,8 +318,8 @@ class Chase extends _ChaseBase<Chase> {
         // Handler used ctx.res directly or returned nothing
         break;
       default:
-        // Fallback: convert to string
-        await ctx.res.text(result.toString());
+        // Objects with toJson() will be serialized
+        await ctx.res.json(result);
     }
   }
 

@@ -1,22 +1,20 @@
 import 'dart:io';
 
 import 'package:chase/chase.dart';
+import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('Error Handling', () {
     late Chase app;
-    late HttpServer server;
-    late HttpClient client;
+    late TestClient client;
 
     setUp(() async {
       app = Chase();
-      client = HttpClient();
     });
 
     tearDown(() async {
-      client.close();
-      await server.close(force: true);
+      await client.close();
     });
 
     test('onError catches handler exceptions', () async {
@@ -33,15 +31,12 @@ void main() {
         throw Exception('Test error');
       });
 
-      server = await app.start(port: 0);
-      final port = server.port;
+      client = await TestClient.start(app);
 
-      final request = await client.get('localhost', port, '/throw');
-      final response = await request.close();
-      final body = await response.transform(const SystemEncoding().decoder).join();
+      final res = await client.get('/throw');
 
-      expect(response.statusCode, HttpStatus.ok);
-      expect(body, contains('Test error'));
+      expect(res.status, HttpStatus.ok);
+      expect(await res.body, contains('Test error'));
       expect(capturedError, isA<Exception>());
       expect(capturedStackTrace, isNotNull);
     });
@@ -56,16 +51,13 @@ void main() {
         throw StateError('Intentional failure');
       });
 
-      server = await app.start(port: 0);
-      final port = server.port;
+      client = await TestClient.start(app);
 
-      final request = await client.get('localhost', port, '/fail');
-      final response = await request.close();
-      final body = await response.transform(const SystemEncoding().decoder).join();
+      final res = await client.get('/fail');
 
-      expect(response.statusCode, HttpStatus.ok);
-      expect(response.headers.value('X-Error'), 'true');
-      expect(body, contains('/fail'));
+      expect(res.status, HttpStatus.ok);
+      expect(res.headers.value('X-Error'), 'true');
+      expect(await res.body, contains('/fail'));
     });
 
     test('default error returns 500 when no handler', () async {
@@ -73,15 +65,12 @@ void main() {
         throw Exception('Unhandled');
       });
 
-      server = await app.start(port: 0);
-      final port = server.port;
+      client = await TestClient.start(app);
 
-      final request = await client.get('localhost', port, '/error');
-      final response = await request.close();
-      final body = await response.transform(const SystemEncoding().decoder).join();
+      final res = await client.get('/error');
 
-      expect(response.statusCode, HttpStatus.internalServerError);
-      expect(body, 'Internal Server Error');
+      expect(res.status, HttpStatus.internalServerError);
+      expect(await res.body, 'Internal Server Error');
     });
 
     test('onError can return string response', () async {
@@ -93,15 +82,12 @@ void main() {
         throw FormatException('Bad format');
       });
 
-      server = await app.start(port: 0);
-      final port = server.port;
+      client = await TestClient.start(app);
 
-      final request = await client.get('localhost', port, '/throw');
-      final response = await request.close();
-      final body = await response.transform(const SystemEncoding().decoder).join();
+      final res = await client.get('/throw');
 
-      expect(response.statusCode, HttpStatus.ok);
-      expect(body, contains('Bad format'));
+      expect(res.status, HttpStatus.ok);
+      expect(await res.body, contains('Bad format'));
     });
 
     test('middleware errors are caught', () async {
@@ -116,15 +102,12 @@ void main() {
         return {'success': true};
       });
 
-      server = await app.start(port: 0);
-      final port = server.port;
+      client = await TestClient.start(app);
 
-      final request = await client.get('localhost', port, '/protected');
-      final response = await request.close();
-      final body = await response.transform(const SystemEncoding().decoder).join();
+      final res = await client.get('/protected');
 
       expect(errorCaught, isTrue);
-      expect(body, contains('middleware_error'));
+      expect(await res.body, contains('middleware_error'));
     });
 
     test('async errors are caught', () async {
@@ -137,15 +120,12 @@ void main() {
         throw Exception('Async failure');
       });
 
-      server = await app.start(port: 0);
-      final port = server.port;
+      client = await TestClient.start(app);
 
-      final request = await client.get('localhost', port, '/async');
-      final response = await request.close();
-      final body = await response.transform(const SystemEncoding().decoder).join();
+      final res = await client.get('/async');
 
-      expect(response.statusCode, HttpStatus.ok);
-      expect(body, contains('Async failure'));
+      expect(res.status, HttpStatus.ok);
+      expect(await res.body, contains('Async failure'));
     });
   });
 }

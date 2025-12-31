@@ -367,5 +367,95 @@ void main() {
       expect(res.status, 200);
       expect(await res.body, 'First'); // First response wins
     });
+
+    test('returning object with toJson() serializes to JSON', () async {
+      app.get('/user').handle((ctx) {
+        return _User(id: 1, name: 'John', email: 'john@example.com');
+      });
+
+      final res = await client.get('/user');
+      expect(res.status, 200);
+      expect(res.headers['content-type']?.first, contains('application/json'));
+      final body = jsonDecode(await res.body) as Map<String, dynamic>;
+      expect(body['id'], 1);
+      expect(body['name'], 'John');
+      expect(body['email'], 'john@example.com');
+    });
+
+    test('returning nested object with toJson() serializes to JSON', () async {
+      app.get('/company').handle((ctx) {
+        return _Company(
+          name: 'Acme Corp',
+          employees: [
+            _User(id: 1, name: 'Alice', email: 'alice@acme.com'),
+            _User(id: 2, name: 'Bob', email: 'bob@acme.com'),
+          ],
+        );
+      });
+
+      final res = await client.get('/company');
+      expect(res.status, 200);
+      expect(res.headers['content-type']?.first, contains('application/json'));
+      final body = jsonDecode(await res.body) as Map<String, dynamic>;
+      expect(body['name'], 'Acme Corp');
+      expect(body['employees'], hasLength(2));
+      expect(body['employees'][0]['name'], 'Alice');
+    });
+
+    test('returning Map<String, Object> sends JSON response', () async {
+      app.get('/map-object').handle((ctx) {
+        final Map<String, Object> data = {'name': 'Test', 'count': 42};
+        return data;
+      });
+
+      final res = await client.get('/map-object');
+      expect(res.status, 200);
+      expect(res.headers['content-type']?.first, contains('application/json'));
+      final body = jsonDecode(await res.body) as Map<String, dynamic>;
+      expect(body['name'], 'Test');
+      expect(body['count'], 42);
+    });
+
+    test('returning Map<String, String> sends JSON response', () async {
+      app.get('/map-string').handle((ctx) {
+        final Map<String, String> data = {'key1': 'value1', 'key2': 'value2'};
+        return data;
+      });
+
+      final res = await client.get('/map-string');
+      expect(res.status, 200);
+      expect(res.headers['content-type']?.first, contains('application/json'));
+      final body = jsonDecode(await res.body) as Map<String, dynamic>;
+      expect(body['key1'], 'value1');
+      expect(body['key2'], 'value2');
+    });
   });
+}
+
+/// Test class with toJson() method
+class _User {
+  final int id;
+  final String name;
+  final String email;
+
+  _User({required this.id, required this.name, required this.email});
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'email': email,
+      };
+}
+
+/// Test class with nested toJson() objects
+class _Company {
+  final String name;
+  final List<_User> employees;
+
+  _Company({required this.name, required this.employees});
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'employees': employees.map((e) => e.toJson()).toList(),
+      };
 }

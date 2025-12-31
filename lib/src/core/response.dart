@@ -284,8 +284,11 @@ class Response {
       }
       response.write(jsonEncode(body));
     } else {
-      // Fallback: convert to string
-      response.write(body.toString());
+      // Objects with toJson() will be serialized
+      if (!headers.containsKey('content-type')) {
+        response.headers.contentType = ContentType.json;
+      }
+      response.write(jsonEncode(body));
     }
 
     await response.close();
