@@ -338,15 +338,6 @@ class Chase extends _ChaseBase<Chase> {
     final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
     _router.add(method, path, wrappedHandler);
   }
-
-  @override
-  Handler _buildMiddlewareChain(List<Middleware> middlewares, Handler handler) {
-    if (middlewares.isEmpty) return handler;
-
-    return middlewares.reversed.fold(handler, (next, mw) {
-      return (ctx) => mw.handle(ctx, () => next(ctx));
-    });
-  }
 }
 
 // =============================================================================
@@ -386,27 +377,31 @@ class ChaseGroup extends _ChaseBase<ChaseGroup> {
   /// [Chase.path] or [ChaseGroup.path] to create groups.
   ChaseGroup._(this._parent, this._prefix);
 
-  // ---------------------------------------------------------------------------
-  // Route Registration (Internal)
-  // ---------------------------------------------------------------------------
-
   @override
   void _addRoute(String method, String path, Handler handler) => _parent
       ._addRoute(method, path, _buildMiddlewareChain(_middlewares, handler));
-
-  @override
-  Handler _buildMiddlewareChain(List<Middleware> middlewares, Handler handler) {
-    if (middlewares.isEmpty) return handler;
-
-    return middlewares.reversed.fold(handler, (next, mw) {
-      return (ctx) => mw.handle(ctx, () => next(ctx));
-    });
-  }
 }
 
 // =============================================================================
 // ChaseBuilder - Route Configuration
 // =============================================================================
+
+/// Mixin providing middleware support for route builders.
+mixin _BuilderMiddlewareSupport<T> {
+  List<Middleware> get _middlewares;
+
+  /// Adds a middleware to this route.
+  T use(Middleware middleware) {
+    _middlewares.add(middleware);
+    return this as T;
+  }
+
+  /// Adds multiple middlewares to this route.
+  T useAll(List<Middleware> middlewares) {
+    _middlewares.addAll(middlewares);
+    return this as T;
+  }
+}
 
 /// A builder for configuring and registering a single route.
 ///
@@ -425,10 +420,12 @@ class ChaseGroup extends _ChaseBase<ChaseGroup> {
 /// * [Middleware], for creating custom request/response interceptors.
 /// * [Handler], for the request handler function signature.
 /// * [Context], for the context object passed to handlers.
-class ChaseBuilder {
+class ChaseBuilder with _BuilderMiddlewareSupport<ChaseBuilder> {
   final _ChaseRouteRegistrar _registrar;
   final String _method;
   final String _path;
+
+  @override
   final List<Middleware> _middlewares = [];
 
   /// Creates a new route builder.
@@ -437,24 +434,9 @@ class ChaseBuilder {
   /// HTTP method helpers like [Chase.get], [Chase.post], etc.
   ChaseBuilder._(this._registrar, this._method, this._path);
 
-  /// Adds a middleware to this route.
-  ChaseBuilder use(Middleware middleware) {
-    _middlewares.add(middleware);
-    return this;
-  }
-
-  /// Adds multiple middlewares to this route.
-  ChaseBuilder useAll(List<Middleware> middlewares) {
-    _middlewares.addAll(middlewares);
-    return this;
-  }
-
   /// Registers the handler for this route.
   void handle(Handler handler) {
-    final wrappedHandler = _registrar._buildMiddlewareChain(
-      _middlewares,
-      handler,
-    );
+    final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
     _registrar._addRoute(_method, _path, wrappedHandler);
   }
 }
@@ -482,31 +464,18 @@ const _allHttpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIO
 ///
 /// * [ChaseBuilder], for single-method route configuration.
 /// * [Middleware], for creating custom request/response interceptors.
-class ChaseBuilderAll {
+class ChaseBuilderAll with _BuilderMiddlewareSupport<ChaseBuilderAll> {
   final _ChaseRouteRegistrar _registrar;
   final String _path;
+
+  @override
   final List<Middleware> _middlewares = [];
 
   ChaseBuilderAll._(this._registrar, this._path);
 
-  /// Adds a middleware to this route.
-  ChaseBuilderAll use(Middleware middleware) {
-    _middlewares.add(middleware);
-    return this;
-  }
-
-  /// Adds multiple middlewares to this route.
-  ChaseBuilderAll useAll(List<Middleware> middlewares) {
-    _middlewares.addAll(middlewares);
-    return this;
-  }
-
   /// Registers the handler for ALL HTTP methods on this route.
   void handle(Handler handler) {
-    final wrappedHandler = _registrar._buildMiddlewareChain(
-      _middlewares,
-      handler,
-    );
+    final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
     for (final method in _allHttpMethods) {
       _registrar._addRoute(method, _path, wrappedHandler);
     }
@@ -533,33 +502,20 @@ class ChaseBuilderAll {
 ///
 /// * [ChaseBuilder], for single-method route configuration.
 /// * [ChaseBuilderAll], for all-method route configuration.
-class ChaseBuilderOn {
+class ChaseBuilderOn with _BuilderMiddlewareSupport<ChaseBuilderOn> {
   final _ChaseRouteRegistrar _registrar;
   final List<String> _methods;
   final String _path;
+
+  @override
   final List<Middleware> _middlewares = [];
 
   ChaseBuilderOn._(this._registrar, List<String> methods, this._path)
       : _methods = methods.map((m) => m.toUpperCase()).toList();
 
-  /// Adds a middleware to this route.
-  ChaseBuilderOn use(Middleware middleware) {
-    _middlewares.add(middleware);
-    return this;
-  }
-
-  /// Adds multiple middlewares to this route.
-  ChaseBuilderOn useAll(List<Middleware> middlewares) {
-    _middlewares.addAll(middlewares);
-    return this;
-  }
-
   /// Registers the handler for the specified HTTP methods on this route.
   void handle(Handler handler) {
-    final wrappedHandler = _registrar._buildMiddlewareChain(
-      _middlewares,
-      handler,
-    );
+    final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
     for (final method in _methods) {
       _registrar._addRoute(method, _path, wrappedHandler);
     }
@@ -573,7 +529,6 @@ class ChaseBuilderOn {
 /// Internal interface for route registration.
 abstract class _ChaseRouteRegistrar {
   void _addRoute(String method, String path, Handler handler);
-  Handler _buildMiddlewareChain(List<Middleware> middlewares, Handler handler);
 }
 
 // =============================================================================
@@ -787,4 +742,16 @@ String _joinPaths(String a, String b) {
   if (normalizedB == '/') return normalizedA;
 
   return '$normalizedA$normalizedB';
+}
+
+/// Builds a middleware chain by wrapping the handler with each middleware.
+///
+/// Middlewares are applied in reverse order so the first middleware in the
+/// list is the outermost wrapper (executes first).
+Handler _buildMiddlewareChain(List<Middleware> middlewares, Handler handler) {
+  if (middlewares.isEmpty) return handler;
+
+  return middlewares.reversed.fold(handler, (next, mw) {
+    return (ctx) => mw.handle(ctx, () => next(ctx));
+  });
 }
