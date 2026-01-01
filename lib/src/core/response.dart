@@ -13,6 +13,9 @@ import 'dart:io';
 ///
 /// // With custom status
 /// return Response.json({'error': 'Not found'}, status: 404);
+///
+/// // Add headers to any response
+/// return Response.json({'data': 1}).header('X-Custom', 'value');
 /// ```
 ///
 /// Use builder pattern for more control:
@@ -24,6 +27,13 @@ import 'dart:io';
 ///
 /// return Response.notFound().json({'error': 'User not found'});
 /// ```
+///
+/// ## Security Notes
+///
+/// - **XSS**: `Response.html()` does NOT escape content. Always sanitize
+///   user input before including it in HTML responses.
+/// - **Open Redirect**: Validate redirect URLs before using `Response.redirect()`.
+///   Consider allowing only relative URLs or whitelisted domains.
 class Response {
   /// The HTTP status code.
   final int statusCode;
@@ -35,7 +45,11 @@ class Response {
   final Map<String, String> headers;
 
   /// Creates a new response.
-  const Response(this.statusCode, {this.body, this.headers = const {}});
+  const Response(
+    this.statusCode, {
+    this.body,
+    this.headers = const {},
+  });
 
   // ---------------------------------------------------------------------------
   // Static Factory Methods (shorthand for 200 OK)
@@ -47,6 +61,8 @@ class Response {
   /// return Response.json({'users': []});
   /// return Response.json({'error': 'Not found'}, status: 404);
   /// ```
+  ///
+  /// Throws [JsonEncodingError] if the data cannot be serialized to JSON.
   static Response json(Object? data, {int status = HttpStatus.ok}) {
     return Response(
       status,
@@ -56,6 +72,9 @@ class Response {
   }
 
   /// Creates an HTML response with 200 OK status (default).
+  ///
+  /// **Security Warning**: This method does NOT escape the content.
+  /// Always sanitize user input before including it in HTML to prevent XSS.
   ///
   /// ```dart
   /// return Response.html('<h1>Welcome</h1>');
@@ -111,31 +130,52 @@ class Response {
   static Response noContent() => const Response(HttpStatus.noContent);
 
   // ---------------------------------------------------------------------------
-  // Redirection Responses (3xx) - returns Response directly
+  // Redirection Responses (3xx)
   // ---------------------------------------------------------------------------
 
   /// Creates a 301 Moved Permanently redirect.
-  Response.movedPermanently(String location)
-      : this(HttpStatus.movedPermanently, headers: {'location': location});
+  ///
+  /// **Security Warning**: Validate the location URL to prevent open redirect
+  /// vulnerabilities. Consider allowing only relative URLs or whitelisted domains.
+  ///
+  /// ```dart
+  /// return Response.movedPermanently('/new-path');
+  /// ```
+  static Response movedPermanently(String location) => Response(
+        HttpStatus.movedPermanently,
+        headers: {'location': _sanitizeHeaderValue(location)},
+      );
 
   /// Creates a 302 Found (temporary) redirect.
-  Response.redirect(String location)
-      : this(HttpStatus.found, headers: {'location': location});
-
-  /// Creates a 302 Found redirect builder (alias).
-  static ResponseBuilder found() => ResponseBuilder(HttpStatus.found);
+  ///
+  /// **Security Warning**: Validate the location URL to prevent open redirect
+  /// vulnerabilities.
+  ///
+  /// ```dart
+  /// return Response.redirect('/login');
+  /// ```
+  static Response redirect(String location) => Response(
+        HttpStatus.found,
+        headers: {'location': _sanitizeHeaderValue(location)},
+      );
 
   /// Creates a 303 See Other redirect.
-  Response.seeOther(String location)
-      : this(HttpStatus.seeOther, headers: {'location': location});
+  static Response seeOther(String location) => Response(
+        HttpStatus.seeOther,
+        headers: {'location': _sanitizeHeaderValue(location)},
+      );
 
   /// Creates a 307 Temporary Redirect.
-  Response.temporaryRedirect(String location)
-      : this(HttpStatus.temporaryRedirect, headers: {'location': location});
+  static Response temporaryRedirect(String location) => Response(
+        HttpStatus.temporaryRedirect,
+        headers: {'location': _sanitizeHeaderValue(location)},
+      );
 
   /// Creates a 308 Permanent Redirect.
-  Response.permanentRedirect(String location)
-      : this(HttpStatus.permanentRedirect, headers: {'location': location});
+  static Response permanentRedirect(String location) => Response(
+        HttpStatus.permanentRedirect,
+        headers: {'location': _sanitizeHeaderValue(location)},
+      );
 
   // ---------------------------------------------------------------------------
   // Client Error Response Builders (4xx)
@@ -216,21 +256,34 @@ class Response {
       if (!headers.containsKey('content-type')) {
         response.headers.contentType = ContentType.json;
       }
-      final encoded = prettyJson
-          ? const JsonEncoder.withIndent('  ').convert(body)
-          : jsonEncode(body);
-      response.write(encoded);
+      try {
+        final encoded = prettyJson
+            ? const JsonEncoder.withIndent('  ').convert(body)
+            : jsonEncode(body);
+        response.write(encoded);
+      } on JsonUnsupportedObjectError catch (e) {
+        throw JsonEncodingError('Failed to encode response body: $e');
+      }
     } else {
       if (!headers.containsKey('content-type')) {
         response.headers.contentType = ContentType.json;
       }
-      final encoded = prettyJson
-          ? const JsonEncoder.withIndent('  ').convert(body)
-          : jsonEncode(body);
-      response.write(encoded);
+      try {
+        final encoded = prettyJson
+            ? const JsonEncoder.withIndent('  ').convert(body)
+            : jsonEncode(body);
+        response.write(encoded);
+      } on JsonUnsupportedObjectError catch (e) {
+        throw JsonEncodingError('Failed to encode response body: $e');
+      }
     }
 
     await response.close();
+  }
+
+  /// Sanitizes header values to prevent CRLF injection.
+  static String _sanitizeHeaderValue(String value) {
+    return value.replaceAll(RegExp(r'[\r\n]'), '');
   }
 }
 
@@ -261,7 +314,24 @@ class ResponseBuilder {
   ///     .json({'id': 1});
   /// ```
   ResponseBuilder header(String name, String value) {
-    return ResponseBuilder(_statusCode, {..._headers, name: value});
+    return ResponseBuilder(
+      _statusCode,
+      {..._headers, name: Response._sanitizeHeaderValue(value)},
+    );
+  }
+
+  /// Adds multiple headers at once.
+  ///
+  /// ```dart
+  /// return Response.ok()
+  ///     .headers({'X-Request-Id': '123', 'X-Custom': 'value'})
+  ///     .json({'data': 1});
+  /// ```
+  ResponseBuilder headers(Map<String, String> headers) {
+    final sanitized = headers.map(
+      (key, value) => MapEntry(key, Response._sanitizeHeaderValue(value)),
+    );
+    return ResponseBuilder(_statusCode, {..._headers, ...sanitized});
   }
 
   /// Creates a JSON response.
@@ -279,6 +349,9 @@ class ResponseBuilder {
   }
 
   /// Creates an HTML response.
+  ///
+  /// **Security Warning**: This method does NOT escape the content.
+  /// Always sanitize user input before including it in HTML to prevent XSS.
   ///
   /// ```dart
   /// return Response.ok().html('<h1>Hello</h1>');
@@ -314,4 +387,17 @@ class ResponseBuilder {
   Response bytes(List<int> data) {
     return Response(_statusCode, body: data, headers: _headers);
   }
+}
+
+// =============================================================================
+// Exceptions
+// =============================================================================
+
+/// Thrown when JSON encoding fails.
+class JsonEncodingError implements Exception {
+  final String message;
+  JsonEncodingError(this.message);
+
+  @override
+  String toString() => 'JsonEncodingError: $message';
 }
