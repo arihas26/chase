@@ -574,6 +574,56 @@ void main() {
     });
   });
 
+  group('Response.htmlEscaped()', () {
+    test('escapes HTML entities', () {
+      final response = Response.htmlEscaped('<script>alert("XSS")</script>');
+      // HtmlEscape also escapes / as &#47;
+      expect(response.body, '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#47;script&gt;');
+      expect(response.statusCode, HttpStatus.ok);
+      expect(response.headers['content-type'], 'text/html; charset=utf-8');
+    });
+
+    test('escapes all dangerous characters', () {
+      final response = Response.htmlEscaped('<>&"\'');
+      expect(response.body, contains('&lt;'));
+      expect(response.body, contains('&gt;'));
+      expect(response.body, contains('&amp;'));
+      expect(response.body, contains('&quot;'));
+    });
+
+    test('with custom status', () {
+      final response = Response.htmlEscaped('<b>Error</b>', status: 400);
+      expect(response.statusCode, 400);
+      expect(response.body, '&lt;b&gt;Error&lt;&#47;b&gt;');
+    });
+
+    test('preserves safe text', () {
+      final response = Response.htmlEscaped('Hello World 123');
+      expect(response.body, 'Hello World 123');
+    });
+  });
+
+  group('ResponseBuilder.htmlEscaped()', () {
+    test('escapes HTML entities', () {
+      final response = Response.ok().htmlEscaped('<script>alert("XSS")</script>');
+      expect(response.body, '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#47;script&gt;');
+    });
+
+    test('preserves custom headers', () {
+      final response = Response.ok()
+          .header('X-Custom', 'value')
+          .htmlEscaped('<b>text</b>');
+      expect(response.headers['X-Custom'], 'value');
+      expect(response.body, '&lt;b&gt;text&lt;&#47;b&gt;');
+    });
+
+    test('with custom status', () {
+      final response = Response.badRequest().htmlEscaped('<error>');
+      expect(response.statusCode, HttpStatus.badRequest);
+      expect(response.body, '&lt;error&gt;');
+    });
+  });
+
   group('ResponseBuilder.download()', () {
     test('creates response with download headers', () {
       final data = [1, 2, 3];

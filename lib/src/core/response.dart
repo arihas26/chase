@@ -71,6 +71,7 @@ class Response {
   ///
   /// **Security Warning**: This method does NOT escape the content.
   /// Always sanitize user input before including it in HTML to prevent XSS.
+  /// For user input, use [htmlEscaped] instead.
   ///
   /// ```dart
   /// return Response.html('<h1>Welcome</h1>');
@@ -79,6 +80,24 @@ class Response {
     return Response(
       status,
       body: content,
+      headers: {'content-type': 'text/html; charset=utf-8'},
+    );
+  }
+
+  /// Creates an HTML response with escaped content to prevent XSS.
+  ///
+  /// Use this for displaying user input safely. The content is escaped
+  /// using [HtmlEscape] from `dart:convert`.
+  ///
+  /// ```dart
+  /// // Safe: user input is escaped
+  /// return Response.htmlEscaped(userInput);
+  /// // <script>alert("XSS")</script> → &lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;
+  /// ```
+  static Response htmlEscaped(String content, {int status = HttpStatus.ok}) {
+    return Response(
+      status,
+      body: const HtmlEscape().convert(content),
       headers: {'content-type': 'text/html; charset=utf-8'},
     );
   }
@@ -380,6 +399,7 @@ class ResponseBuilder {
   ///
   /// **Security Warning**: This method does NOT escape the content.
   /// Always sanitize user input before including it in HTML to prevent XSS.
+  /// For user input, use [htmlEscaped] instead.
   ///
   /// ```dart
   /// return Response.ok().html('<h1>Hello</h1>');
@@ -388,6 +408,19 @@ class ResponseBuilder {
     return Response(
       _statusCode,
       body: content,
+      headers: {..._headers, 'content-type': 'text/html; charset=utf-8'},
+    );
+  }
+
+  /// Creates an HTML response with escaped content to prevent XSS.
+  ///
+  /// ```dart
+  /// return Response.ok().htmlEscaped(userInput);
+  /// ```
+  Response htmlEscaped(String content) {
+    return Response(
+      _statusCode,
+      body: const HtmlEscape().convert(content),
       headers: {..._headers, 'content-type': 'text/html; charset=utf-8'},
     );
   }
