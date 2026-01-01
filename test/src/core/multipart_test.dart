@@ -127,12 +127,10 @@ void main() {
       });
 
       test('caches multipart result', () async {
-        var parseCount = 0;
         final app = Chase();
         app.post('/upload').handle((ctx) async {
           // Call multipart() twice
           final data1 = await ctx.req.multipart();
-          parseCount++;
           final data2 = await ctx.req.multipart();
           // Second call should return cached result
           await ctx.res.json({
