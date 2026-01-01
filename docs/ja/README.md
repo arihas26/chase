@@ -813,6 +813,35 @@ app.get('/profile').handle((ctx) {
 });
 ```
 
+## メソッドオーバーライド
+
+HTMLフォームはGETとPOSTのみサポートしています。メソッドオーバーライドを使用すると、フォームからPUT、PATCH、DELETEリクエストをシミュレートできます。
+
+```dart
+// メソッドオーバーライドを有効化（デフォルト：フォームフィールド "_method"）
+final app = Chase()..methodOverride();
+
+// カスタム設定
+final app = Chase()
+  ..methodOverride(
+    form: '_method',            // フォームフィールド名（デフォルト）
+    header: 'X-HTTP-Method',    // ヘッダー名
+    query: '_method',           // クエリパラメータ名
+  );
+
+// フォームからのDELETEを処理
+app.delete('/posts/:id').handle((ctx) {
+  return {'deleted': ctx.req.param('id')};
+});
+```
+
+```html
+<form action="/posts/123" method="POST">
+  <input type="hidden" name="_method" value="DELETE" />
+  <button type="submit">削除</button>
+</form>
+```
+
 ## サーバー設定
 
 ```dart

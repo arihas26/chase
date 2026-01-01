@@ -17,8 +17,12 @@ class Context {
   /// General-purpose storage for sharing data between middleware and handlers.
   final Map<String, dynamic> _store = {};
 
-  Context(HttpRequest req, HttpResponse res, [Map<String, String>? params])
-      : _req = Req(req, params),
+  Context(
+    HttpRequest req,
+    HttpResponse res, [
+    Map<String, String>? params,
+    String? methodOverride,
+  ])  : _req = Req(req, params, methodOverride),
         _res = Res(res);
 
   /// The HTTP request.

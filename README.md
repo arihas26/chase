@@ -805,6 +805,35 @@ app.get('/profile').handle((ctx) {
 });
 ```
 
+## Method Override
+
+HTML forms only support GET and POST. Method Override allows forms to simulate PUT, PATCH, and DELETE requests.
+
+```dart
+// Enable method override (default: form field "_method")
+final app = Chase()..methodOverride();
+
+// Custom configuration
+final app = Chase()
+  ..methodOverride(
+    form: '_method',            // Form field name (default)
+    header: 'X-HTTP-Method',    // Header name
+    query: '_method',           // Query parameter name
+  );
+
+// Now handles DELETE from form
+app.delete('/posts/:id').handle((ctx) {
+  return {'deleted': ctx.req.param('id')};
+});
+```
+
+```html
+<form action="/posts/123" method="POST">
+  <input type="hidden" name="_method" value="DELETE" />
+  <button type="submit">Delete</button>
+</form>
+```
+
 ## Server Configuration
 
 ```dart

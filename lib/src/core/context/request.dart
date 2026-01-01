@@ -36,6 +36,7 @@ import 'package:chase/src/core/exception/http_exception.dart';
 class Req {
   final HttpRequest _raw;
   final Map<String, String> _params;
+  final String? _methodOverride;
   Uint8List? _cachedBytes;
   String? _cachedText;
   Object? _cachedJson;
@@ -44,14 +45,22 @@ class Req {
   Map<String, String>? _cachedCookies;
   MultipartBody? _cachedMultipart;
 
-  Req(this._raw, [Map<String, String>? params]) : _params = params ?? {};
+  Req(this._raw, [Map<String, String>? params, String? methodOverride])
+      : _params = params ?? {},
+        _methodOverride = methodOverride;
 
   // ---------------------------------------------------------------------------
   // Basic Request Info
   // ---------------------------------------------------------------------------
 
   /// HTTP method (GET, POST, PUT, DELETE, etc.)
-  String get method => _raw.method;
+  ///
+  /// Returns the overridden method if method override is enabled,
+  /// otherwise returns the original request method.
+  String get method => _methodOverride ?? _raw.method;
+
+  /// The original HTTP method before any override.
+  String get rawMethod => _raw.method;
 
   /// Full request URI including query parameters.
   Uri get uri => _raw.uri;

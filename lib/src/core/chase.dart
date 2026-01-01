@@ -47,6 +47,7 @@ class Chase extends _ChaseBase<Chase> {
   Handler? _cachedNotFoundHandler;
   final List<FutureOr<void> Function()> _onStartCallbacks = [];
   final List<FutureOr<void> Function()> _onStopCallbacks = [];
+  MethodOverrideConfig? _methodOverrideConfig;
 
   @override
   final String _prefix = '/';
@@ -179,6 +180,46 @@ class Chase extends _ChaseBase<Chase> {
     return this;
   }
 
+  /// Enables HTTP method override for HTML forms.
+  ///
+  /// HTML forms can only send GET and POST requests. This feature allows
+  /// overriding the HTTP method using a form field, query parameter, or header.
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// // Enable with defaults (form field: _method)
+  /// app.methodOverride();
+  ///
+  /// // Enable with custom options
+  /// app.methodOverride(
+  ///   form: '_method',           // Form field name
+  ///   header: 'X-HTTP-Method',   // Header name
+  ///   query: '_method',          // Query parameter name
+  /// );
+  /// ```
+  ///
+  /// ## HTML Form Example
+  ///
+  /// ```html
+  /// <form action="/posts/123" method="POST">
+  ///   <input type="hidden" name="_method" value="DELETE" />
+  ///   <button type="submit">Delete</button>
+  /// </form>
+  /// ```
+  Chase methodOverride({
+    String? form = '_method',
+    String? header,
+    String? query,
+  }) {
+    _methodOverrideConfig = MethodOverrideConfig(
+      form: form,
+      header: header,
+      query: query,
+    );
+    return this;
+  }
+
   // ---------------------------------------------------------------------------
   // Server Lifecycle
   // ---------------------------------------------------------------------------
@@ -303,10 +344,17 @@ class Chase extends _ChaseBase<Chase> {
   // ---------------------------------------------------------------------------
 
   Future<void> _handleRequest(HttpRequest req) async {
-    final route = _router.match(req.method, req.uri.path);
+    // Check for method override before routing
+    String? methodOverride;
+    if (_methodOverrideConfig != null && req.method == 'POST') {
+      methodOverride = await _getMethodOverride(req);
+    }
+
+    final method = methodOverride ?? req.method;
+    final route = _router.match(method, req.uri.path);
     // Handler already has middleware chain built at registration time
     final handler = route?.handler ?? _cachedNotFoundHandler ?? _defaultNotFoundHandler;
-    final ctx = Context(req, req.response, route?.params);
+    final ctx = Context(req, req.response, route?.params, methodOverride);
 
     try {
       final result = await handler(ctx);
@@ -359,6 +407,48 @@ class Chase extends _ChaseBase<Chase> {
 
   static Future<void> _defaultNotFoundHandler(Context ctx) async {
     await ctx.res.notFound();
+  }
+
+  /// Gets the overridden HTTP method from header, query, or form.
+  Future<String?> _getMethodOverride(HttpRequest req) async {
+    final config = _methodOverrideConfig!;
+    final allowedMethods = {'PUT', 'PATCH', 'DELETE'};
+
+    // Check header first (cheapest)
+    if (config.header != null) {
+      final value = req.headers.value(config.header!)?.toUpperCase();
+      if (value != null && allowedMethods.contains(value)) {
+        return value;
+      }
+    }
+
+    // Check query parameter
+    if (config.query != null) {
+      final value = req.uri.queryParameters[config.query]?.toUpperCase();
+      if (value != null && allowedMethods.contains(value)) {
+        return value;
+      }
+    }
+
+    // Check form field (requires parsing body)
+    if (config.form != null) {
+      final contentType = req.headers.contentType;
+      if (contentType?.mimeType == 'application/x-www-form-urlencoded') {
+        try {
+          final body = await req.cast<List<int>>().expand((x) => x).toList();
+          final text = String.fromCharCodes(body);
+          final params = Uri.splitQueryString(text);
+          final value = params[config.form]?.toUpperCase();
+          if (value != null && allowedMethods.contains(value)) {
+            return value;
+          }
+        } catch (_) {
+          // Ignore parsing errors
+        }
+      }
+    }
+
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -787,5 +877,34 @@ Handler _buildMiddlewareChain(List<Middleware> middlewares, Handler handler) {
 
   return middlewares.reversed.fold(handler, (next, mw) {
     return (ctx) => mw.handle(ctx, () => next(ctx));
+  });
+}
+
+// =============================================================================
+// Method Override Configuration
+// =============================================================================
+
+/// Configuration for HTTP method override.
+///
+/// This allows HTML forms to simulate PUT, PATCH, and DELETE requests
+/// by including the method in a form field, query parameter, or header.
+class MethodOverrideConfig {
+  /// Form field name to check for method override.
+  ///
+  /// Set to `null` to disable form-based override.
+  final String? form;
+
+  /// Header name to check for method override.
+  ///
+  /// Common values: `X-HTTP-Method-Override`, `X-Method-Override`.
+  final String? header;
+
+  /// Query parameter name to check for method override.
+  final String? query;
+
+  const MethodOverrideConfig({
+    this.form,
+    this.header,
+    this.query,
   });
 }
