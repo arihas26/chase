@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chase/chase.dart';
-import 'package:chase/src/core/router.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
