@@ -547,7 +547,7 @@ mixin _BuilderMiddlewareSupport<T> {
 class ChaseBuilder with _BuilderMiddlewareSupport<ChaseBuilder> {
   final _ChaseRouteRegistrar _registrar;
   final String _method;
-  final String _path;
+  final List<String> _paths;
 
   @override
   final List<Middleware> _middlewares = [];
@@ -556,12 +556,14 @@ class ChaseBuilder with _BuilderMiddlewareSupport<ChaseBuilder> {
   ///
   /// This constructor is typically not called directly. Instead, use
   /// HTTP method helpers like [Chase.get], [Chase.post], etc.
-  ChaseBuilder._(this._registrar, this._method, this._path);
+  ChaseBuilder._(this._registrar, this._method, this._paths);
 
   /// Registers the handler for this route.
   void handle(Handler handler) {
     final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
-    _registrar._addRoute(_method, _path, wrappedHandler);
+    for (final path in _paths) {
+      _registrar._addRoute(_method, path, wrappedHandler);
+    }
   }
 }
 
@@ -590,18 +592,20 @@ const _allHttpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIO
 /// * [Middleware], for creating custom request/response interceptors.
 class ChaseBuilderAll with _BuilderMiddlewareSupport<ChaseBuilderAll> {
   final _ChaseRouteRegistrar _registrar;
-  final String _path;
+  final List<String> _paths;
 
   @override
   final List<Middleware> _middlewares = [];
 
-  ChaseBuilderAll._(this._registrar, this._path);
+  ChaseBuilderAll._(this._registrar, this._paths);
 
   /// Registers the handler for ALL HTTP methods on this route.
   void handle(Handler handler) {
     final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
-    for (final method in _allHttpMethods) {
-      _registrar._addRoute(method, _path, wrappedHandler);
+    for (final path in _paths) {
+      for (final method in _allHttpMethods) {
+        _registrar._addRoute(method, path, wrappedHandler);
+      }
     }
   }
 }
@@ -629,19 +633,21 @@ class ChaseBuilderAll with _BuilderMiddlewareSupport<ChaseBuilderAll> {
 class ChaseBuilderOn with _BuilderMiddlewareSupport<ChaseBuilderOn> {
   final _ChaseRouteRegistrar _registrar;
   final List<String> _methods;
-  final String _path;
+  final List<String> _paths;
 
   @override
   final List<Middleware> _middlewares = [];
 
-  ChaseBuilderOn._(this._registrar, List<String> methods, this._path)
+  ChaseBuilderOn._(this._registrar, List<String> methods, this._paths)
       : _methods = methods.map((m) => m.toUpperCase()).toList();
 
   /// Registers the handler for the specified HTTP methods on this route.
   void handle(Handler handler) {
     final wrappedHandler = _buildMiddlewareChain(_middlewares, handler);
-    for (final method in _methods) {
-      _registrar._addRoute(method, _path, wrappedHandler);
+    for (final path in _paths) {
+      for (final method in _methods) {
+        _registrar._addRoute(method, path, wrappedHandler);
+      }
     }
   }
 }
@@ -687,10 +693,12 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
   // HTTP Methods
   // ---------------------------------------------------------------------------
 
-  /// Creates a GET route builder for the given path.
+  /// Creates a GET route builder for the given path(s).
   ///
   /// GET requests are used to retrieve resources.
   ///
+  /// You can pass either a single path or a list of paths.
+  /// When passing a list, the same handler is registered for all paths.
   ///
   /// ## Example
   ///
@@ -699,41 +707,41 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
   ///   await ctx.res.json({'users': []});
   /// });
   ///
-  /// app.get('/users/:id').handle((ctx) async {
-  ///   final id = ctx.req.params['id'];
-  ///   await ctx.res.json({'id': id});
+  /// // Multiple paths with same handler
+  /// app.get(['/hello', '/ja/hello']).handle((ctx) async {
+  ///   await ctx.res.text('Hello');
   /// });
   /// ```
-  ChaseBuilder get([String path = '/']) =>
-      ChaseBuilder._(this, 'GET', _joinPaths(_prefix, path));
+  ChaseBuilder get([Object path = '/']) =>
+      ChaseBuilder._(this, 'GET', _normalizePaths(_prefix, path));
 
-  /// Creates a POST route builder for the given path.
-  ChaseBuilder post([String path = '/']) =>
-      ChaseBuilder._(this, 'POST', _joinPaths(_prefix, path));
+  /// Creates a POST route builder for the given path(s).
+  ChaseBuilder post([Object path = '/']) =>
+      ChaseBuilder._(this, 'POST', _normalizePaths(_prefix, path));
 
-  /// Creates a PUT route builder for the given path.
-  ChaseBuilder put([String path = '/']) =>
-      ChaseBuilder._(this, 'PUT', _joinPaths(_prefix, path));
+  /// Creates a PUT route builder for the given path(s).
+  ChaseBuilder put([Object path = '/']) =>
+      ChaseBuilder._(this, 'PUT', _normalizePaths(_prefix, path));
 
-  /// Creates a PATCH route builder for the given path.
-  ChaseBuilder patch([String path = '/']) =>
-      ChaseBuilder._(this, 'PATCH', _joinPaths(_prefix, path));
+  /// Creates a PATCH route builder for the given path(s).
+  ChaseBuilder patch([Object path = '/']) =>
+      ChaseBuilder._(this, 'PATCH', _normalizePaths(_prefix, path));
 
-  /// Creates a DELETE route builder for the given path.
-  ChaseBuilder delete([String path = '/']) =>
-      ChaseBuilder._(this, 'DELETE', _joinPaths(_prefix, path));
+  /// Creates a DELETE route builder for the given path(s).
+  ChaseBuilder delete([Object path = '/']) =>
+      ChaseBuilder._(this, 'DELETE', _normalizePaths(_prefix, path));
 
-  /// Creates a HEAD route builder for the given path.
-  ChaseBuilder head([String path = '/']) =>
-      ChaseBuilder._(this, 'HEAD', _joinPaths(_prefix, path));
+  /// Creates a HEAD route builder for the given path(s).
+  ChaseBuilder head([Object path = '/']) =>
+      ChaseBuilder._(this, 'HEAD', _normalizePaths(_prefix, path));
 
-  /// Creates an OPTIONS route builder for the given path.
-  ChaseBuilder options([String path = '/']) =>
-      ChaseBuilder._(this, 'OPTIONS', _joinPaths(_prefix, path));
+  /// Creates an OPTIONS route builder for the given path(s).
+  ChaseBuilder options([Object path = '/']) =>
+      ChaseBuilder._(this, 'OPTIONS', _normalizePaths(_prefix, path));
 
-  /// Creates a route builder for any HTTP method.
-  ChaseBuilder route(String method, [String path = '/']) =>
-      ChaseBuilder._(this, method.toUpperCase(), _joinPaths(_prefix, path));
+  /// Creates a route builder for any HTTP method with the given path(s).
+  ChaseBuilder route(String method, [Object path = '/']) =>
+      ChaseBuilder._(this, method.toUpperCase(), _normalizePaths(_prefix, path));
 
   /// Creates a route builder that matches ALL HTTP methods.
   ///
@@ -741,6 +749,8 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
   /// - Applying middleware to all methods on a path
   /// - Proxy/forwarding handlers
   /// - Fallback/catch-all routes
+  ///
+  /// You can pass either a single path or a list of paths.
   ///
   /// ## Example
   ///
@@ -750,14 +760,19 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
   ///
   /// // Catch-all fallback
   /// app.all('*').handle((ctx) => ctx.res.notFound());
+  ///
+  /// // Multiple paths
+  /// app.all(['/hello', '/ja/hello']).handle((ctx) => ...);
   /// ```
-  ChaseBuilderAll all([String path = '/']) =>
-      ChaseBuilderAll._(this, _joinPaths(_prefix, path));
+  ChaseBuilderAll all([Object path = '/']) =>
+      ChaseBuilderAll._(this, _normalizePaths(_prefix, path));
 
   /// Creates a route builder for specific HTTP methods.
   ///
   /// This is useful when you want to handle multiple (but not all) methods
   /// with the same handler.
+  ///
+  /// You can pass either a single path or a list of paths.
   ///
   /// ## Example
   ///
@@ -767,9 +782,12 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
   ///
   /// // Handle read operations
   /// app.on(['GET', 'HEAD'], '/resource').handle((ctx) => ...);
+  ///
+  /// // Multiple paths
+  /// app.on(['GET', 'POST'], ['/form', '/ja/form']).handle((ctx) => ...);
   /// ```
-  ChaseBuilderOn on(List<String> methods, [String path = '/']) =>
-      ChaseBuilderOn._(this, methods, _joinPaths(_prefix, path));
+  ChaseBuilderOn on(List<String> methods, [Object path = '/']) =>
+      ChaseBuilderOn._(this, methods, _normalizePaths(_prefix, path));
 
   // ---------------------------------------------------------------------------
   // Middleware
@@ -866,6 +884,19 @@ String _joinPaths(String a, String b) {
   if (normalizedB == '/') return normalizedA;
 
   return '$normalizedA$normalizedB';
+}
+
+/// Normalizes paths to a list.
+///
+/// Accepts either a single path string or a list of paths.
+/// Each path is joined with the given prefix.
+///
+/// Examples:
+/// - ('/api', '/users') → ['/api/users']
+/// - ('/api', ['/hello', '/ja/hello']) → ['/api/hello', '/api/ja/hello']
+List<String> _normalizePaths(String prefix, Object path) {
+  final paths = path is List<String> ? path : [path as String];
+  return paths.map((p) => _joinPaths(prefix, p)).toList();
 }
 
 /// Builds a middleware chain by wrapping the handler with each middleware.

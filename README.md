@@ -156,6 +156,36 @@ app.get('/search').handle((ctx) {
 });
 ```
 
+### Multiple Paths
+
+Register the same handler for multiple paths:
+
+```dart
+// Same handler for multiple paths
+app.get(['/hello', '/ja/hello']).handle((ctx) {
+  ctx.res.text('Hello!');
+});
+
+// Works with all HTTP methods
+app.post(['/submit', '/api/submit']).handle(submitHandler);
+app.put(['/update', '/api/update']).handle(updateHandler);
+
+// With middleware
+app.get(['/a', '/b', '/c'])
+  .use(AuthMiddleware())
+  .handle(handler);
+
+// With path parameters
+app.get(['/users/:id', '/members/:id']).handle((ctx) {
+  final id = ctx.req.param('id');
+  ctx.res.json({'id': id});
+});
+
+// all() and on() also support multiple paths
+app.all(['/any', '/v1/any']).handle(anyHandler);
+app.on(['GET', 'POST'], ['/form', '/api/form']).handle(formHandler);
+```
+
 ## Middleware
 
 ### Using Middleware

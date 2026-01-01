@@ -164,6 +164,36 @@ app.get('/search').handle((ctx) {
 });
 ```
 
+### 複数パス
+
+同一ハンドラを複数パスに登録:
+
+```dart
+// 複数パスに同じハンドラを登録
+app.get(['/hello', '/ja/hello']).handle((ctx) {
+  ctx.res.text('Hello!');
+});
+
+// 全HTTPメソッドで使用可能
+app.post(['/submit', '/api/submit']).handle(submitHandler);
+app.put(['/update', '/api/update']).handle(updateHandler);
+
+// ミドルウェアと組み合わせ
+app.get(['/a', '/b', '/c'])
+  .use(AuthMiddleware())
+  .handle(handler);
+
+// パスパラメータも使用可能
+app.get(['/users/:id', '/members/:id']).handle((ctx) {
+  final id = ctx.req.param('id');
+  ctx.res.json({'id': id});
+});
+
+// all() と on() も複数パスをサポート
+app.all(['/any', '/v1/any']).handle(anyHandler);
+app.on(['GET', 'POST'], ['/form', '/api/form']).handle(formHandler);
+```
+
 ## ミドルウェア
 
 ### ミドルウェアの使用
