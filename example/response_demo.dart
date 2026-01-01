@@ -15,7 +15,12 @@ void main() async {
 
   // 3. List を直接返す → JSON
   app.get('/list').handle((ctx) {
-    return [1, 2, 3, {'name': 'item'}];
+    return [
+      1,
+      2,
+      3,
+      {'name': 'item'},
+    ];
   });
 
   // 4. Response でステータスコード指定
@@ -26,9 +31,9 @@ void main() async {
 
   // 5. Response でヘッダー追加
   app.get('/custom-header').handle((ctx) {
-    return Response.ok()
-        .header('X-Custom', 'my-value')
-        .json({'with': 'custom header'});
+    return Response.ok().header('X-Custom', 'my-value').json({
+      'with': 'custom header',
+    });
   });
 
   // 6. リダイレクト
