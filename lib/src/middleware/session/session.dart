@@ -46,8 +46,16 @@ class SessionData {
   }
 
   /// Gets a value from the session.
+  ///
+  /// In debug mode, an assertion will fail if the key exists but
+  /// the type doesn't match, helping to catch type mismatches early.
   T? get<T>(String key) {
     final value = _data[key];
+    assert(
+      value == null || value is T,
+      'Session type mismatch: key "$key" has type ${value.runtimeType}, '
+      'but expected $T',
+    );
     return value is T ? value : null;
   }
 

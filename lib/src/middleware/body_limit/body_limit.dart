@@ -128,6 +128,7 @@ class BodyLimit implements Middleware {
     // In production, you might want to enforce Content-Length header presence
     if (contentLength <= 0) {
       await next();
+      return;
     }
 
     // Check if content length exceeds the limit
