@@ -514,6 +514,59 @@ class ChaseBuilderAll {
 }
 
 // =============================================================================
+// ChaseBuilderOn - Route Configuration for Specific Methods
+// =============================================================================
+
+/// A builder for configuring routes that match specific HTTP methods.
+///
+/// Similar to [ChaseBuilder] but registers the handler for multiple methods.
+///
+/// ## Example
+///
+/// ```dart
+/// app.on(['GET', 'POST'], '/form')
+///   .use(CsrfMiddleware())
+///   .handle(formHandler);
+/// ```
+///
+/// ## See also
+///
+/// * [ChaseBuilder], for single-method route configuration.
+/// * [ChaseBuilderAll], for all-method route configuration.
+class ChaseBuilderOn {
+  final _ChaseRouteRegistrar _registrar;
+  final List<String> _methods;
+  final String _path;
+  final List<Middleware> _middlewares = [];
+
+  ChaseBuilderOn._(this._registrar, List<String> methods, this._path)
+      : _methods = methods.map((m) => m.toUpperCase()).toList();
+
+  /// Adds a middleware to this route.
+  ChaseBuilderOn use(Middleware middleware) {
+    _middlewares.add(middleware);
+    return this;
+  }
+
+  /// Adds multiple middlewares to this route.
+  ChaseBuilderOn useAll(List<Middleware> middlewares) {
+    _middlewares.addAll(middlewares);
+    return this;
+  }
+
+  /// Registers the handler for the specified HTTP methods on this route.
+  void handle(Handler handler) {
+    final wrappedHandler = _registrar._buildMiddlewareChain(
+      _middlewares,
+      handler,
+    );
+    for (final method in _methods) {
+      _registrar._addRoute(method, _path, wrappedHandler);
+    }
+  }
+}
+
+// =============================================================================
 // Internal Route Registration Interface
 // =============================================================================
 
@@ -621,6 +674,23 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
   /// ```
   ChaseBuilderAll all([String path = '/']) =>
       ChaseBuilderAll._(this, _joinPaths(_prefix, path));
+
+  /// Creates a route builder for specific HTTP methods.
+  ///
+  /// This is useful when you want to handle multiple (but not all) methods
+  /// with the same handler.
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// // Handle both GET and POST
+  /// app.on(['GET', 'POST'], '/submit').handle((ctx) => ...);
+  ///
+  /// // Handle read operations
+  /// app.on(['GET', 'HEAD'], '/resource').handle((ctx) => ...);
+  /// ```
+  ChaseBuilderOn on(List<String> methods, [String path = '/']) =>
+      ChaseBuilderOn._(this, methods, _joinPaths(_prefix, path));
 
   // ---------------------------------------------------------------------------
   // Middleware

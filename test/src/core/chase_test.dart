@@ -247,6 +247,44 @@ void main() {
       expect(router.routes.length, 7);
       expect(router.routes.first.path, '/api/proxy');
     });
+
+    test('on registers specified HTTP methods', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      app.on(['GET', 'POST'], '/form').handle((c) => c);
+
+      expect(router.routes, [
+        (method: 'GET', path: '/form'),
+        (method: 'POST', path: '/form'),
+      ]);
+    });
+
+    test('on normalizes method names to uppercase', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      app.on(['get', 'post', 'Put'], '/mixed').handle((c) => c);
+
+      expect(router.routes, [
+        (method: 'GET', path: '/mixed'),
+        (method: 'POST', path: '/mixed'),
+        (method: 'PUT', path: '/mixed'),
+      ]);
+    });
+
+    test('on works with groups', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      final api = app.path('/api');
+      api.on(['GET', 'HEAD'], '/resource').handle((c) => c);
+
+      expect(router.routes, [
+        (method: 'GET', path: '/api/resource'),
+        (method: 'HEAD', path: '/api/resource'),
+      ]);
+    });
   });
 
   group('Lifecycle', () {
@@ -379,6 +417,27 @@ void main() {
       final deleteRes = await client.delete('/echo');
       expect(deleteRes.status, 200);
       expect(await deleteRes.body, 'Method: DELETE');
+    });
+
+    test('on() handles specified HTTP methods only', () async {
+      final app = Chase();
+
+      app.on(['GET', 'POST'], '/form').handle((ctx) => 'OK: ${ctx.req.method}');
+
+      final client = await TestClient.start(app);
+      addTearDown(() => client.close());
+
+      final getRes = await client.get('/form');
+      expect(getRes.status, 200);
+      expect(await getRes.body, 'OK: GET');
+
+      final postRes = await client.post('/form');
+      expect(postRes.status, 200);
+      expect(await postRes.body, 'OK: POST');
+
+      // PUT is not registered, should return 404
+      final putRes = await client.put('/form');
+      expect(putRes.status, 404);
     });
   });
 }
