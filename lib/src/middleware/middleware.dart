@@ -20,7 +20,7 @@ export 'etag/etag.dart';
 export 'timeout/timeout.dart';
 
 // Utilities
-export 'logger/logger.dart';
+export 'logger/request_logger.dart';
 export 'exception/exception_handler.dart';
 export 'session/session.dart';
 export 'i18n/i18n.dart';

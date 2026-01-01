@@ -1,5 +1,5 @@
 import 'package:zlogger/zlogger.dart';
-import 'package:chase/src/middleware/logger/logger.dart';
+import 'package:chase/src/middleware/logger/request_logger.dart';
 import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
 
