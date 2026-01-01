@@ -9,7 +9,7 @@ topics:
   - server
   - http
   - framework
-  - dart
+  - fast
 
 environment:
   sdk: ^3.10.7
