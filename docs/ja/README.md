@@ -83,13 +83,13 @@ void main() async {
 
   // JSONレスポンス（Map/Listは自動シリアライズ）
   app.get('/hello/:name').handle((ctx) {
-    final name = ctx.params['name'];
+    final name = ctx.req.param('name');
     return {'message': 'Hello, $name!'};
   });
 
   // 完全な制御のためのResponseオブジェクト
   app.get('/users/:id').handle((ctx) {
-    return Response.ok({'id': ctx.params['id'], 'name': 'John'});
+    return Response.ok({'id': ctx.req.param('id'), 'name': 'John'});
   });
 
   await app.start(port: 6060);
@@ -120,21 +120,34 @@ app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
 ```dart
 // 単一パラメータ
 app.get('/users/:id').handle((ctx) {
-  final id = ctx.params['id'];
+  final id = ctx.req.param('id');
   ctx.res.json({'id': id});
 });
 
 // 複数パラメータ
 app.get('/users/:userId/posts/:postId').handle((ctx) {
-  final userId = ctx.params['userId'];
-  final postId = ctx.params['postId'];
+  final userId = ctx.req.param('userId');
+  final postId = ctx.req.param('postId');
   ctx.res.json({'userId': userId, 'postId': postId});
 });
 
 // ワイルドカード（キャッチオール）
 app.get('/files/*path').handle((ctx) {
-  final path = ctx.params['path'];  // 例: "images/photo.jpg"
+  final path = ctx.req.param('path');  // 例: "images/photo.jpg"
   ctx.res.text('File: $path');
+});
+
+// オプショナルパラメータ
+app.get('/users/:id?').handle((ctx) {
+  final id = ctx.req.param('id');  // 未指定の場合はnull
+  // /users と /users/123 の両方にマッチ
+});
+
+// 他のパラメータと組み合わせ
+app.get('/posts/:postId/comments/:commentId?').handle((ctx) {
+  final postId = ctx.req.param('postId');      // 必須
+  final commentId = ctx.req.param('commentId'); // オプショナル
+  // /posts/1/comments と /posts/1/comments/2 にマッチ
 });
 ```
 

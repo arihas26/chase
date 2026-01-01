@@ -1,7 +1,6 @@
 import 'dart:collection';
 
 import 'package:chase/chase.dart';
-import 'package:chase/src/core/router.dart';
 
 /// A route entry that stores the regex pattern, parameter names, and handler.
 class _RouteEntry {

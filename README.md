@@ -75,13 +75,13 @@ void main() async {
 
   // JSON response (Map/List auto-serialized)
   app.get('/hello/:name').handle((ctx) {
-    final name = ctx.params['name'];
+    final name = ctx.req.param('name');
     return {'message': 'Hello, $name!'};
   });
 
   // Response object for full control
   app.get('/users/:id').handle((ctx) {
-    return Response.ok({'id': ctx.params['id'], 'name': 'John'});
+    return Response.ok({'id': ctx.req.param('id'), 'name': 'John'});
   });
 
   await app.start(port: 6060);
@@ -112,21 +112,34 @@ app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
 ```dart
 // Single parameter
 app.get('/users/:id').handle((ctx) {
-  final id = ctx.params['id'];
+  final id = ctx.req.param('id');
   ctx.res.json({'id': id});
 });
 
 // Multiple parameters
 app.get('/users/:userId/posts/:postId').handle((ctx) {
-  final userId = ctx.params['userId'];
-  final postId = ctx.params['postId'];
+  final userId = ctx.req.param('userId');
+  final postId = ctx.req.param('postId');
   ctx.res.json({'userId': userId, 'postId': postId});
 });
 
 // Wildcard (catch-all)
 app.get('/files/*path').handle((ctx) {
-  final path = ctx.params['path'];  // e.g., "images/photo.jpg"
+  final path = ctx.req.param('path');  // e.g., "images/photo.jpg"
   ctx.res.text('File: $path');
+});
+
+// Optional parameter
+app.get('/users/:id?').handle((ctx) {
+  final id = ctx.req.param('id');  // null if not provided
+  // Matches both /users and /users/123
+});
+
+// Optional with other parameters
+app.get('/posts/:postId/comments/:commentId?').handle((ctx) {
+  final postId = ctx.req.param('postId');      // Required
+  final commentId = ctx.req.param('commentId'); // Optional
+  // Matches /posts/1/comments and /posts/1/comments/2
 });
 ```
 
