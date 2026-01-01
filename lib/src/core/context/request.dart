@@ -659,8 +659,8 @@ class Req {
       throw BadRequestException('Missing multipart boundary.');
     }
 
-    final fields = <String, String>{};
-    final files = <String, MultipartFile>{};
+    final fields = <String, List<String>>{};
+    final files = <String, List<MultipartFile>>{};
 
     final body = await bytes();
     final boundaryBytes = ascii.encode('--$boundary');
@@ -736,13 +736,13 @@ class Req {
       final partContentType = partCt == null ? null : ContentType.parse(partCt);
 
       if (filename != null && filename.isNotEmpty) {
-        files[name] = MultipartFile(
+        files.putIfAbsent(name, () => []).add(MultipartFile(
           filename: filename,
           bytes: Uint8List.fromList(contentBytes),
           contentType: partContentType,
-        );
+        ));
       } else {
-        fields[name] = utf8.decode(contentBytes);
+        fields.putIfAbsent(name, () => []).add(utf8.decode(contentBytes));
       }
 
       pos = next;

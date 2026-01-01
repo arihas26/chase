@@ -696,6 +696,38 @@ class TestResponse {
 }
 
 // -----------------------------------------------------------------------------
+// MultipartFileData
+// -----------------------------------------------------------------------------
+
+/// Data for a multipart file upload in tests.
+///
+/// Example:
+/// ```dart
+/// MultipartFileData(
+///   filename: 'photo.png',
+///   bytes: Uint8List.fromList([...]),
+///   contentType: 'image/png',
+/// )
+/// ```
+class MultipartFileData {
+  /// The filename to use in the multipart body.
+  final String filename;
+
+  /// The file content as bytes.
+  final Uint8List bytes;
+
+  /// The content type (MIME type) of the file.
+  final String? contentType;
+
+  /// Creates multipart file data.
+  const MultipartFileData({
+    required this.filename,
+    required this.bytes,
+    this.contentType,
+  });
+}
+
+// -----------------------------------------------------------------------------
 // TestClient
 // -----------------------------------------------------------------------------
 
@@ -795,6 +827,83 @@ class TestClient {
     Map<String, String>? headers,
   }) =>
       request('DELETE', path, headers: headers);
+
+  /// Sends a POST request with multipart/form-data body.
+  ///
+  /// Example:
+  /// ```dart
+  /// final res = await client.postMultipart('/upload',
+  ///   fields: {'name': 'John'},
+  ///   files: {
+  ///     'avatar': MultipartFileData(
+  ///       filename: 'photo.png',
+  ///       bytes: imageBytes,
+  ///       contentType: 'image/png',
+  ///     ),
+  ///   },
+  /// );
+  /// ```
+  Future<TestResponse> postMultipart(
+    String path, {
+    Map<String, String>? fields,
+    Map<String, MultipartFileData>? files,
+    Map<String, String>? headers,
+  }) async {
+    final boundary = 'chase-test-boundary-${DateTime.now().millisecondsSinceEpoch}';
+    final body = _buildMultipartBody(boundary, fields ?? {}, files ?? {});
+
+    final effectiveHeaders = Map<String, String>.from(headers ?? {});
+    effectiveHeaders['content-type'] = 'multipart/form-data; boundary=$boundary';
+
+    final uri = Uri.parse('http://localhost:$_port$path');
+    final req = await _client.openUrl('POST', uri);
+    req.followRedirects = false;
+
+    effectiveHeaders.forEach((key, value) {
+      req.headers.set(key, value);
+    });
+
+    req.add(body);
+    final res = await req.close();
+    return TestResponse(res);
+  }
+
+  List<int> _buildMultipartBody(
+    String boundary,
+    Map<String, String> fields,
+    Map<String, MultipartFileData> files,
+  ) {
+    final buffer = <int>[];
+    final crlf = utf8.encode('\r\n');
+
+    // Add text fields
+    for (final entry in fields.entries) {
+      buffer.addAll(utf8.encode('--$boundary\r\n'));
+      buffer.addAll(utf8.encode(
+          'Content-Disposition: form-data; name="${entry.key}"\r\n\r\n'));
+      buffer.addAll(utf8.encode(entry.value));
+      buffer.addAll(crlf);
+    }
+
+    // Add files
+    for (final entry in files.entries) {
+      final file = entry.value;
+      buffer.addAll(utf8.encode('--$boundary\r\n'));
+      buffer.addAll(utf8.encode(
+          'Content-Disposition: form-data; name="${entry.key}"; filename="${file.filename}"\r\n'));
+      if (file.contentType != null) {
+        buffer.addAll(utf8.encode('Content-Type: ${file.contentType}\r\n'));
+      }
+      buffer.addAll(crlf);
+      buffer.addAll(file.bytes);
+      buffer.addAll(crlf);
+    }
+
+    // Final boundary
+    buffer.addAll(utf8.encode('--$boundary--\r\n'));
+
+    return buffer;
+  }
 
   /// Sends a request with any HTTP method.
   Future<TestResponse> request(
