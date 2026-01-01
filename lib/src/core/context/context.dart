@@ -91,4 +91,102 @@ class Context {
   /// ctx.log.error('Failed to save', {'error': e.toString()}, e);
   /// ```
   zlogger.Log get log => zlogger.log;
+
+  // ---------------------------------------------------------------------------
+  // Fluent Response API
+  // ---------------------------------------------------------------------------
+
+  /// Sets the response status code and returns `this` for chaining.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.status(201).json({'created': true});
+  /// await ctx.status(204).body(null);
+  /// ```
+  Context status(int code) {
+    _res.statusCode = code;
+    return this;
+  }
+
+  /// Sets a response header and returns `this` for chaining.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.header('X-Custom', 'value').json({'ok': true});
+  /// await ctx.header('Cache-Control', 'no-cache').text('Hello');
+  /// ```
+  Context header(String name, String value) {
+    _res.headers.set(name, value);
+    return this;
+  }
+
+  /// Sends a JSON response.
+  ///
+  /// Shorthand for `ctx.res.json()` that works with fluent chaining.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.json({'message': 'Hello'});
+  /// await ctx.status(201).json({'id': 1, 'created': true});
+  /// ```
+  Future<void> json(Object? data) => _res.json(data, status: _res.statusCode);
+
+  /// Sends a plain text response.
+  ///
+  /// Shorthand for `ctx.res.text()` that works with fluent chaining.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.text('Hello, World!');
+  /// await ctx.status(200).text('OK');
+  /// ```
+  Future<void> text(String body) => _res.text(body, status: _res.statusCode);
+
+  /// Sends an HTML response.
+  ///
+  /// Shorthand for `ctx.res.html()` that works with fluent chaining.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.html('<h1>Hello</h1>');
+  /// await ctx.status(200).html('<html>...</html>');
+  /// ```
+  Future<void> html(String body) => _res.html(body, status: _res.statusCode);
+
+  /// Sends a redirect response.
+  ///
+  /// Shorthand for `ctx.res.redirect()` that works with fluent chaining.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.redirect('/login');
+  /// await ctx.redirect('/new-url', status: 301);
+  /// ```
+  Future<void> redirect(String location, {int status = 302}) =>
+      _res.redirect(location, status: status);
+
+  /// Sends an empty body response with optional status code.
+  ///
+  /// Useful for 204 No Content or other empty responses.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.status(204).body(null);
+  /// await ctx.body('Plain body');
+  /// ```
+  Future<void> body(String? content) async {
+    if (content != null) {
+      _res.write(content);
+    }
+    await _res.close();
+  }
+
+  /// Sends a 404 Not Found response.
+  ///
+  /// Example:
+  /// ```dart
+  /// await ctx.notFound();
+  /// await ctx.notFound('Resource not found');
+  /// ```
+  Future<void> notFound([String message = 'Not Found']) => _res.notFound(message);
 }
