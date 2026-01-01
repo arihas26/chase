@@ -1,4 +1,5 @@
 import 'package:chase/chase.dart';
+import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -128,6 +129,97 @@ void main() {
       ChaseLoggerConfig.global.info('test');
 
       expect(logs.length, 1);
+    });
+  });
+
+  group('Chase.log', () {
+    late Chase app;
+
+    setUp(() {
+      app = Chase();
+    });
+
+    tearDown(() {
+      ChaseLoggerConfig.global = const DefaultLogger();
+    });
+
+    test('returns global logger', () {
+      final logs = <LogRecord>[];
+      app.logger = DefaultLogger(handler: logs.add);
+
+      app.log.info('app started');
+
+      expect(logs.length, 1);
+      expect(logs.single.message, 'app started');
+    });
+
+    test('logger setter updates global logger', () {
+      final logs = <LogRecord>[];
+      final customLogger = DefaultLogger(handler: logs.add);
+
+      app.logger = customLogger;
+
+      expect(ChaseLoggerConfig.global, same(customLogger));
+    });
+  });
+
+  group('Context.log', () {
+    late Chase app;
+    late TestClient client;
+
+    setUp(() {
+      app = Chase();
+      ChaseLoggerConfig.global = const DefaultLogger();
+    });
+
+    tearDown(() async {
+      await client.close();
+      ChaseLoggerConfig.global = const DefaultLogger();
+    });
+
+    test('returns logger from global config', () async {
+      final logs = <LogRecord>[];
+      app.logger = DefaultLogger(handler: logs.add);
+
+      app.get('/test').handle((ctx) {
+        ctx.log.info('handler called');
+        ctx.res.text('ok');
+      });
+
+      client = await TestClient.start(app);
+      await client.get('/test');
+
+      expect(logs.length, 1);
+      expect(logs.single.message, 'handler called');
+    });
+
+    test('includes request_id when available', () async {
+      final logs = <LogRecord>[];
+      app.logger = DefaultLogger(handler: logs.add);
+
+      app.use(RequestId());
+      app.get('/test').handle((ctx) {
+        ctx.log.info('with request id');
+        ctx.res.text('ok');
+      });
+
+      client = await TestClient.start(app);
+      await client.get('/test');
+
+      expect(logs.length, 1);
+      expect(logs.single.fields['request_id'], isNotNull);
+    });
+
+    test('caches logger instance', () async {
+      app.get('/test').handle((ctx) {
+        final log1 = ctx.log;
+        final log2 = ctx.log;
+        expect(log1, same(log2));
+        ctx.res.text('ok');
+      });
+
+      client = await TestClient.start(app);
+      await client.get('/test');
     });
   });
 }
