@@ -13,5 +13,8 @@ export 'src/handler/handler.dart';
 // Router
 export 'src/router/router.dart';
 
+// Helper
+export 'src/helper/streaming.dart';
+
 // Extensions
 export 'src/extensions/convenience.dart';

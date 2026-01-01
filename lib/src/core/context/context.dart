@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/request.dart';
 import 'package:chase/src/core/context/response.dart';
+import 'package:chase/src/core/response.dart';
 import 'package:zlogger/zlogger.dart' as zlogger;
 
 /// The context for handling HTTP requests and responses.
@@ -93,18 +94,24 @@ class Context {
   zlogger.Log get log => zlogger.log;
 
   // ---------------------------------------------------------------------------
-  // Fluent Response API
+  // Response Builder State (for fluent chaining)
+  // ---------------------------------------------------------------------------
+
+  int _statusCode = HttpStatus.ok;
+  final Map<String, String> _headers = {};
+
+  // ---------------------------------------------------------------------------
+  // Fluent Response API (Hono-style)
   // ---------------------------------------------------------------------------
 
   /// Sets the response status code and returns `this` for chaining.
   ///
   /// Example:
   /// ```dart
-  /// await ctx.status(201).json({'created': true});
-  /// await ctx.status(204).body(null);
+  /// return ctx.status(201).json({'created': true});
   /// ```
   Context status(int code) {
-    _res.statusCode = code;
+    _statusCode = code;
     return this;
   }
 
@@ -112,81 +119,92 @@ class Context {
   ///
   /// Example:
   /// ```dart
-  /// await ctx.header('X-Custom', 'value').json({'ok': true});
-  /// await ctx.header('Cache-Control', 'no-cache').text('Hello');
+  /// return ctx.header('X-Custom', 'value').json({'ok': true});
   /// ```
   Context header(String name, String value) {
-    _res.headers.set(name, value);
+    _headers[name] = value;
     return this;
   }
 
-  /// Sends a JSON response.
-  ///
-  /// Shorthand for `ctx.res.json()` that works with fluent chaining.
+  /// Returns a JSON response.
   ///
   /// Example:
   /// ```dart
-  /// await ctx.json({'message': 'Hello'});
-  /// await ctx.status(201).json({'id': 1, 'created': true});
+  /// return ctx.json({'message': 'Hello'});
+  /// return ctx.status(201).json({'id': 1, 'created': true});
   /// ```
-  Future<void> json(Object? data) => _res.json(data, status: _res.statusCode);
-
-  /// Sends a plain text response.
-  ///
-  /// Shorthand for `ctx.res.text()` that works with fluent chaining.
-  ///
-  /// Example:
-  /// ```dart
-  /// await ctx.text('Hello, World!');
-  /// await ctx.status(200).text('OK');
-  /// ```
-  Future<void> text(String body) => _res.text(body, status: _res.statusCode);
-
-  /// Sends an HTML response.
-  ///
-  /// Shorthand for `ctx.res.html()` that works with fluent chaining.
-  ///
-  /// Example:
-  /// ```dart
-  /// await ctx.html('<h1>Hello</h1>');
-  /// await ctx.status(200).html('<html>...</html>');
-  /// ```
-  Future<void> html(String body) => _res.html(body, status: _res.statusCode);
-
-  /// Sends a redirect response.
-  ///
-  /// Shorthand for `ctx.res.redirect()` that works with fluent chaining.
-  ///
-  /// Example:
-  /// ```dart
-  /// await ctx.redirect('/login');
-  /// await ctx.redirect('/new-url', status: 301);
-  /// ```
-  Future<void> redirect(String location, {int status = 302}) =>
-      _res.redirect(location, status: status);
-
-  /// Sends an empty body response with optional status code.
-  ///
-  /// Useful for 204 No Content or other empty responses.
-  ///
-  /// Example:
-  /// ```dart
-  /// await ctx.status(204).body(null);
-  /// await ctx.body('Plain body');
-  /// ```
-  Future<void> body(String? content) async {
-    if (content != null) {
-      _res.write(content);
-    }
-    await _res.close();
+  Response json(Object? data) {
+    return Response(
+      _statusCode,
+      body: data,
+      headers: {..._headers, 'content-type': 'application/json; charset=utf-8'},
+    );
   }
 
-  /// Sends a 404 Not Found response.
+  /// Returns a plain text response.
   ///
   /// Example:
   /// ```dart
-  /// await ctx.notFound();
-  /// await ctx.notFound('Resource not found');
+  /// return ctx.text('Hello, World!');
+  /// return ctx.status(200).text('OK');
   /// ```
-  Future<void> notFound([String message = 'Not Found']) => _res.notFound(message);
+  Response text(String body) {
+    return Response(
+      _statusCode,
+      body: body,
+      headers: {..._headers, 'content-type': 'text/plain; charset=utf-8'},
+    );
+  }
+
+  /// Returns an HTML response.
+  ///
+  /// Example:
+  /// ```dart
+  /// return ctx.html('<h1>Hello</h1>');
+  /// return ctx.status(200).html('<html>...</html>');
+  /// ```
+  Response html(String body) {
+    return Response(
+      _statusCode,
+      body: body,
+      headers: {..._headers, 'content-type': 'text/html; charset=utf-8'},
+    );
+  }
+
+  /// Returns a redirect response.
+  ///
+  /// Example:
+  /// ```dart
+  /// return ctx.redirect('/login');
+  /// return ctx.redirect('/new-url', status: 301);
+  /// ```
+  Response redirect(String location, {int status = HttpStatus.found}) {
+    return Response(status, headers: {..._headers, 'location': location});
+  }
+
+  /// Returns an empty body response.
+  ///
+  /// Example:
+  /// ```dart
+  /// return ctx.status(204).body(null);
+  /// return ctx.body('Plain body');
+  /// ```
+  Response body(String? content) {
+    return Response(_statusCode, body: content, headers: _headers);
+  }
+
+  /// Returns a 404 Not Found response.
+  ///
+  /// Example:
+  /// ```dart
+  /// return ctx.notFound();
+  /// return ctx.notFound('Resource not found');
+  /// ```
+  Response notFound([String message = 'Not Found']) {
+    return Response(
+      HttpStatus.notFound,
+      body: message,
+      headers: {..._headers, 'content-type': 'text/plain; charset=utf-8'},
+    );
+  }
 }
