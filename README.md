@@ -206,6 +206,7 @@ app.post('/api/data')
 | `Validator` | Request validation |
 | `Proxy` | HTTP proxy |
 | `StaticFileHandler` | Static file serving |
+| `PrettyJson` | Format JSON with indentation |
 
 ### Custom Middleware
 

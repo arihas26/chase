@@ -338,7 +338,10 @@ class Chase extends _ChaseBase<Chase> {
     // Handle return value based on type
     switch (result) {
       case Response response:
-        await response.writeTo(ctx.req.$raw.response);
+        await response.writeTo(
+          ctx.req.$raw.response,
+          prettyJson: ctx.res.prettyJson,
+        );
       case String text:
         await ctx.res.text(text);
       case Map json:

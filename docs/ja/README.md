@@ -214,6 +214,7 @@ app.post('/api/data')
 | `Validator` | リクエストバリデーション |
 | `Proxy` | HTTPプロキシ |
 | `StaticFileHandler` | 静的ファイル配信 |
+| `PrettyJson` | JSON整形出力 |
 
 ### カスタムミドルウェア
 

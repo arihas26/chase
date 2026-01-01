@@ -28,6 +28,12 @@ class Res {
   TextStreaming? _cachedTextStreaming;
   Sse? _cachedSse;
 
+  /// Whether to format JSON output with indentation.
+  bool prettyJson = false;
+
+  /// The indent string to use for pretty JSON (default: 2 spaces).
+  String jsonIndent = '  ';
+
   Res(this._raw);
 
   /// Returns true if response has already been sent.
@@ -67,10 +73,13 @@ class Res {
   Future<void> json(Object? body, {int status = HttpStatus.ok}) async {
     if (_sent) return;
     _sent = true;
+    final encoded = prettyJson
+        ? const JsonEncoder.withIndent('  ').convert(body)
+        : jsonEncode(body);
     _raw
       ..statusCode = status
       ..headers.contentType = ContentType.json
-      ..write(jsonEncode(body));
+      ..write(encoded);
     await _raw.close();
   }
 

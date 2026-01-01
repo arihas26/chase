@@ -254,7 +254,8 @@ class Response {
   /// Writes this response to an [HttpResponse].
   ///
   /// This method is called internally by Chase to send the response.
-  Future<void> writeTo(HttpResponse response) async {
+  /// If [prettyJson] is true, JSON output will be formatted with indentation.
+  Future<void> writeTo(HttpResponse response, {bool prettyJson = false}) async {
     // Set status code
     response.statusCode = statusCode;
 
@@ -282,13 +283,19 @@ class Response {
       if (!headers.containsKey('content-type')) {
         response.headers.contentType = ContentType.json;
       }
-      response.write(jsonEncode(body));
+      final encoded = prettyJson
+          ? const JsonEncoder.withIndent('  ').convert(body)
+          : jsonEncode(body);
+      response.write(encoded);
     } else {
       // Objects with toJson() will be serialized
       if (!headers.containsKey('content-type')) {
         response.headers.contentType = ContentType.json;
       }
-      response.write(jsonEncode(body));
+      final encoded = prettyJson
+          ? const JsonEncoder.withIndent('  ').convert(body)
+          : jsonEncode(body);
+      response.write(encoded);
     }
 
     await response.close();
