@@ -117,7 +117,7 @@ class Response {
   static ResponseBuilder header(String name, String value) {
     return ResponseBuilder(
       HttpStatus.ok,
-      {name: _sanitizeHeaderValue(value)},
+      {_sanitizeHeaderName(name): _sanitizeHeaderValue(value)},
     );
   }
 
@@ -142,6 +142,17 @@ class Response {
   // ---------------------------------------------------------------------------
   // Redirection Responses (3xx)
   // ---------------------------------------------------------------------------
+
+  /// Creates a 304 Not Modified response.
+  ///
+  /// Used for cache validation. Should not contain a body.
+  ///
+  /// ```dart
+  /// if (request.headers['if-none-match'] == etag) {
+  ///   return Response.notModified();
+  /// }
+  /// ```
+  static Response notModified() => const Response(HttpStatus.notModified);
 
   /// Creates a 301 Moved Permanently redirect.
   ///
@@ -262,38 +273,39 @@ class Response {
       response.write(body);
     } else if (body is List<int>) {
       response.add(body as List<int>);
-    } else if (body is Map || body is List) {
-      if (!headers.containsKey('content-type')) {
-        response.headers.contentType = ContentType.json;
-      }
-      try {
-        final encoded = prettyJson
-            ? const JsonEncoder.withIndent('  ').convert(body)
-            : jsonEncode(body);
-        response.write(encoded);
-      } on JsonUnsupportedObjectError catch (e) {
-        throw JsonEncodingError('Failed to encode response body: $e');
-      }
     } else {
+      // Map, List, or any other object - encode as JSON
       if (!headers.containsKey('content-type')) {
         response.headers.contentType = ContentType.json;
       }
-      try {
-        final encoded = prettyJson
-            ? const JsonEncoder.withIndent('  ').convert(body)
-            : jsonEncode(body);
-        response.write(encoded);
-      } on JsonUnsupportedObjectError catch (e) {
-        throw JsonEncodingError('Failed to encode response body: $e');
-      }
+      _writeJson(response, body, prettyJson);
     }
 
     await response.close();
   }
 
+  /// Encodes and writes JSON to the response.
+  static void _writeJson(HttpResponse response, Object? body, bool prettyJson) {
+    try {
+      final encoded = prettyJson
+          ? const JsonEncoder.withIndent('  ').convert(body)
+          : jsonEncode(body);
+      response.write(encoded);
+    } on JsonUnsupportedObjectError catch (e) {
+      throw JsonEncodingError('Failed to encode response body: $e');
+    }
+  }
+
   /// Sanitizes header values to prevent CRLF injection.
   static String _sanitizeHeaderValue(String value) {
     return value.replaceAll(RegExp(r'[\r\n]'), '');
+  }
+
+  /// Sanitizes header names to prevent injection attacks.
+  /// Header names must be valid HTTP token characters.
+  static String _sanitizeHeaderName(String name) {
+    // Remove CRLF, colons, and other invalid characters
+    return name.replaceAll(RegExp(r'[\r\n:]'), '');
   }
 }
 
@@ -329,7 +341,7 @@ class ResponseBuilder {
   ResponseBuilder header(String name, String value) {
     return ResponseBuilder(_statusCode, {
       ..._headers,
-      name: Response._sanitizeHeaderValue(value),
+      Response._sanitizeHeaderName(name): Response._sanitizeHeaderValue(value),
     });
   }
 
@@ -342,7 +354,10 @@ class ResponseBuilder {
   /// ```
   ResponseBuilder headers(Map<String, String> headers) {
     final sanitized = headers.map(
-      (key, value) => MapEntry(key, Response._sanitizeHeaderValue(value)),
+      (key, value) => MapEntry(
+        Response._sanitizeHeaderName(key),
+        Response._sanitizeHeaderValue(value),
+      ),
     );
     return ResponseBuilder(_statusCode, {..._headers, ...sanitized});
   }
@@ -393,12 +408,40 @@ class ResponseBuilder {
   /// Creates a response with raw bytes.
   ///
   /// ```dart
-  /// return Response.ok()
-  ///     .header('content-type', 'image/png')
-  ///     .bytes(imageData);
+  /// return Response.ok().bytes(imageData, contentType: 'image/png');
+  /// return Response.ok().bytes(pdfData); // defaults to application/octet-stream
   /// ```
-  Response bytes(List<int> data) {
-    return Response(_statusCode, body: data, headers: _headers);
+  Response bytes(List<int> data, {String contentType = 'application/octet-stream'}) {
+    return Response(
+      _statusCode,
+      body: data,
+      headers: {..._headers, 'content-type': contentType},
+    );
+  }
+
+  /// Creates a file download response.
+  ///
+  /// Sets appropriate headers for browser file download.
+  ///
+  /// ```dart
+  /// return Response.ok().download(pdfBytes, 'report.pdf');
+  /// return Response.ok().download(imageBytes, 'photo.png', contentType: 'image/png');
+  /// ```
+  Response download(
+    List<int> data,
+    String filename, {
+    String contentType = 'application/octet-stream',
+  }) {
+    final sanitizedFilename = filename.replaceAll('"', '\\"');
+    return Response(
+      _statusCode,
+      body: data,
+      headers: {
+        ..._headers,
+        'content-type': contentType,
+        'content-disposition': 'attachment; filename="$sanitizedFilename"',
+      },
+    );
   }
 }
 

@@ -566,6 +566,44 @@ void main() {
     });
   });
 
+  group('Response.notModified()', () {
+    test('creates 304 Not Modified response', () {
+      final response = Response.notModified();
+      expect(response.statusCode, HttpStatus.notModified);
+      expect(response.body, isNull);
+    });
+  });
+
+  group('ResponseBuilder.download()', () {
+    test('creates response with download headers', () {
+      final data = [1, 2, 3];
+      final response = Response.ok().download(data, 'file.pdf');
+      expect(response.statusCode, HttpStatus.ok);
+      expect(response.body, data);
+      expect(response.headers['content-type'], 'application/octet-stream');
+      expect(response.headers['content-disposition'], 'attachment; filename="file.pdf"');
+    });
+
+    test('uses custom content-type', () {
+      final response = Response.ok().download([1, 2], 'image.png', contentType: 'image/png');
+      expect(response.headers['content-type'], 'image/png');
+      expect(response.headers['content-disposition'], 'attachment; filename="image.png"');
+    });
+
+    test('escapes quotes in filename', () {
+      final response = Response.ok().download([1], 'file"with"quotes.txt');
+      expect(response.headers['content-disposition'], 'attachment; filename="file\\"with\\"quotes.txt"');
+    });
+
+    test('preserves custom headers', () {
+      final response = Response.ok()
+          .header('X-Custom', 'value')
+          .download([1, 2, 3], 'data.bin');
+      expect(response.headers['X-Custom'], 'value');
+      expect(response.headers['content-disposition'], contains('data.bin'));
+    });
+  });
+
   group('ResponseBuilder methods', () {
     group('headers() bulk method', () {
       test('adds multiple headers at once', () {
@@ -638,19 +676,18 @@ void main() {
     });
 
     group('bytes() method', () {
-      test('creates response with byte data', () {
+      test('creates response with byte data and default content-type', () {
         final data = [72, 101, 108, 108, 111]; // "Hello" in ASCII
         final response = Response.ok().bytes(data);
 
         expect(response.statusCode, HttpStatus.ok);
         expect(response.body, data);
+        expect(response.headers['content-type'], 'application/octet-stream');
       });
 
-      test('bytes() with custom content-type header', () {
+      test('bytes() with custom contentType parameter', () {
         final data = [0x89, 0x50, 0x4E, 0x47]; // PNG magic bytes
-        final response = Response.ok()
-            .header('content-type', 'image/png')
-            .bytes(data);
+        final response = Response.ok().bytes(data, contentType: 'image/png');
 
         expect(response.headers['content-type'], 'image/png');
         expect(response.body, data);
@@ -659,16 +696,24 @@ void main() {
       test('bytes() with empty list', () {
         final response = Response.ok().bytes([]);
         expect(response.body, isEmpty);
+        expect(response.headers['content-type'], 'application/octet-stream');
       });
 
-      test('bytes() preserves headers', () {
+      test('bytes() preserves custom headers', () {
         final response = Response.ok()
             .header('X-Custom', 'value')
-            .header('Content-Disposition', 'attachment; filename="file.bin"')
-            .bytes([1, 2, 3]);
+            .bytes([1, 2, 3], contentType: 'application/pdf');
 
         expect(response.headers['X-Custom'], 'value');
-        expect(response.headers['Content-Disposition'], 'attachment; filename="file.bin"');
+        expect(response.headers['content-type'], 'application/pdf');
+      });
+
+      test('bytes() contentType overrides header()', () {
+        final response = Response.ok()
+            .header('content-type', 'text/plain')
+            .bytes([1, 2, 3], contentType: 'image/jpeg');
+
+        expect(response.headers['content-type'], 'image/jpeg');
       });
     });
 
@@ -695,6 +740,31 @@ void main() {
         // json() should set application/json
         expect(response.headers['content-type'], 'application/json; charset=utf-8');
       });
+    });
+  });
+
+  group('Header name sanitization', () {
+    test('removes CRLF from header names', () {
+      final response = Response.header('X-Evil\r\nName', 'value').json({});
+      expect(response.headers.containsKey('X-Evil\r\nName'), isFalse);
+      expect(response.headers['X-EvilName'], 'value');
+    });
+
+    test('removes colons from header names', () {
+      final response = Response.ok().header('X-Evil:Name', 'value').json({});
+      expect(response.headers.containsKey('X-Evil:Name'), isFalse);
+      expect(response.headers['X-EvilName'], 'value');
+    });
+
+    test('sanitizes header names in headers() bulk method', () {
+      final response = Response.ok()
+          .headers({
+            'X-First\nEvil': 'first',
+            'X-Second:Bad': 'second',
+          })
+          .json({});
+      expect(response.headers['X-FirstEvil'], 'first');
+      expect(response.headers['X-SecondBad'], 'second');
     });
   });
 
