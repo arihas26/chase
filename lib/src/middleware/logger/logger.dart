@@ -3,22 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
+import 'package:chase/src/core/logger.dart';
 import 'package:chase/src/core/middleware.dart';
-
-/// Log level for filtering log output.
-enum LogLevel {
-  /// Detailed debugging information.
-  debug,
-
-  /// General information about request processing.
-  info,
-
-  /// Warning conditions (e.g., slow requests).
-  warn,
-
-  /// Error conditions (e.g., 5xx responses).
-  error,
-}
 
 /// A structured log entry containing request/response information.
 class LogEntry {

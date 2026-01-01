@@ -1,3 +1,4 @@
+import 'package:chase/src/core/logger.dart';
 import 'package:chase/src/middleware/logger/logger.dart';
 import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
