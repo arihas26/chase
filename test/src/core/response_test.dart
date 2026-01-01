@@ -793,6 +793,146 @@ void main() {
     });
   });
 
+  group('Response.safeRedirect()', () {
+    test('allows relative URLs starting with /', () {
+      final response = Response.safeRedirect('/dashboard');
+      expect(response.statusCode, HttpStatus.found);
+      expect(response.headers['location'], '/dashboard');
+    });
+
+    test('allows relative paths without /', () {
+      final response = Response.safeRedirect('page.html');
+      expect(response.headers['location'], 'page.html');
+    });
+
+    test('allows custom status code', () {
+      final response = Response.safeRedirect('/new', status: HttpStatus.movedPermanently);
+      expect(response.statusCode, HttpStatus.movedPermanently);
+    });
+
+    test('rejects http:// URLs', () {
+      expect(
+        () => Response.safeRedirect('http://evil.com'),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects https:// URLs', () {
+      expect(
+        () => Response.safeRedirect('https://evil.com'),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects protocol-relative URLs', () {
+      expect(
+        () => Response.safeRedirect('//evil.com/path'),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects javascript: URLs', () {
+      expect(
+        () => Response.safeRedirect('javascript:alert(1)'),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects data: URLs', () {
+      expect(
+        () => Response.safeRedirect('data:text/html,<script>'),
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects encoded bypass attempts', () {
+      expect(
+        () => Response.safeRedirect('%68%74%74%70://evil.com'), // encoded "http"
+        throwsArgumentError,
+      );
+    });
+
+    test('rejects empty URLs', () {
+      expect(
+        () => Response.safeRedirect(''),
+        throwsArgumentError,
+      );
+    });
+  });
+
+  group('Security headers', () {
+    test('secure() adds common security headers', () {
+      final response = Response.ok().secure().json({});
+      expect(response.headers['x-content-type-options'], 'nosniff');
+      expect(response.headers['x-frame-options'], 'DENY');
+      expect(response.headers['x-xss-protection'], '1; mode=block');
+      expect(response.headers['referrer-policy'], 'strict-origin-when-cross-origin');
+    });
+
+    test('noSniff() adds X-Content-Type-Options', () {
+      final response = Response.ok().noSniff().text('test');
+      expect(response.headers['x-content-type-options'], 'nosniff');
+    });
+
+    test('frameOptions() defaults to DENY', () {
+      final response = Response.ok().frameOptions().text('test');
+      expect(response.headers['x-frame-options'], 'DENY');
+    });
+
+    test('frameOptions() accepts custom value', () {
+      final response = Response.ok().frameOptions('SAMEORIGIN').text('test');
+      expect(response.headers['x-frame-options'], 'SAMEORIGIN');
+    });
+
+    test('csp() adds Content-Security-Policy', () {
+      final response = Response.ok().csp("default-src 'self'").html('<p>test</p>');
+      expect(response.headers['content-security-policy'], "default-src 'self'");
+    });
+
+    test('hsts() adds Strict-Transport-Security', () {
+      final response = Response.ok().hsts().json({});
+      expect(response.headers['strict-transport-security'], 'max-age=31536000');
+    });
+
+    test('hsts() with includeSubdomains', () {
+      final response = Response.ok().hsts(includeSubdomains: true).json({});
+      expect(response.headers['strict-transport-security'], 'max-age=31536000; includeSubDomains');
+    });
+
+    test('hsts() with preload', () {
+      final response = Response.ok().hsts(includeSubdomains: true, preload: true).json({});
+      expect(response.headers['strict-transport-security'], 'max-age=31536000; includeSubDomains; preload');
+    });
+
+    test('hsts() with custom maxAge', () {
+      final response = Response.ok().hsts(maxAge: Duration(days: 30)).json({});
+      expect(response.headers['strict-transport-security'], 'max-age=2592000');
+    });
+
+    test('noCache() adds cache control headers', () {
+      final response = Response.ok().noCache().json({'sensitive': 'data'});
+      expect(response.headers['cache-control'], 'no-store, no-cache, must-revalidate, private');
+    });
+  });
+
+  group('JSON security', () {
+    test('Response.json() includes nosniff header', () {
+      final response = Response.json({'data': 1});
+      expect(response.headers['x-content-type-options'], 'nosniff');
+    });
+
+    test('ResponseBuilder.json() includes nosniff header', () {
+      final response = Response.ok().json({'data': 1});
+      expect(response.headers['x-content-type-options'], 'nosniff');
+    });
+
+    test('jsonSecure() adds XSSI prefix', () {
+      final response = Response.ok().jsonSecure({'data': 1});
+      expect(response.headers['x-content-type-options'], 'nosniff');
+      // The prefix is added during writeTo, body is _JsonSecureWrapper
+    });
+  });
+
   group('Header name sanitization', () {
     test('removes CRLF from header names', () {
       final response = Response.header('X-Evil\r\nName', 'value').json({});

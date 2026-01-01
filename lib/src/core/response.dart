@@ -53,6 +53,8 @@ class Response {
 
   /// Creates a JSON response with 200 OK status (default).
   ///
+  /// By default, adds `X-Content-Type-Options: nosniff` to prevent MIME sniffing.
+  ///
   /// ```dart
   /// return Response.json({'users': []});
   /// return Response.json({'error': 'Not found'}, status: 404);
@@ -63,7 +65,10 @@ class Response {
     return Response(
       status,
       body: data,
-      headers: {'content-type': 'application/json; charset=utf-8'},
+      headers: {
+        'content-type': 'application/json; charset=utf-8',
+        'x-content-type-options': 'nosniff',
+      },
     );
   }
 
@@ -172,6 +177,59 @@ class Response {
   /// }
   /// ```
   static Response notModified() => const Response(HttpStatus.notModified);
+
+  /// Creates a safe redirect that only allows relative URLs.
+  ///
+  /// This prevents open redirect vulnerabilities by rejecting:
+  /// - Absolute URLs (http://, https://, //)
+  /// - javascript: and data: URLs
+  /// - URLs with encoded characters that could bypass validation
+  ///
+  /// Throws [ArgumentError] if the URL is not a safe relative path.
+  ///
+  /// ```dart
+  /// return Response.safeRedirect('/dashboard');  // OK
+  /// return Response.safeRedirect('https://evil.com');  // Throws!
+  /// ```
+  static Response safeRedirect(String location, {int status = HttpStatus.found}) {
+    if (!_isRelativeUrl(location)) {
+      throw ArgumentError.value(
+        location,
+        'location',
+        'Only relative URLs are allowed. Use redirect() for absolute URLs.',
+      );
+    }
+    return Response(
+      status,
+      headers: {'location': _sanitizeHeaderValue(location)},
+    );
+  }
+
+  /// Checks if a URL is a safe relative path.
+  static bool _isRelativeUrl(String url) {
+    // Reject empty or whitespace-only
+    if (url.trim().isEmpty) return false;
+
+    // Decode and check again to prevent encoded bypass attacks
+    final decoded = Uri.decodeFull(url).toLowerCase();
+
+    // Reject absolute URLs
+    if (decoded.startsWith('http://') ||
+        decoded.startsWith('https://') ||
+        decoded.startsWith('//')) {
+      return false;
+    }
+
+    // Reject dangerous schemes
+    if (decoded.startsWith('javascript:') ||
+        decoded.startsWith('data:') ||
+        decoded.startsWith('vbscript:')) {
+      return false;
+    }
+
+    // Must start with / or be a relative path
+    return url.startsWith('/') || !url.contains(':');
+  }
 
   /// Creates a 301 Moved Permanently redirect.
   ///
@@ -292,6 +350,10 @@ class Response {
       response.write(body);
     } else if (body is List<int>) {
       response.add(body as List<int>);
+    } else if (body is _JsonSecureWrapper) {
+      // XSSI-protected JSON
+      response.write(_JsonSecureWrapper.prefix);
+      _writeJson(response, (body as _JsonSecureWrapper).data, prettyJson);
     } else {
       // Map, List, or any other object - encode as JSON
       if (!headers.containsKey('content-type')) {
@@ -383,6 +445,8 @@ class ResponseBuilder {
 
   /// Creates a JSON response.
   ///
+  /// By default, adds `X-Content-Type-Options: nosniff` to prevent MIME sniffing.
+  ///
   /// ```dart
   /// return Response.ok().json({'message': 'Success'});
   /// return Response.notFound().json({'error': 'Not found'});
@@ -391,7 +455,32 @@ class ResponseBuilder {
     return Response(
       _statusCode,
       body: data,
-      headers: {..._headers, 'content-type': 'application/json; charset=utf-8'},
+      headers: {
+        ..._headers,
+        'content-type': 'application/json; charset=utf-8',
+        'x-content-type-options': 'nosniff',
+      },
+    );
+  }
+
+  /// Creates a JSON response with XSSI (Cross-Site Script Inclusion) protection.
+  ///
+  /// Prepends `)]}',\n` to the response to prevent JSON hijacking via script tags.
+  /// The client must strip this prefix before parsing.
+  ///
+  /// ```dart
+  /// return Response.ok().jsonSecure({'sensitive': 'data'});
+  /// // Response body: )]}',\n{"sensitive":"data"}
+  /// ```
+  Response jsonSecure(Object? data) {
+    return Response(
+      _statusCode,
+      body: _JsonSecureWrapper(data),
+      headers: {
+        ..._headers,
+        'content-type': 'application/json; charset=utf-8',
+        'x-content-type-options': 'nosniff',
+      },
     );
   }
 
@@ -437,6 +526,90 @@ class ResponseBuilder {
       headers: {..._headers, 'content-type': 'text/plain; charset=utf-8'},
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Security Headers
+  // ---------------------------------------------------------------------------
+
+  /// Adds common security headers to prevent common attacks.
+  ///
+  /// Includes:
+  /// - `X-Content-Type-Options: nosniff` - Prevents MIME sniffing
+  /// - `X-Frame-Options: DENY` - Prevents clickjacking
+  /// - `X-XSS-Protection: 1; mode=block` - Legacy XSS filter
+  /// - `Referrer-Policy: strict-origin-when-cross-origin`
+  ///
+  /// ```dart
+  /// return Response.ok().secure().json({'data': 1});
+  /// ```
+  ResponseBuilder secure() {
+    return ResponseBuilder(_statusCode, {
+      ..._headers,
+      'x-content-type-options': 'nosniff',
+      'x-frame-options': 'DENY',
+      'x-xss-protection': '1; mode=block',
+      'referrer-policy': 'strict-origin-when-cross-origin',
+    });
+  }
+
+  /// Adds X-Content-Type-Options: nosniff header.
+  ///
+  /// Prevents browsers from MIME-sniffing the content type.
+  ResponseBuilder noSniff() {
+    return header('x-content-type-options', 'nosniff');
+  }
+
+  /// Adds X-Frame-Options header to prevent clickjacking.
+  ///
+  /// - `deny`: Page cannot be displayed in a frame
+  /// - `sameorigin`: Page can only be displayed in a frame on the same origin
+  ResponseBuilder frameOptions([String value = 'DENY']) {
+    return header('x-frame-options', value);
+  }
+
+  /// Adds Content-Security-Policy header.
+  ///
+  /// ```dart
+  /// return Response.ok()
+  ///     .csp("default-src 'self'; script-src 'self'")
+  ///     .html(content);
+  /// ```
+  ResponseBuilder csp(String policy) {
+    return header('content-security-policy', policy);
+  }
+
+  /// Adds Strict-Transport-Security (HSTS) header.
+  ///
+  /// Forces HTTPS for the specified duration.
+  ///
+  /// ```dart
+  /// return Response.ok()
+  ///     .hsts(maxAge: Duration(days: 365), includeSubdomains: true)
+  ///     .json({'data': 1});
+  /// ```
+  ResponseBuilder hsts({
+    Duration maxAge = const Duration(days: 365),
+    bool includeSubdomains = false,
+    bool preload = false,
+  }) {
+    var value = 'max-age=${maxAge.inSeconds}';
+    if (includeSubdomains) value += '; includeSubDomains';
+    if (preload) value += '; preload';
+    return header('strict-transport-security', value);
+  }
+
+  /// Adds Cache-Control header to prevent caching of sensitive data.
+  ///
+  /// ```dart
+  /// return Response.ok().noCache().json({'sensitive': 'data'});
+  /// ```
+  ResponseBuilder noCache() {
+    return header('cache-control', 'no-store, no-cache, must-revalidate, private');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Response Body Methods
+  // ---------------------------------------------------------------------------
 
   /// Creates a response with raw bytes.
   ///
@@ -489,4 +662,11 @@ class JsonEncodingError implements Exception {
 
   @override
   String toString() => 'JsonEncodingError: $message';
+}
+
+/// Wrapper for JSON data with XSSI protection prefix.
+class _JsonSecureWrapper {
+  static const prefix = ")]}',\n";
+  final Object? data;
+  const _JsonSecureWrapper(this.data);
 }
