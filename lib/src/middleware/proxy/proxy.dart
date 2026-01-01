@@ -131,10 +131,10 @@ class Proxy implements Middleware {
         'message': 'Failed to connect to upstream server: ${e.message}',
       }, status: HttpStatus.badGateway);
     } catch (e) {
-      // Handle other errors
+      // Handle other errors - don't expose internal error details
       await ctx.res.json({
         'error': 'Internal Server Error',
-        'message': 'Proxy error: $e',
+        'message': 'An error occurred while processing the request',
       }, status: HttpStatus.internalServerError);
     } finally {
       client.close();
