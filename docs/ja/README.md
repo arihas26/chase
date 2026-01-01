@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../assets/chase-logo.png" alt="Chase Logo" width="400">
+  <img src="/assets/chase-logo.png" alt="Chase Logo" width="400">
 </p>
 
 <p align="center">
@@ -29,7 +29,7 @@
 
 ## パフォーマンス
 <p align="center">
-  <img src="../../assets/benchmark-result.png" alt="Benchmark Results" width="600">
+  <img src="/assets/benchmark-result.png" alt="Benchmark Results" width="600">
 </p>
 
 <p align="center">
