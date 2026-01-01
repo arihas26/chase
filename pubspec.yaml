@@ -9,7 +9,6 @@ topics:
   - server
   - http
   - framework
-  - middleware
   - dart
 
 environment:
