@@ -194,6 +194,7 @@ app.post('/api/data')
 | `SecureHeaders` | Security headers (CSP, HSTS, etc.) |
 | `RateLimit` | Request rate limiting |
 | `BodyLimit` | Request body size limit |
+| `IpRestriction` | IP-based access control |
 | **Performance** | |
 | `Compress` | Gzip/Deflate compression |
 | `CacheControl` | Cache-Control headers |

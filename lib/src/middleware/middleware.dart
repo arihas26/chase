@@ -12,6 +12,7 @@ export 'csrf/csrf.dart';
 export 'secure_headers/secure_headers.dart';
 export 'rate_limit/rate_limit.dart';
 export 'body_limit/body_limit.dart';
+export 'ip_restriction/ip_restriction.dart';
 
 // Performance
 export 'compress/compress.dart';
