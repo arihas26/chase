@@ -514,6 +514,24 @@ class TestContext {
     return _create('DELETE', path, headers: headers, remoteIp: remoteIp);
   }
 
+  /// Creates a test context with a HEAD request.
+  static Context head(
+    String path, {
+    Map<String, String>? headers,
+    String remoteIp = '127.0.0.1',
+  }) {
+    return _create('HEAD', path, headers: headers, remoteIp: remoteIp);
+  }
+
+  /// Creates a test context with an OPTIONS request.
+  static Context options(
+    String path, {
+    Map<String, String>? headers,
+    String remoteIp = '127.0.0.1',
+  }) {
+    return _create('OPTIONS', path, headers: headers, remoteIp: remoteIp);
+  }
+
   /// Creates a test context with custom method.
   static Context create(
     String method,

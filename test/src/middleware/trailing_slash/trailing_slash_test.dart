@@ -73,7 +73,15 @@ void main() {
       expect(ctx.response.headers.value('location'), isNull);
     });
 
-    // Note: HEAD requests are also handled but TestContext doesn't support HEAD
+    test('applies to HEAD requests', () async {
+      final ctx = TestContext.head('/about/');
+      final middleware = trimTrailingSlash();
+
+      await middleware.handle(ctx, () async {});
+
+      expect(ctx.response.statusCode, HttpStatus.movedPermanently);
+      expect(ctx.response.headers.value('location'), '/about');
+    });
   });
 
   group('appendTrailingSlash', () {

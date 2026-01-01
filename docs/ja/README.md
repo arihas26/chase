@@ -110,6 +110,8 @@ app.post('/users').handle(createUser);
 app.put('/users/:id').handle(updateUser);
 app.patch('/users/:id').handle(patchUser);
 app.delete('/users/:id').handle(deleteUser);
+app.head('/users/:id').handle(checkUser);
+app.options('/users').handle(corsHandler);
 
 // カスタムメソッド
 app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
