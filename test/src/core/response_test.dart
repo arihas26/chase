@@ -425,6 +425,58 @@ void main() {
     });
   });
 
+  group('Response.header() static method', () {
+    test('creates builder with header and returns JSON response', () {
+      final response = Response.header('X-Custom', 'value').json({'data': 1});
+      expect(response.headers['X-Custom'], 'value');
+      expect(response.headers['content-type'], 'application/json; charset=utf-8');
+      expect(response.body, {'data': 1});
+      expect(response.statusCode, HttpStatus.ok);
+    });
+
+    test('creates builder with header and returns text response', () {
+      final response = Response.header('X-Request-Id', 'abc123').text('Hello');
+      expect(response.headers['X-Request-Id'], 'abc123');
+      expect(response.body, 'Hello');
+    });
+
+    test('creates builder with header and returns HTML response', () {
+      final response = Response.header('X-Frame-Options', 'DENY').html('<p>Hi</p>');
+      expect(response.headers['X-Frame-Options'], 'DENY');
+    });
+
+    test('chains multiple headers', () {
+      final response = Response.header('X-First', 'first')
+          .header('X-Second', 'second')
+          .header('X-Third', 'third')
+          .json({'ok': true});
+      expect(response.headers['X-First'], 'first');
+      expect(response.headers['X-Second'], 'second');
+      expect(response.headers['X-Third'], 'third');
+    });
+
+    test('sanitizes header values (CRLF injection)', () {
+      final response = Response.header('X-Evil', 'value\r\nInjected: bad').json({});
+      expect(response.headers['X-Evil'], 'valueInjected: bad');
+      expect(response.headers.containsKey('Injected'), isFalse);
+    });
+
+    test('can change status with .status()', () {
+      final response = Response.header('X-Custom', 'value')
+          .status(HttpStatus.created)
+          .json({'id': 1});
+      expect(response.statusCode, HttpStatus.created);
+      expect(response.headers['X-Custom'], 'value');
+    });
+
+    test('later header overrides earlier one', () {
+      final response = Response.header('X-Override', 'first')
+          .header('X-Override', 'second')
+          .json({});
+      expect(response.headers['X-Override'], 'second');
+    });
+  });
+
   group('Response static factory methods with custom status', () {
     test('json() with default status 200', () {
       final response = Response.json({'key': 'value'});
@@ -717,6 +769,36 @@ void main() {
           .json({'custom': true});
       expect(response.statusCode, 299);
       expect(response.headers['X-Custom'], 'value');
+    });
+  });
+
+  group('ResponseBuilder.status() method', () {
+    test('changes status code in builder chain', () {
+      final response = Response.ok()
+          .header('X-Custom', 'value')
+          .status(HttpStatus.created)
+          .json({'id': 1});
+      expect(response.statusCode, HttpStatus.created);
+      expect(response.headers['X-Custom'], 'value');
+    });
+
+    test('preserves headers when changing status', () {
+      final response = Response.header('X-First', 'first')
+          .header('X-Second', 'second')
+          .status(404)
+          .json({'error': 'Not found'});
+      expect(response.statusCode, 404);
+      expect(response.headers['X-First'], 'first');
+      expect(response.headers['X-Second'], 'second');
+    });
+
+    test('can chain status multiple times', () {
+      final response = Response.ok()
+          .status(201)
+          .status(202)
+          .status(203)
+          .text('Final');
+      expect(response.statusCode, 203);
     });
   });
 

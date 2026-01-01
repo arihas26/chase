@@ -45,11 +45,7 @@ class Response {
   final Map<String, String> headers;
 
   /// Creates a new response.
-  const Response(
-    this.statusCode, {
-    this.body,
-    this.headers = const {},
-  });
+  const Response(this.statusCode, {this.body, this.headers = const {}});
 
   // ---------------------------------------------------------------------------
   // Static Factory Methods (shorthand for 200 OK)
@@ -111,6 +107,20 @@ class Response {
   /// ```
   static ResponseBuilder status(int code) => ResponseBuilder(code);
 
+  /// Creates a 200 OK response builder with a header.
+  ///
+  /// Shortcut for `Response.ok().header(name, value)`.
+  ///
+  /// ```dart
+  /// return Response.header('X-Custom', 'value').json({'data': 1});
+  /// ```
+  static ResponseBuilder header(String name, String value) {
+    return ResponseBuilder(
+      HttpStatus.ok,
+      {name: _sanitizeHeaderValue(value)},
+    );
+  }
+
   /// Creates a 200 OK response builder.
   static ResponseBuilder ok() => ResponseBuilder(HttpStatus.ok);
 
@@ -142,9 +152,9 @@ class Response {
   /// return Response.movedPermanently('/new-path');
   /// ```
   static Response movedPermanently(String location) => Response(
-        HttpStatus.movedPermanently,
-        headers: {'location': _sanitizeHeaderValue(location)},
-      );
+    HttpStatus.movedPermanently,
+    headers: {'location': _sanitizeHeaderValue(location)},
+  );
 
   /// Creates a 302 Found (temporary) redirect.
   ///
@@ -155,27 +165,27 @@ class Response {
   /// return Response.redirect('/login');
   /// ```
   static Response redirect(String location) => Response(
-        HttpStatus.found,
-        headers: {'location': _sanitizeHeaderValue(location)},
-      );
+    HttpStatus.found,
+    headers: {'location': _sanitizeHeaderValue(location)},
+  );
 
   /// Creates a 303 See Other redirect.
   static Response seeOther(String location) => Response(
-        HttpStatus.seeOther,
-        headers: {'location': _sanitizeHeaderValue(location)},
-      );
+    HttpStatus.seeOther,
+    headers: {'location': _sanitizeHeaderValue(location)},
+  );
 
   /// Creates a 307 Temporary Redirect.
   static Response temporaryRedirect(String location) => Response(
-        HttpStatus.temporaryRedirect,
-        headers: {'location': _sanitizeHeaderValue(location)},
-      );
+    HttpStatus.temporaryRedirect,
+    headers: {'location': _sanitizeHeaderValue(location)},
+  );
 
   /// Creates a 308 Permanent Redirect.
   static Response permanentRedirect(String location) => Response(
-        HttpStatus.permanentRedirect,
-        headers: {'location': _sanitizeHeaderValue(location)},
-      );
+    HttpStatus.permanentRedirect,
+    headers: {'location': _sanitizeHeaderValue(location)},
+  );
 
   // ---------------------------------------------------------------------------
   // Client Error Response Builders (4xx)
@@ -306,6 +316,9 @@ class ResponseBuilder {
   /// Creates a new response builder with the given status code.
   const ResponseBuilder(this._statusCode, [this._headers = const {}]);
 
+  /// Sets the status code of the response.
+  ResponseBuilder status(int code) => ResponseBuilder(code, _headers);
+
   /// Adds a header to the response.
   ///
   /// ```dart
@@ -314,10 +327,10 @@ class ResponseBuilder {
   ///     .json({'id': 1});
   /// ```
   ResponseBuilder header(String name, String value) {
-    return ResponseBuilder(
-      _statusCode,
-      {..._headers, name: Response._sanitizeHeaderValue(value)},
-    );
+    return ResponseBuilder(_statusCode, {
+      ..._headers,
+      name: Response._sanitizeHeaderValue(value),
+    });
   }
 
   /// Adds multiple headers at once.
