@@ -2,19 +2,33 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chase/src/core/context/cookie.dart';
+import 'package:meta/meta.dart';
 import 'package:chase/src/core/http/sse.dart';
 import 'package:chase/src/core/http/streaming.dart';
 import 'package:chase/src/core/http/text_streaming.dart';
 
-/// HTTP response wrapper providing convenient access to response methods.
+/// HTTP response wrapper providing low-level access to the response.
+///
+/// For sending responses, use the fluent Response API:
+/// - `Response.ok().json({'data': 1})` - for JSON responses
+/// - `Response.ok().html('<h1>Hi</h1>')` - for HTML responses
+/// - `Response.ok().text('Hello')` - for plain text responses
+/// - `Response.found('/new-path')` - for redirects
+///
+/// This class is mainly used for:
+/// - Setting headers and cookies
+/// - Streaming responses
+/// - Low-level response control
 ///
 /// Example:
 /// ```dart
-/// app.get('/api/users', (ctx) async {
-///   await ctx.res.json({'users': []});
+/// // Simple response using Response fluent API
+/// app.get('/users').handle((ctx) {
+///   return Response.ok().json({'users': []});
 /// });
 ///
-/// app.get('/stream', (ctx) async {
+/// // Streaming with ctx.res
+/// app.get('/stream').handle((ctx) async {
 ///   ctx.res.statusCode = 200;
 ///   ctx.res.headers.contentType = ContentType.binary;
 ///   ctx.res.write('Hello');
@@ -55,10 +69,46 @@ class Res {
   HttpHeaders get headers => _raw.headers;
 
   // ---------------------------------------------------------------------------
-  // Convenience Methods
+  // Low-level Response Methods (for middleware)
   // ---------------------------------------------------------------------------
+  //
+  // For handlers, prefer using the fluent Response API: Response.ok().json()
+  // These methods are mainly for middleware that needs to send responses
+  // without returning a Response object.
 
-  /// Sends a plain text response.
+  /// Sends a JSON response (for middleware use).
+  ///
+  /// **Internal use only.** For handlers, use the fluent Response API:
+  /// ```dart
+  /// return Response.ok().json({'key': 'value'});
+  /// ```
+  @internal
+  Future<void> json(Object? body, {int status = HttpStatus.ok}) async {
+    if (_sent) return;
+    _sent = true;
+
+    String jsonBody;
+    if (prettyJson) {
+      final encoder = JsonEncoder.withIndent(jsonIndent);
+      jsonBody = encoder.convert(body);
+    } else {
+      jsonBody = jsonEncode(body);
+    }
+
+    _raw
+      ..statusCode = status
+      ..headers.contentType = ContentType.json
+      ..write(jsonBody);
+    await _raw.close();
+  }
+
+  /// Sends a plain text response (for middleware use).
+  ///
+  /// **Internal use only.** For handlers, use the fluent Response API:
+  /// ```dart
+  /// return Response.ok().text('Hello World');
+  /// ```
+  @internal
   Future<void> text(String body, {int status = HttpStatus.ok}) async {
     if (_sent) return;
     _sent = true;
@@ -69,21 +119,29 @@ class Res {
     await _raw.close();
   }
 
-  /// Sends a JSON response.
-  Future<void> json(Object? body, {int status = HttpStatus.ok}) async {
+  /// Sends a redirect response (for middleware use).
+  ///
+  /// **Internal use only.** For handlers, use the fluent Response API:
+  /// ```dart
+  /// return Response.found('/login');
+  /// ```
+  @internal
+  Future<void> redirect(String location, {int status = HttpStatus.found}) async {
     if (_sent) return;
     _sent = true;
-    final encoded = prettyJson
-        ? const JsonEncoder.withIndent('  ').convert(body)
-        : jsonEncode(body);
     _raw
       ..statusCode = status
-      ..headers.contentType = ContentType.json
-      ..write(encoded);
+      ..headers.set(HttpHeaders.locationHeader, location);
     await _raw.close();
   }
 
-  /// Sends an HTML response.
+  /// Sends an HTML response (for middleware use).
+  ///
+  /// **Internal use only.** For handlers, use the fluent Response API:
+  /// ```dart
+  /// return Response.ok().html('<h1>Hello</h1>');
+  /// ```
+  @internal
   Future<void> html(String body, {int status = HttpStatus.ok}) async {
     if (_sent) return;
     _sent = true;
@@ -94,112 +152,15 @@ class Res {
     await _raw.close();
   }
 
-  /// Sends a redirect response.
-  Future<void> redirect(String location, {int status = HttpStatus.found}) async {
-    if (_sent) return;
-    _sent = true;
-    _raw
-      ..statusCode = status
-      ..headers.set(HttpHeaders.locationHeader, location);
-    await _raw.close();
-  }
-
-  /// Sends a 404 Not Found response.
+  /// Sends a 404 Not Found response (for middleware use).
+  ///
+  /// **Internal use only.** For handlers, use:
+  /// ```dart
+  /// return Response.notFound().text('Not found');
+  /// ```
+  @internal
   Future<void> notFound([String body = '404 Not Found']) async {
     await text(body, status: HttpStatus.notFound);
-  }
-
-  /// Sends a 201 Created response with optional JSON body.
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// ctx.res.created({'id': 1, 'name': 'New Item'});
-  /// ```
-  Future<void> created([Object? body]) async {
-    if (body != null) {
-      await json(body, status: HttpStatus.created);
-    } else {
-      await text('', status: HttpStatus.created);
-    }
-  }
-
-  /// Sends a 204 No Content response.
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// ctx.res.noContent();
-  /// ```
-  Future<void> noContent() async {
-    if (_sent) return;
-    _sent = true;
-    _raw.statusCode = HttpStatus.noContent;
-    await _raw.close();
-  }
-
-  /// Sends a 400 Bad Request response.
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// ctx.res.badRequest('Invalid email format');
-  /// ctx.res.badRequest({'error': 'Invalid email', 'field': 'email'});
-  /// ```
-  Future<void> badRequest([Object? body = 'Bad Request']) async {
-    if (body is String) {
-      await text(body, status: HttpStatus.badRequest);
-    } else {
-      await json(body, status: HttpStatus.badRequest);
-    }
-  }
-
-  /// Sends a 401 Unauthorized response.
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// ctx.res.unauthorized();
-  /// ctx.res.unauthorized({'error': 'Invalid token'});
-  /// ```
-  Future<void> unauthorized([Object? body = 'Unauthorized']) async {
-    if (body is String) {
-      await text(body, status: HttpStatus.unauthorized);
-    } else {
-      await json(body, status: HttpStatus.unauthorized);
-    }
-  }
-
-  /// Sends a 403 Forbidden response.
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// ctx.res.forbidden();
-  /// ctx.res.forbidden({'error': 'Access denied'});
-  /// ```
-  Future<void> forbidden([Object? body = 'Forbidden']) async {
-    if (body is String) {
-      await text(body, status: HttpStatus.forbidden);
-    } else {
-      await json(body, status: HttpStatus.forbidden);
-    }
-  }
-
-  /// Sends a 500 Internal Server Error response.
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// ctx.res.serverError();
-  /// ctx.res.serverError({'error': 'Something went wrong'});
-  /// ```
-  Future<void> serverError([Object? body = 'Internal Server Error']) async {
-    if (body is String) {
-      await text(body, status: HttpStatus.internalServerError);
-    } else {
-      await json(body, status: HttpStatus.internalServerError);
-    }
   }
 
   // ---------------------------------------------------------------------------

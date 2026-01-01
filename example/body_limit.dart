@@ -30,49 +30,68 @@ void main() async {
   app.use(BodyLimit(const BodyLimitOptions.mb(5)));
 
   // Example 2: Small limit for API endpoints
-  app.post('/api/data').use(BodyLimit(const BodyLimitOptions.kb(100))).handle((ctx) async {
+  app.post('/api/data').use(BodyLimit(const BodyLimitOptions.kb(100))).handle((
+    ctx,
+  ) async {
     // This route only accepts requests up to 100KB
     final body = await ctx.req.json();
-    await ctx.res.json({'message': 'Data received', 'data': body});
+    return Response.ok().json({'message': 'Data received', 'data': body});
   });
 
   // Example 3: Larger limit for file uploads
-  app.post('/upload').use(BodyLimit(const BodyLimitOptions.mb(100))).handle((ctx) async {
+  app.post('/upload').use(BodyLimit(const BodyLimitOptions.mb(100))).handle((
+    ctx,
+  ) async {
     // This route accepts files up to 100MB
-    await ctx.res.json({'message': 'File upload endpoint ready'});
+    return Response.ok().json({'message': 'File upload endpoint ready'});
   });
 
   // Example 4: Custom error message
-  app.post('/strict')
-      .use(BodyLimit(const BodyLimitOptions(
-        maxSize: 1024, // 1KB
-        errorMessage: 'This endpoint has a strict 1KB limit',
-      )))
+  app
+      .post('/strict')
+      .use(
+        BodyLimit(
+          const BodyLimitOptions(
+            maxSize: 1024, // 1KB
+            errorMessage: 'This endpoint has a strict 1KB limit',
+          ),
+        ),
+      )
       .handle((ctx) async {
-    final body = await ctx.req.json();
-    await ctx.res.json({'received': body});
-  });
+        final body = await ctx.req.json();
+        return Response.ok().json({'received': body});
+      });
 
   // Example 5: Generic error without size details
-  app.post('/secure')
-      .use(BodyLimit(const BodyLimitOptions(
-        maxSize: 2048,
-        includeLimit: false, // Don't reveal size limits
-      )))
+  app
+      .post('/secure')
+      .use(
+        BodyLimit(
+          const BodyLimitOptions(
+            maxSize: 2048,
+            includeLimit: false, // Don't reveal size limits
+          ),
+        ),
+      )
       .handle((ctx) async {
-    await ctx.res.json({'status': 'ok'});
-  });
+        return Response.ok().json({'status': 'ok'});
+      });
 
   // Example 6: Very small limit for metadata endpoints
-  app.post('/metadata')
-      .use(BodyLimit(const BodyLimitOptions(
-        maxSize: 512, // 512 bytes
-        errorMessage: 'Metadata must be under 512 bytes',
-      )))
+  app
+      .post('/metadata')
+      .use(
+        BodyLimit(
+          const BodyLimitOptions(
+            maxSize: 512, // 512 bytes
+            errorMessage: 'Metadata must be under 512 bytes',
+          ),
+        ),
+      )
       .handle((ctx) async {
-    final metadata = await ctx.req.json();
-    await ctx.res.json({'metadata': metadata});
-  });
+        final metadata = await ctx.req.json();
+        return Response.ok().json({'metadata': metadata});
+      });
 
   // Example 7: Multiple size limits in nested routes
   app.routes('/api/v1', (api) {
@@ -82,25 +101,27 @@ void main() async {
     api.post('/users').handle((ctx) async {
       // Inherits the 10KB limit
       final user = await ctx.req.json();
-      await ctx.res.json({'user': user, 'limit': '10KB'});
+      return Response.ok().json({'user': user, 'limit': '10KB'});
     });
 
     // Override with larger limit for specific endpoint
-    api.post('/posts').use(BodyLimit(const BodyLimitOptions.kb(50))).handle((ctx) async {
+    api.post('/posts').use(BodyLimit(const BodyLimitOptions.kb(50))).handle((
+      ctx,
+    ) async {
       final post = await ctx.req.json();
-      await ctx.res.json({'post': post, 'limit': '50KB'});
+      return Response.ok().json({'post': post, 'limit': '50KB'});
     });
   });
 
   // Example 8: No limit route (for demonstration - not recommended in production)
   app.post('/unlimited').handle((ctx) async {
     // No BodyLimit middleware, will use global limit or no limit
-    await ctx.res.json({'message': 'This route uses the global 5MB limit'});
+    return Response.ok().json({'message': 'This route uses the global 5MB limit'});
   });
 
   // Info endpoint showing all routes and their limits
   app.get('/').handle((ctx) async {
-    final html = '''
+    final htmlContent = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -215,7 +236,7 @@ void main() async {
 </html>
 ''';
 
-    await ctx.res.html(html);
+    return Response.ok().html(htmlContent);
   });
 
   final port = 3000;
@@ -225,10 +246,14 @@ void main() async {
   print('');
   print('Example tests:');
   print('  # Small request (should succeed)');
-  print('  curl -X POST http://localhost:$port/api/data -H "Content-Type: application/json" -d \'{"test":"data"}\'');
+  print(
+    '  curl -X POST http://localhost:$port/api/data -H "Content-Type: application/json" -d \'{"test":"data"}\'',
+  );
   print('');
   print('  # Large request (should fail)');
-  print('  curl -X POST http://localhost:$port/api/data -H "Content-Type: application/json" -H "Content-Length: 200000" -d \'{"large":"data"}\'');
+  print(
+    '  curl -X POST http://localhost:$port/api/data -H "Content-Type: application/json" -H "Content-Length: 200000" -d \'{"large":"data"}\'',
+  );
 
   await app.start(port: port);
 }

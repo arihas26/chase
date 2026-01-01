@@ -46,9 +46,10 @@ class MetricsPlugin extends Plugin {
     app.use(_MetricsMiddleware(metrics));
 
     // Add metrics endpoint
-    app.get(path).handle((ctx) async {
-      ctx.res.headers.set('content-type', 'text/plain; version=0.0.4; charset=utf-8');
-      await ctx.res.text(metrics.export());
+    app.get(path).handle((ctx) {
+      return Response.ok()
+          .header('content-type', 'text/plain; version=0.0.4; charset=utf-8')
+          .text(metrics.export());
     });
   }
 }

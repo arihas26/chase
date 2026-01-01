@@ -27,19 +27,19 @@ void main() {
 
     group('success responses (2xx)', () {
       test('ok() creates 200 response', () {
-        final response = Response.ok('Hello');
+        final response = Response.ok().text('Hello');
         expect(response.statusCode, HttpStatus.ok);
         expect(response.body, 'Hello');
       });
 
       test('ok() with JSON body', () {
-        final response = Response.ok({'message': 'Hello'});
+        final response = Response.ok().json({'message': 'Hello'});
         expect(response.statusCode, HttpStatus.ok);
         expect(response.body, {'message': 'Hello'});
       });
 
       test('created() creates 201 response', () {
-        final response = Response.created({'id': 1});
+        final response = Response.created().json({'id': 1});
         expect(response.statusCode, HttpStatus.created);
         expect(response.body, {'id': 1});
       });
@@ -51,7 +51,7 @@ void main() {
       });
 
       test('accepted() creates 202 response', () {
-        final response = Response.accepted({'status': 'processing'});
+        final response = Response.accepted().json({'status': 'processing'});
         expect(response.statusCode, HttpStatus.accepted);
       });
     });
@@ -63,8 +63,8 @@ void main() {
         expect(response.headers['location'], '/new-location');
       });
 
-      test('found() creates 302 redirect', () {
-        final response = Response.found('/temporary');
+      test('redirect() creates 302 redirect', () {
+        final response = Response.redirect('/temporary');
         expect(response.statusCode, HttpStatus.found);
         expect(response.headers['location'], '/temporary');
       });
@@ -90,22 +90,22 @@ void main() {
 
     group('client error responses (4xx)', () {
       test('badRequest() creates 400 response', () {
-        final response = Response.badRequest({'error': 'Invalid input'});
+        final response = Response.badRequest().json({'error': 'Invalid input'});
         expect(response.statusCode, HttpStatus.badRequest);
       });
 
       test('unauthorized() creates 401 response', () {
-        final response = Response.unauthorized({'error': 'Auth required'});
+        final response = Response.unauthorized().json({'error': 'Auth required'});
         expect(response.statusCode, HttpStatus.unauthorized);
       });
 
       test('forbidden() creates 403 response', () {
-        final response = Response.forbidden({'error': 'Access denied'});
+        final response = Response.forbidden().json({'error': 'Access denied'});
         expect(response.statusCode, HttpStatus.forbidden);
       });
 
       test('notFound() creates 404 response', () {
-        final response = Response.notFound({'error': 'Not found'});
+        final response = Response.notFound().json({'error': 'Not found'});
         expect(response.statusCode, HttpStatus.notFound);
       });
 
@@ -115,24 +115,24 @@ void main() {
       });
 
       test('conflict() creates 409 response', () {
-        final response = Response.conflict({'error': 'Resource conflict'});
+        final response = Response.conflict().json({'error': 'Resource conflict'});
         expect(response.statusCode, HttpStatus.conflict);
       });
 
       test('unprocessableEntity() creates 422 response', () {
-        final response = Response.unprocessableEntity({'errors': []});
+        final response = Response.unprocessableEntity().json({'errors': []});
         expect(response.statusCode, HttpStatus.unprocessableEntity);
       });
 
       test('tooManyRequests() creates 429 response', () {
-        final response = Response.tooManyRequests({'error': 'Rate limited'});
+        final response = Response.tooManyRequests().json({'error': 'Rate limited'});
         expect(response.statusCode, HttpStatus.tooManyRequests);
       });
     });
 
     group('server error responses (5xx)', () {
       test('internalServerError() creates 500 response', () {
-        final response = Response.internalServerError({'error': 'Server error'});
+        final response = Response.internalServerError().json({'error': 'Server error'});
         expect(response.statusCode, HttpStatus.internalServerError);
       });
 
@@ -142,36 +142,28 @@ void main() {
       });
 
       test('serviceUnavailable() creates 503 response', () {
-        final response = Response.serviceUnavailable({'error': 'Maintenance'});
+        final response = Response.serviceUnavailable().json({'error': 'Maintenance'});
         expect(response.statusCode, HttpStatus.serviceUnavailable);
       });
     });
 
-    group('convenience constructors', () {
-      test('json() creates JSON response with content-type header', () {
-        final response = Response.json({'key': 'value'});
-        expect(response.statusCode, HttpStatus.ok);
-        expect(response.headers['content-type'], 'application/json; charset=utf-8');
-        expect(response.body, {'key': 'value'});
+
+    group('fluent API', () {
+      test('Response.status() creates response with custom status', () {
+        final response = Response.status(418).json({'error': "I'm a teapot"});
+        expect(response.statusCode, 418);
+        expect(response.body, {'error': "I'm a teapot"});
       });
 
-      test('json() with custom status', () {
-        final response = Response.json({'error': 'Not found'}, status: 404);
-        expect(response.statusCode, 404);
-      });
-
-      test('text() creates text response with content-type header', () {
-        final response = Response.text('Hello, World!');
-        expect(response.statusCode, HttpStatus.ok);
-        expect(response.headers['content-type'], 'text/plain; charset=utf-8');
-        expect(response.body, 'Hello, World!');
-      });
-
-      test('html() creates HTML response with content-type header', () {
-        final response = Response.html('<h1>Hello</h1>');
-        expect(response.statusCode, HttpStatus.ok);
-        expect(response.headers['content-type'], 'text/html; charset=utf-8');
-        expect(response.body, '<h1>Hello</h1>');
+      test('header() adds headers and chains', () {
+        final response = Response.created()
+            .header('Location', '/users/1')
+            .header('X-Custom', 'value')
+            .json({'id': 1});
+        expect(response.statusCode, HttpStatus.created);
+        expect(response.headers['Location'], '/users/1');
+        expect(response.headers['X-Custom'], 'value');
+        expect(response.body, {'id': 1});
       });
     });
   });
@@ -189,9 +181,9 @@ void main() {
       await client.close();
     });
 
-    test('handler can return Response.ok()', () async {
+    test('handler can return Response.ok().text()', () async {
       app.get('/text').handle((ctx) {
-        return Response.ok('Hello from Response!');
+        return Response.ok().text('Hello from Response!');
       });
 
       final res = await client.get('/text');
@@ -199,9 +191,9 @@ void main() {
       expect(await res.body, 'Hello from Response!');
     });
 
-    test('handler can return Response.json()', () async {
+    test('handler can return Response.ok().json()', () async {
       app.get('/json').handle((ctx) {
-        return Response.json({'message': 'Hello', 'framework': 'chase'});
+        return Response.ok().json({'message': 'Hello', 'framework': 'chase'});
       });
 
       final res = await client.get('/json');
@@ -212,9 +204,9 @@ void main() {
       expect(body['framework'], 'chase');
     });
 
-    test('handler can return Response.created()', () async {
+    test('handler can return Response.created().json()', () async {
       app.post('/users').handle((ctx) {
-        return Response.created({'id': 1, 'name': 'John'});
+        return Response.created().json({'id': 1, 'name': 'John'});
       });
 
       final res = await client.post('/users');
@@ -223,9 +215,9 @@ void main() {
       expect(body['id'], 1);
     });
 
-    test('handler can return Response.notFound()', () async {
+    test('handler can return Response.notFound().json()', () async {
       app.get('/missing').handle((ctx) {
-        return Response.notFound({'error': 'Resource not found'});
+        return Response.notFound().json({'error': 'Resource not found'});
       });
 
       final res = await client.get('/missing');
@@ -265,7 +257,9 @@ void main() {
     test('handler can mix ctx.res headers with Response', () async {
       app.get('/mixed').handle((ctx) {
         ctx.res.headers.set('x-custom', 'from-ctx');
-        return Response.ok('Response body', {'x-response': 'from-response'});
+        return Response.ok()
+            .header('x-response', 'from-response')
+            .text('Response body');
       });
 
       final res = await client.get('/mixed');
@@ -277,7 +271,7 @@ void main() {
     test('async handler can return Response', () async {
       app.get('/async').handle((ctx) async {
         await Future.delayed(Duration(milliseconds: 10));
-        return Response.ok({'async': true});
+        return Response.ok().json({'async': true});
       });
 
       final res = await client.get('/async');

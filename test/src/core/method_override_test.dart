@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:chase/chase.dart';
 import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
@@ -88,7 +86,8 @@ void main() {
       late TestClient client;
 
       setUp(() async {
-        app = Chase()..methodOverride(form: null, header: 'X-HTTP-Method-Override');
+        app = Chase()
+          ..methodOverride(form: null, header: 'X-HTTP-Method-Override');
         app.delete('/posts/:id').handle((ctx) {
           return {'deleted': ctx.req.param('id')};
         });
@@ -137,10 +136,7 @@ void main() {
       setUp(() async {
         app = Chase()..methodOverride();
         app.delete('/posts/:id').handle((ctx) {
-          return {
-            'method': ctx.req.method,
-            'rawMethod': ctx.req.rawMethod,
-          };
+          return {'method': ctx.req.method, 'rawMethod': ctx.req.rawMethod};
         });
         client = await TestClient.start(app);
       });

@@ -256,11 +256,13 @@ Response stream(
   Context ctx,
   Future<void> Function(StreamApi stream) callback, {
   void Function(Object error, StreamApi stream)? onError,
+  Map<String, String>? headers,
 }) {
   return StreamingResponse(
     headers: {
       'content-type': 'application/octet-stream',
       'transfer-encoding': 'chunked',
+      ...?headers,
     },
     callback: (response) async {
       final api = StreamApi._(response);
@@ -297,12 +299,15 @@ Response streamText(
   Context ctx,
   Future<void> Function(TextStreamApi stream) callback, {
   void Function(Object error, TextStreamApi stream)? onError,
+  String contentType = 'text/plain; charset=utf-8',
+  Map<String, String>? headers,
 }) {
   return StreamingResponse(
     headers: {
-      'content-type': 'text/plain; charset=utf-8',
+      'content-type': contentType,
       'transfer-encoding': 'chunked',
       'x-content-type-options': 'nosniff',
+      ...?headers,
     },
     callback: (response) async {
       final api = TextStreamApi._(response);

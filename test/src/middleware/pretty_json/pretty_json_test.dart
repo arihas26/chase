@@ -110,7 +110,7 @@ void main() {
       await middleware.handle(ctx, () async {});
 
       // Simulate what Chase does with Response
-      final response = Response.ok({'message': 'Hello'});
+      final response = Response.ok().json({'message': 'Hello'});
       await response.writeTo(ctx.response, prettyJson: ctx.res.prettyJson);
 
       final body = ctx.response.body;
@@ -124,7 +124,7 @@ void main() {
 
       await middleware.handle(ctx, () async {});
 
-      final response = Response.ok({
+      final response = Response.ok().json({
         'user': {'name': 'John'},
       });
       await response.writeTo(ctx.response, prettyJson: ctx.res.prettyJson);

@@ -30,12 +30,10 @@ void main() async {
   app.get('/api/data').handle((ctx) async {
     final etag = ETagHelper.fromVersion('v$dataVersion');
 
-    // Check if client has current version
-    if (await ctx.checkEtag(etag)) {
-      return; // 304 Not Modified sent
-    }
+    // Check if client has current version - returns null if 304 was sent
+    if (await ctx.checkEtag(etag)) return null;
 
-    await ctx.res.json(data);
+    return Response.ok().json(data);
   });
 
   // Example 2: Content-based ETag
@@ -44,10 +42,9 @@ void main() async {
     final content = {'message': 'Hello, World!', 'timestamp': 'fixed'};
     final etag = ETagHelper.fromJson(content);
 
-    if (await ctx.checkEtag(etag)) {
-    }
+    if (await ctx.checkEtag(etag)) return null;
 
-    await ctx.res.json(content);
+    return Response.ok().json(content);
   });
 
   // Example 3: Weak ETag
@@ -56,10 +53,9 @@ void main() async {
     final content = {'data': 'example'};
     final etag = ETagHelper.fromJson(content, weak: true);
 
-    if (await ctx.checkEtag(etag)) {
-    }
+    if (await ctx.checkEtag(etag)) return null;
 
-    await ctx.res.json(content);
+    return Response.ok().json(content);
   });
 
   // Example 4: Update data (invalidates ETag)
@@ -70,7 +66,7 @@ void main() async {
       'version': dataVersion,
     };
 
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Data updated',
       'newVersion': dataVersion,
       'newEtag': ETagHelper.fromVersion('v$dataVersion'),
@@ -91,7 +87,7 @@ void main() async {
     if (await ctx.checkEtag(etag)) {
     }
 
-    await ctx.res.json(config);
+    return Response.ok().json(config);
   });
 
   // Example 6: Using ETag with Last-Modified
@@ -103,10 +99,9 @@ void main() async {
     // Set Last-Modified header
     ctx.res.headers.set('Last-Modified', HttpDate.format(lastModified));
 
-    if (await ctx.checkEtag(etag)) {
-    }
+    if (await ctx.checkEtag(etag)) return null;
 
-    await ctx.res.json(content);
+    return Response.ok().json(content);
   });
 
   // Example 7: Checking If-None-Match manually
@@ -116,18 +111,15 @@ void main() async {
 
     // Manual check
     if (ctx.etagMatches(etag)) {
-      ctx.res.statusCode = 304;
-      ctx.res.headers.set('ETag', etag);
-      await ctx.res.close();
+      return Response.status(HttpStatus.notModified).header('ETag', etag);
     }
 
-    ctx.res.headers.set('ETag', etag);
-    await ctx.res.json(content);
+    return Response.ok().header('ETag', etag).json(content);
   });
 
   // Info endpoint
   app.get('/').handle((ctx) async {
-    final html = '''
+    final htmlContent = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -253,7 +245,7 @@ curl -i http://localhost:6060/api/data</code></pre>
 </body>
 </html>
 ''';
-    await ctx.res.html(html);
+    return Response.ok().html(htmlContent);
   });
 
   final port = 3000;

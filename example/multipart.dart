@@ -17,9 +17,7 @@ void main() async {
   // Simple file upload endpoint
   app.post('/upload').handle((ctx) async {
     if (!ctx.req.isMultipart) {
-      ctx.res.statusCode = 400;
-      await ctx.res.json({'error': 'Expected multipart/form-data'});
-      return;
+      return Response.badRequest().json({'error': 'Expected multipart/form-data'});
     }
 
     final data = await ctx.req.multipart();
@@ -28,7 +26,7 @@ void main() async {
     final name = data.field('name') ?? 'Unknown';
     final avatar = data.file('avatar');
 
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Upload successful',
       'name': name,
       'avatar': avatar != null
@@ -53,7 +51,7 @@ void main() async {
     // Filter only images
     final images = photos.where((f) => f.isImage).toList();
 
-    await ctx.res.json({
+    return Response.ok().json({
       'totalFiles': photos.length,
       'images': images.length,
       'files': photos
@@ -74,7 +72,7 @@ void main() async {
     // Use fieldAll() for multiple values with same name
     final tags = data.fieldAll('tags');
 
-    await ctx.res.json({
+    return Response.ok().json({
       'title': title,
       'tags': tags,
       'tagCount': tags.length,
@@ -87,16 +85,14 @@ void main() async {
     final doc = data.file('document');
 
     if (doc == null) {
-      ctx.res.statusCode = 400;
-      await ctx.res.json({'error': 'No document uploaded'});
-      return;
+      return Response.badRequest().json({'error': 'No document uploaded'});
     }
 
     // Save to disk using saveTo() helper
     final uploadPath = 'uploads/${doc.filename}';
     await doc.saveTo(uploadPath);
 
-    await ctx.res.json({
+    return Response.ok().json({
       'saved': true,
       'path': uploadPath,
       'size': doc.size,
@@ -107,7 +103,7 @@ void main() async {
   app.post('/info').handle((ctx) async {
     final data = await ctx.req.multipart();
 
-    await ctx.res.json({
+    return Response.ok().json({
       'fieldNames': data.fieldNames.toList(),
       'fileNames': data.fileNames.toList(),
       'fieldCount': data.fieldCount,

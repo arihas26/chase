@@ -21,7 +21,7 @@ void main() async {
 
   // Simple endpoint to check headers
   app.get('/').handle((ctx) async {
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Check response headers for security settings',
       'headers': {
         'X-Content-Type-Options': 'nosniff',
@@ -38,7 +38,7 @@ void main() async {
     dev.use(const SecureHeaders(SecureHeadersOptions.minimal()));
 
     dev.get('/info').handle((ctx) async {
-      await ctx.res.json({
+      return Response.ok().json({
         'mode': 'development',
         'note': 'Minimal security headers applied',
       });
@@ -50,7 +50,7 @@ void main() async {
     secure.use(SecureHeaders(SecureHeadersOptions.strict()));
 
     secure.get('/data').handle((ctx) async {
-      await ctx.res.json({
+      return Response.ok().json({
         'mode': 'production',
         'note': 'Strict security headers applied',
         'headers': [
@@ -78,7 +78,7 @@ void main() async {
     )));
 
     api.get('/users').handle((ctx) async {
-      await ctx.res.json({'users': [], 'csp': 'Custom CSP applied'});
+      return Response.ok().json({'users': [], 'csp': 'Custom CSP applied'});
     });
   });
 
@@ -90,7 +90,7 @@ void main() async {
     )));
 
     test.get('/page').handle((ctx) async {
-      await ctx.res.html('''
+      return Response.ok().html('''
 <!DOCTYPE html>
 <html>
 <head>
@@ -117,7 +117,7 @@ void main() async {
     )));
 
     hsts.get('/info').handle((ctx) async {
-      await ctx.res.json({
+      return Response.ok().json({
         'hsts': 'enabled',
         'maxAge': '1 year',
         'includeSubDomains': true,
@@ -135,7 +135,7 @@ void main() async {
     )));
 
     isolated.get('/status').handle((ctx) async {
-      await ctx.res.json({
+      return Response.ok().json({
         'crossOriginIsolated': true,
         'note': 'Required for SharedArrayBuffer and high-resolution timers',
       });
@@ -149,7 +149,7 @@ void main() async {
     )));
 
     restricted.get('/features').handle((ctx) async {
-      await ctx.res.json({
+      return Response.ok().json({
         'permissions': {
           'camera': 'disabled',
           'microphone': 'disabled',
@@ -162,7 +162,7 @@ void main() async {
 
   // Info endpoint
   app.get('/info').handle((ctx) async {
-    final html = '''
+    final htmlContent = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -297,7 +297,7 @@ curl -i http://localhost:6060/hsts/info</code></pre>
 </body>
 </html>
 ''';
-    await ctx.res.html(html);
+    return Response.ok().html(htmlContent);
   });
 
   final port = 3000;

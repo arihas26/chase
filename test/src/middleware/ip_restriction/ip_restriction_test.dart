@@ -227,7 +227,7 @@ void main() {
         final ctx = TestContext.get('/', remoteIp: '10.0.0.1');
         final middleware = IpRestriction(
           denyList: ['10.0.0.1'],
-          onDenied: (ctx, ip) => Response.forbidden({'blocked': ip}),
+          onDenied: (ctx, ip) => Response.forbidden().json({'blocked': ip}),
         );
 
         await middleware.handle(ctx, () async {});

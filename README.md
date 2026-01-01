@@ -73,10 +73,16 @@ void main() async {
   // Simple string response
   app.get('/').handle((ctx) => 'Hello, World!');
 
-  // JSON response (Map/List auto-serialized)
+  // JSON response (Hono-style fluent API)
   app.get('/hello/:name').handle((ctx) {
     final name = ctx.req.param('name');
-    return {'message': 'Hello, $name!'};
+    return ctx.json({'message': 'Hello, $name!'});
+  });
+
+  // With status code
+  app.post('/users').handle((ctx) async {
+    final body = await ctx.req.json();
+    return ctx.status(201).json({'id': 1, ...body});
   });
 
   // Response object for full control
@@ -97,7 +103,7 @@ void main() async {
 final app = Chase();
 
 // HTTP methods
-app.get('/users').handle((ctx) => ctx.res.json({'users': []}));
+app.get('/users').handle((ctx) => ctx.json({'users': []}));
 app.post('/users').handle(createUser);
 app.put('/users/:id').handle(updateUser);
 app.patch('/users/:id').handle(patchUser);
@@ -106,7 +112,7 @@ app.head('/users/:id').handle(checkUser);
 app.options('/users').handle(corsHandler);
 
 // Custom method
-app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
+app.route('CUSTOM', '/any').handle((ctx) => ctx.text('Custom method'));
 ```
 
 ### Route Parameters
@@ -115,20 +121,20 @@ app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
 // Single parameter
 app.get('/users/:id').handle((ctx) {
   final id = ctx.req.param('id');
-  ctx.res.json({'id': id});
+  return ctx.json({'id': id});
 });
 
 // Multiple parameters
 app.get('/users/:userId/posts/:postId').handle((ctx) {
   final userId = ctx.req.param('userId');
   final postId = ctx.req.param('postId');
-  ctx.res.json({'userId': userId, 'postId': postId});
+  return ctx.json({'userId': userId, 'postId': postId});
 });
 
 // Wildcard (catch-all)
 app.get('/files/*path').handle((ctx) {
   final path = ctx.req.param('path');  // e.g., "images/photo.jpg"
-  ctx.res.text('File: $path');
+  return ctx.text('File: $path');
 });
 
 // Optional parameter
@@ -152,7 +158,7 @@ app.get('/search').handle((ctx) {
   final query = ctx.req.query('q');           // Single value
   final tags = ctx.req.queryAll('tag');       // Multiple values
   final queries = ctx.req.queries;            // All as Map
-  ctx.res.json({'query': query, 'tags': tags});
+  return ctx.json({'query': query, 'tags': tags});
 });
 ```
 
@@ -163,7 +169,7 @@ Register the same handler for multiple paths:
 ```dart
 // Same handler for multiple paths
 app.get(['/hello', '/ja/hello']).handle((ctx) {
-  ctx.res.text('Hello!');
+  return ctx.text('Hello!');
 });
 
 // Works with all HTTP methods
@@ -178,7 +184,7 @@ app.get(['/a', '/b', '/c'])
 // With path parameters
 app.get(['/users/:id', '/members/:id']).handle((ctx) {
   final id = ctx.req.param('id');
-  ctx.res.json({'id': id});
+  return ctx.json({'id': id});
 });
 
 // all() and on() also support multiple paths
@@ -279,7 +285,7 @@ app.post('/users').handle((ctx) async {
   final path = ctx.req.path;
   final url = ctx.req.url;
 
-  ctx.res.json({'received': json});
+  return ctx.json({'received': json});
 });
 ```
 
@@ -324,9 +330,39 @@ final addr = ctx.req.remoteAddress; // Direct connection IP
 
 ### Response
 
-Chase supports multiple response styles - from simple return values to full Response objects.
+Chase supports multiple response styles - from simple return values to the Hono-style fluent API.
 
-#### Return Values (Recommended)
+#### Fluent API (Recommended)
+
+```dart
+// JSON response
+app.get('/json').handle((ctx) => ctx.json({'message': 'Hello'}));
+
+// Text response
+app.get('/text').handle((ctx) => ctx.text('Hello, World!'));
+
+// HTML response
+app.get('/html').handle((ctx) => ctx.html('<h1>Hello</h1>'));
+
+// With status code (chainable)
+app.post('/users').handle((ctx) => ctx.status(201).json({'id': 1}));
+
+// With custom headers (chainable)
+app.get('/data').handle((ctx) {
+  return ctx
+    .status(200)
+    .header('X-Custom', 'value')
+    .json({'data': 'value'});
+});
+
+// Redirect
+app.get('/old').handle((ctx) => ctx.redirect('/new'));
+
+// Not found
+app.get('/missing').handle((ctx) => ctx.notFound('Resource not found'));
+```
+
+#### Simple Return Values
 
 ```dart
 // String → text/plain
@@ -379,31 +415,25 @@ Response.text('Hello', status: 200)
 Response.html('<h1>Hello</h1>')
 ```
 
-#### Imperative Style (ctx.res)
+#### Low-Level Access (ctx.res)
+
+For advanced use cases, you can still access the underlying `HttpResponse`:
 
 ```dart
-app.get('/imperative').handle((ctx) {
-  // Text response
-  ctx.res.text('Hello');
-  ctx.res.text('Not Found', status: 404);
-  
-  // JSON response
-  ctx.res.json({'message': 'Hello'});
-  ctx.res.json({'error': 'Not found'}, status: 404);
-  
-  // HTML response
-  ctx.res.html('<h1>Hello</h1>');
-  
-  // Redirect
-  ctx.res.redirect('/new-location');
-  ctx.res.redirect('/new', status: 301);  // Permanent
-  
-  // Headers
+app.get('/low-level').handle((ctx) async {
+  // Direct header access
   ctx.res.headers.set('X-Custom', 'value');
   
   // Cookies
   ctx.res.cookie('session', 'abc123', maxAge: Duration(hours: 24));
   ctx.res.deleteCookie('session');
+  
+  // Status code
+  ctx.res.statusCode = 200;
+  
+  // Write directly
+  ctx.res.write('Hello');
+  await ctx.res.close();
 });
 ```
 
@@ -429,10 +459,10 @@ final userSchema = Schema({
 ```dart
 app.post('/users')
   .use(Validator(body: userSchema))
-  .handle((ctx) async {
+  .handle((ctx) {
     // Access validated & transformed data
     final data = ctx.validatedBody!;
-    ctx.res.json({'created': data});
+    return ctx.status(201).json({'created': data});
   });
 ```
 
@@ -564,46 +594,75 @@ app.get('/ws').handle((ctx) async {
 ## Server-Sent Events
 
 ```dart
-app.get('/events').handle((ctx) async {
-  final sse = ctx.res.sse();
-  
-  // Send events
-  await sse.send({'count': 1}, event: 'update');
-  await sse.send({'count': 2}, event: 'update', id: '2');
-  
-  // Keep connection for real-time updates
-  Timer.periodic(Duration(seconds: 1), (timer) async {
-    await sse.send({'time': DateTime.now().toIso8601String()});
+app.get('/events').handle((ctx) {
+  return streamSSE(ctx, (stream) async {
+    // Send events
+    await stream.writeSSE(SSEMessage(
+      data: '{"count": 1}',
+      event: 'update',
+    ));
+    
+    await stream.writeSSE(SSEMessage(
+      data: '{"count": 2}',
+      event: 'update',
+      id: '2',
+    ));
+    
+    // Real-time updates
+    for (var i = 0; i < 10; i++) {
+      await stream.sleep(Duration(seconds: 1));
+      await stream.writeSSE(SSEMessage(
+        data: DateTime.now().toIso8601String(),
+      ));
+    }
   });
 });
 ```
 
 ## Streaming
 
+Chase provides Hono-style streaming helpers that return `Response` objects.
+
 ### Text Streaming
 
 ```dart
-app.get('/stream').handle((ctx) async {
-  final stream = ctx.res.textStream();
-  
-  for (var i = 0; i < 10; i++) {
-    await stream.writeln('Line $i');
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-  
-  await stream.close();
+app.get('/stream').handle((ctx) {
+  return streamText(ctx, (stream) async {
+    for (var i = 0; i < 10; i++) {
+      await stream.writeln('Line $i');
+      await stream.sleep(Duration(milliseconds: 100));
+    }
+  });
 });
 ```
 
 ### Binary Streaming
 
 ```dart
-app.get('/download').handle((ctx) async {
-  final file = File('large-file.zip');
-  final stream = ctx.res.stream();
-  
-  ctx.res.headers.set('content-disposition', 'attachment; filename="file.zip"');
-  await stream.pipe(file.openRead());
+app.get('/download').handle((ctx) {
+  return stream(ctx, (s) async {
+    final file = File('large-file.zip');
+    await s.pipe(file.openRead());
+  }, headers: {
+    'content-disposition': 'attachment; filename="file.zip"',
+  });
+});
+```
+
+### Streaming with Abort Handling
+
+```dart
+app.get('/long-stream').handle((ctx) {
+  return streamText(ctx, (stream) async {
+    stream.onAbort(() {
+      print('Client disconnected');
+    });
+    
+    while (!stream.isClosed) {
+      await stream.writeln(DateTime.now().toIso8601String());
+      await stream.sleep(Duration(seconds: 1));
+    }
+  });
 });
 ```
 
@@ -642,19 +701,19 @@ app.post('/login').handle((ctx) async {
   final body = await ctx.req.json();
   ctx.session['userId'] = body['userId'];
   ctx.session['loggedIn'] = true;
-  ctx.res.json({'success': true});
+  return ctx.json({'success': true});
 });
 
 app.get('/profile').handle((ctx) {
   if (ctx.session['loggedIn'] != true) {
-    return ctx.res.json({'error': 'Not logged in'}, status: 401);
+    return ctx.status(401).json({'error': 'Not logged in'});
   }
-  ctx.res.json({'userId': ctx.session['userId']});
+  return ctx.json({'userId': ctx.session['userId']});
 });
 
 app.post('/logout').handle((ctx) async {
   await ctx.destroySession();
-  ctx.res.json({'success': true});
+  return ctx.json({'success': true});
 });
 ```
 
@@ -689,7 +748,7 @@ app.use(I18n(
 app.get('/greeting').handle((ctx) {
   final t = ctx.t;  // Translation function
   
-  ctx.res.json({
+  return ctx.json({
     'greeting': t('greeting'),
     'welcome': t('welcome', {'name': 'John'}),
     'locale': ctx.locale,
@@ -708,7 +767,7 @@ Locale is detected in order:
 // Force specific locale
 app.get('/ja/greeting').handle((ctx) {
   ctx.setLocale('ja');
-  ctx.res.json({'message': ctx.t('greeting')});
+  return ctx.json({'message': ctx.t('greeting')});
 });
 ```
 
@@ -729,10 +788,10 @@ void main() {
 
   setUp(() async {
     app = Chase();
-    app.get('/').handle((ctx) => ctx.res.text('Hello'));
+    app.get('/').handle((ctx) => ctx.text('Hello'));
     app.post('/users').handle((ctx) async {
       final body = await ctx.req.json();
-      ctx.res.json(body, status: 201);
+      return ctx.status(201).json(body);
     });
     
     client = await TestClient.start(app);
@@ -830,7 +889,7 @@ class HealthCheckPlugin extends Plugin {
   @override
   void onInstall(Chase app) {
     app.get('/health').handle((ctx) {
-      ctx.res.json({
+      return ctx.json({
         'status': 'healthy',
         'timestamp': DateTime.now().toIso8601String(),
       });
@@ -871,8 +930,9 @@ app.get('/profile').handle((ctx) {
   final requestId = ctx.get<String>('requestId');
   
   if (ctx.has('user')) {
-    ctx.res.json({'user': user, 'requestId': requestId});
+    return ctx.json({'user': user, 'requestId': requestId});
   }
+  return ctx.status(401).json({'error': 'Unauthorized'});
 });
 ```
 

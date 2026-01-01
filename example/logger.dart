@@ -38,13 +38,13 @@ void main() async {
 
   // Health check (logging skipped, but request_id still generated)
   app.get('/health').handle((ctx) async {
-    await ctx.res.json({'status': 'ok'});
+    return Response.ok().json({'status': 'ok'});
   });
 
   // Home page
   app.get('/').handle((ctx) {
     ctx.log.info('Home page accessed');
-    ctx.res.text('Welcome to Chase!');
+    return Response.ok().text('Welcome to Chase!');
   });
 
   // Demonstrates log propagation to service layer
@@ -54,7 +54,7 @@ void main() async {
     // Service uses Log.named() - request_id is automatically included
     final user = await _userService.findUser(userId);
 
-    ctx.res.json(user);
+    return Response.ok().json(user);
   });
 
   app.post('/users').handle((ctx) async {
@@ -66,18 +66,14 @@ void main() async {
 
       if (name == null || name.isEmpty) {
         ctx.log.warn('Invalid user data', {'reason': 'name is required'});
-        ctx.res.statusCode = 400;
-        ctx.res.json({'error': 'Name is required'});
-        return;
+        return Response.badRequest().json({'error': 'Name is required'});
       }
 
       final user = await _userService.createUser(name);
-      ctx.res.statusCode = 201;
-      ctx.res.json(user);
+      return Response.created().json(user);
     } catch (e, st) {
       ctx.log.error('Failed to create user', {'error': e.toString()}, e, st);
-      ctx.res.statusCode = 500;
-      ctx.res.json({'error': 'Internal server error'});
+      return Response.internalServerError().json({'error': 'Internal server error'});
     }
   });
 
@@ -86,8 +82,7 @@ void main() async {
       throw Exception('Something went wrong!');
     } catch (e, st) {
       ctx.log.error('Unhandled error occurred', {'path': '/error'}, e, st);
-      ctx.res.statusCode = 500;
-      ctx.res.json({'error': 'Internal server error'});
+      return Response.internalServerError().json({'error': 'Internal server error'});
     }
   });
 

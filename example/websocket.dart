@@ -157,7 +157,7 @@ void main() async {
 
   // Serve HTML client for testing
   app.get('/').handle((ctx) async {
-    final html = '''
+    final htmlContent = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -313,7 +313,7 @@ void main() async {
 </html>
 ''';
 
-    await ctx.res.html(html);
+    return Response.ok().html(htmlContent);
   });
 
   final port = 3002;

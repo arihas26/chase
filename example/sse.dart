@@ -1,10 +1,4 @@
-import 'dart:async';
-import 'dart:io';
-import 'dart:math';
-
-import 'package:chase/chase.dart';
-
-/// Example: Server-Sent Events (SSE)
+/// Example: Server-Sent Events (SSE) - Hono-style API
 ///
 /// This example demonstrates:
 /// - Real-time server-to-client updates
@@ -12,180 +6,188 @@ import 'package:chase/chase.dart';
 /// - Event IDs for reconnection
 /// - Keep-alive comments
 ///
-/// Run: dart run bin/example_sse.dart
-/// Test: curl http://localhost:6060/events
-///       Open http://localhost:6060 in browser
+/// Run: dart run example/sse.dart
+/// Test: curl http://localhost:3001/events
+///       Open http://localhost:3001 in browser
+library;
+
+import 'dart:math';
+
+import 'package:chase/chase.dart';
+
 void main() async {
   final app = Chase();
   final random = Random();
 
   // Example 1: Basic SSE with periodic updates
-  app.get('/events').handle((ctx) async {
-    ctx.res.headers.contentType = ContentType('text', 'event-stream');
-    ctx.res.headers.set('cache-control', 'no-cache');
-    ctx.res.headers.set('connection', 'keep-alive');
+  app.get('/events').handle((ctx) {
+    return streamSSE(ctx, (sse) async {
+      sse.onAbort(() {
+        print('Client disconnected from /events');
+      });
 
-    final sse = ctx.res.sse();
+      print('Client connected to /events');
 
-    sse.onAbort(() {
-      print('⚠️  Client disconnected from /events');
-    });
-
-    print('📡 Client connected to /events');
-
-    // Send initial connection event
-    await sse.send('Connected to event stream', event: 'connection', id: '0');
-
-    // Send periodic updates
-    for (var i = 1; i <= 10; i++) {
-      if (sse.isClosed) break;
-
-      await sse.send(
-        'Update #$i at ${DateTime.now().toIso8601String()}',
-        event: 'update',
-        id: '$i',
+      // Send initial connection event
+      await sse.writeSSE(
+        data: 'Connected to event stream',
+        event: 'connection',
+        id: '0',
       );
 
-      await Future.delayed(Duration(seconds: 2));
-    }
+      // Send periodic updates
+      for (var i = 1; i <= 10; i++) {
+        if (sse.isClosed) break;
 
-    await sse.send('Stream complete', event: 'done', id: '11');
-    await sse.close();
+        await sse.writeSSE(
+          data: 'Update #$i at ${DateTime.now().toIso8601String()}',
+          event: 'update',
+          id: '$i',
+        );
+
+        await sse.sleep(Duration(seconds: 2));
+      }
+
+      await sse.writeSSE(
+        data: 'Stream complete',
+        event: 'done',
+        id: '11',
+      );
+    });
   });
 
   // Example 2: Real-time stock prices
-  app.get('/stocks').handle((ctx) async {
-    ctx.res.headers.contentType = ContentType('text', 'event-stream');
-    ctx.res.headers.set('cache-control', 'no-cache');
-    ctx.res.headers.set('connection', 'keep-alive');
+  app.get('/stocks').handle((ctx) {
+    return streamSSE(ctx, (sse) async {
+      print('Client connected to /stocks');
 
-    final sse = ctx.res.sse();
+      final stocks = ['AAPL', 'GOOGL', 'MSFT', 'AMZN'];
+      var messageId = 0;
 
-    print('📈 Client connected to /stocks');
+      // Simulate stock price updates
+      while (!sse.isClosed) {
+        for (final symbol in stocks) {
+          if (sse.isClosed) break;
 
-    final stocks = ['AAPL', 'GOOGL', 'MSFT', 'AMZN'];
-    var messageId = 0;
+          final price = 100 + random.nextDouble() * 50;
+          final change = (random.nextDouble() - 0.5) * 5;
 
-    // Simulate stock price updates
-    while (!sse.isClosed) {
-      for (final symbol in stocks) {
-        if (sse.isClosed) break;
+          final data =
+              '{"symbol":"$symbol","price":"${price.toStringAsFixed(2)}","change":"${change.toStringAsFixed(2)}","timestamp":"${DateTime.now().toIso8601String()}"}';
 
-        final price = 100 + random.nextDouble() * 50;
-        final change = (random.nextDouble() - 0.5) * 5;
+          await sse.writeSSE(
+            data: data,
+            event: 'price-update',
+            id: '${messageId++}',
+          );
+        }
 
-        final data = {
-          'symbol': symbol,
-          'price': price.toStringAsFixed(2),
-          'change': change.toStringAsFixed(2),
-          'timestamp': DateTime.now().toIso8601String(),
-        };
+        await sse.sleep(Duration(seconds: 3));
 
-        await sse.send(data, event: 'price-update', id: '${messageId++}');
+        // Send keep-alive comment every 10 messages
+        if (messageId % 10 == 0) {
+          await sse.writeComment('keep-alive');
+        }
       }
-
-      await Future.delayed(Duration(seconds: 3));
-
-      // Send keep-alive comment every 30 seconds
-      if (messageId % 10 == 0) {
-        await sse.comment('keep-alive');
-      }
-    }
+    });
   });
 
   // Example 3: Progress tracking
-  app.get('/progress/:taskId').handle((ctx) async {
-    final taskId = ctx.req.paramOr<String>('taskId', 'unknown');
+  app.get('/progress/:taskId').handle((ctx) {
+    final taskId = ctx.req.param('taskId') ?? 'unknown';
 
-    ctx.res.headers.contentType = ContentType('text', 'event-stream');
-    ctx.res.headers.set('cache-control', 'no-cache');
+    return streamSSE(ctx, (sse) async {
+      print('Starting task $taskId');
 
-    final sse = ctx.res.sse();
+      await sse.writeSSE(
+        data: 'Task started',
+        event: 'status',
+        id: '0',
+      );
 
-    print('⏳ Starting task $taskId');
+      // Simulate progress
+      for (var progress = 0; progress <= 100; progress += 10) {
+        if (sse.isClosed) break;
 
-    await sse.send('Task started', event: 'status', id: '0');
+        final data =
+            '{"taskId":"$taskId","progress":$progress,"message":"${progress == 100 ? 'Complete!' : 'Processing...'}"}';
 
-    // Simulate progress
-    for (var progress = 0; progress <= 100; progress += 10) {
-      if (sse.isClosed) break;
+        await sse.writeSSE(
+          data: data,
+          event: 'progress',
+          id: '$progress',
+        );
 
-      final data = {
-        'taskId': taskId,
-        'progress': progress,
-        'message': progress == 100 ? 'Complete!' : 'Processing...',
-      };
+        await sse.sleep(Duration(milliseconds: 500));
+      }
 
-      await sse.send(data, event: 'progress', id: '$progress');
-
-      await Future.delayed(Duration(milliseconds: 500));
-    }
-
-    await sse.send('Task completed', event: 'status', id: '100');
-    await sse.close();
+      await sse.writeSSE(
+        data: 'Task completed',
+        event: 'status',
+        id: '100',
+      );
+    });
   });
 
   // Example 4: Real-time notifications
-  app.get('/notifications').handle((ctx) async {
-    ctx.res.headers.contentType = ContentType('text', 'event-stream');
-    ctx.res.headers.set('cache-control', 'no-cache');
+  app.get('/notifications').handle((ctx) {
+    return streamSSE(ctx, (sse) async {
+      print('Client connected to /notifications');
 
-    final sse = ctx.res.sse();
+      final notifications = [
+        '{"type":"info","message":"New feature available"}',
+        '{"type":"warning","message":"Scheduled maintenance in 1 hour"}',
+        '{"type":"success","message":"Profile updated successfully"}',
+        '{"type":"error","message":"Failed to sync data"}',
+      ];
 
-    print('🔔 Client connected to /notifications');
+      var id = 0;
 
-    final notifications = [
-      {'type': 'info', 'message': 'New feature available'},
-      {'type': 'warning', 'message': 'Scheduled maintenance in 1 hour'},
-      {'type': 'success', 'message': 'Profile updated successfully'},
-      {'type': 'error', 'message': 'Failed to sync data'},
-    ];
+      for (final notification in notifications) {
+        if (sse.isClosed) break;
 
-    var id = 0;
+        await sse.writeSSE(
+          data: notification,
+          event: 'notification',
+          id: '${id++}',
+        );
 
-    for (final notification in notifications) {
-      if (sse.isClosed) break;
+        await sse.sleep(Duration(seconds: 3));
+      }
 
-      await sse.send(notification, event: 'notification', id: '${id++}');
-
-      await Future.delayed(Duration(seconds: 3));
-    }
-
-    // Keep connection alive for continuous notifications
-    while (!sse.isClosed) {
-      await Future.delayed(Duration(seconds: 30));
-      await sse.comment('keep-alive');
-    }
+      // Keep connection alive for continuous notifications
+      while (!sse.isClosed) {
+        await sse.sleep(Duration(seconds: 30));
+        await sse.writeComment('keep-alive');
+      }
+    });
   });
 
   // Example 5: Live server metrics
-  app.get('/metrics').handle((ctx) async {
-    ctx.res.headers.contentType = ContentType('text', 'event-stream');
-    ctx.res.headers.set('cache-control', 'no-cache');
+  app.get('/metrics').handle((ctx) {
+    return streamSSE(ctx, (sse) async {
+      print('Client connected to /metrics');
 
-    final sse = ctx.res.sse();
+      var messageId = 0;
 
-    print('📊 Client connected to /metrics');
+      while (!sse.isClosed) {
+        final metrics =
+            '{"cpu":"${(random.nextDouble() * 100).toStringAsFixed(1)}","memory":"${(random.nextDouble() * 100).toStringAsFixed(1)}","requests":${random.nextInt(1000)},"timestamp":"${DateTime.now().toIso8601String()}"}';
 
-    var messageId = 0;
+        await sse.writeSSE(
+          data: metrics,
+          event: 'metrics',
+          id: '${messageId++}',
+        );
 
-    while (!sse.isClosed) {
-      final metrics = {
-        'cpu': (random.nextDouble() * 100).toStringAsFixed(1),
-        'memory': (random.nextDouble() * 100).toStringAsFixed(1),
-        'requests': random.nextInt(1000),
-        'timestamp': DateTime.now().toIso8601String(),
-      };
-
-      await sse.send(metrics, event: 'metrics', id: '${messageId++}');
-
-      await Future.delayed(Duration(seconds: 1));
-    }
+        await sse.sleep(Duration(seconds: 1));
+      }
+    });
   });
 
   // Serve HTML client for testing
-  app.get('/').handle((ctx) async {
-    final html = '''
+  app.get('/').handle((ctx) {
+    final htmlContent = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -268,11 +270,11 @@ void main() async {
 </html>
 ''';
 
-    await ctx.res.html(html);
+    return Response.ok().html(htmlContent);
   });
 
   final port = 3001;
-  print('🚀 SSE server running on http://localhost:$port');
+  print('SSE server running on http://localhost:$port');
   print('');
   print('Open http://localhost:$port in your browser');
   print('Or try these endpoints:');

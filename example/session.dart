@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:chase/chase.dart';
 
 /// Example: Session Middleware
@@ -35,10 +33,10 @@ void main() async {
   app.get('/login').handle((ctx) async {
     final username = ctx.req.query('username');
     if (username == null || username.isEmpty) {
-      await ctx.res.json({
+      return Response.badRequest().json({
         'error': 'Username required',
         'usage': '/login?username=yourname',
-      }, status: HttpStatus.badRequest);
+      });
     }
 
     // Store user data in session
@@ -46,7 +44,7 @@ void main() async {
     ctx.session.set('loginTime', DateTime.now().toIso8601String());
     ctx.session.set('visits', 0);
 
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Logged in successfully',
       'sessionId': '${ctx.session.id.substring(0, 8)}...',
       'username': username,
@@ -57,17 +55,17 @@ void main() async {
   app.get('/profile').handle((ctx) async {
     final username = ctx.session.get<String>('username');
     if (username == null) {
-      await ctx.res.json({
+      return Response.unauthorized().json({
         'error': 'Not logged in',
         'hint': 'Visit /login?username=yourname first',
-      }, status: HttpStatus.unauthorized);
+      });
     }
 
     // Increment visit counter
     final visits = (ctx.session.get<int>('visits') ?? 0) + 1;
     ctx.session.set('visits', visits);
 
-    await ctx.res.json({
+    return Response.ok().json({
       'username': username,
       'loginTime': ctx.session.get<String>('loginTime'),
       'visits': visits,
@@ -79,12 +77,12 @@ void main() async {
   app.get('/logout').handle((ctx) async {
     final username = ctx.session.get<String>('username');
     if (username == null) {
-      await ctx.res.json({'message': 'Already logged out'});
+      return Response.ok().json({'message': 'Already logged out'});
     }
 
     ctx.destroySession();
 
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Logged out successfully',
       'previousUser': username,
     });
@@ -94,9 +92,9 @@ void main() async {
   app.get('/secure-action').handle((ctx) async {
     final username = ctx.session.get<String>('username');
     if (username == null) {
-      await ctx.res.json({
+      return Response.unauthorized().json({
         'error': 'Not logged in',
-      }, status: HttpStatus.unauthorized);
+      });
     }
 
     // Regenerate session ID to prevent session fixation
@@ -105,7 +103,7 @@ void main() async {
     ctx.regenerateSession();
     final newId = ctx.session.id.substring(0, 8);
 
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Session regenerated',
       'oldIdPrefix': '$oldId...',
       'newIdPrefix': '$newId...',
@@ -115,7 +113,7 @@ void main() async {
 
   // Example 5: Session info
   app.get('/session-info').handle((ctx) async {
-    await ctx.res.json({
+    return Response.ok().json({
       'sessionId': '${ctx.session.id.substring(0, 8)}...',
       'isNew': ctx.session.isNew,
       'isModified': ctx.session.isModified,
@@ -127,7 +125,7 @@ void main() async {
   // Example 6: Clear specific data
   app.get('/clear-visits').handle((ctx) async {
     ctx.session.remove('visits');
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Visits counter cleared',
       'data': ctx.session.data,
     });
@@ -135,7 +133,7 @@ void main() async {
 
   // Example 7: Admin - view store stats
   app.get('/admin/sessions').handle((ctx) async {
-    await ctx.res.json({
+    return Response.ok().json({
       'activeSessions': store.length,
     });
   });
@@ -143,7 +141,7 @@ void main() async {
   // Example 8: Shopping cart simulation
   app.get('/cart').handle((ctx) async {
     final cart = ctx.session.get<List<dynamic>>('cart') ?? [];
-    await ctx.res.json({
+    return Response.ok().json({
       'items': cart,
       'itemCount': cart.length,
     });
@@ -152,18 +150,17 @@ void main() async {
   app.get('/cart/add').handle((ctx) async {
     final item = ctx.req.query('item');
     if (item == null) {
-      await ctx.res.json({
+      return Response.badRequest().json({
         'error': 'Item required',
         'usage': '/cart/add?item=apple',
-      }, status: HttpStatus.badRequest);
-      return;
+      });
     }
 
     final cart = List<String>.from(ctx.session.get<List<dynamic>>('cart') ?? []);
     cart.add(item);
     ctx.session.set('cart', cart);
 
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Added to cart',
       'item': item,
       'itemCount': cart.length,
@@ -172,14 +169,14 @@ void main() async {
 
   app.get('/cart/clear').handle((ctx) async {
     ctx.session.remove('cart');
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Cart cleared',
     });
   });
 
   // Info endpoint
   app.get('/').handle((ctx) async {
-    final html = '''
+    final htmlContent = '''
 <!DOCTYPE html>
 <html>
 <head>
@@ -338,7 +335,7 @@ curl -b cookies.txt http://localhost:6060/profile  # Should show not logged in</
 </body>
 </html>
 ''';
-    await ctx.res.html(html);
+    return Response.ok().html(htmlContent);
   });
 
   final port = 3000;

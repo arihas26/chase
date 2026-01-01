@@ -22,7 +22,7 @@ void main() async {
 
   // Simple endpoint showing request ID
   app.get('/').handle((ctx) async {
-    await ctx.res.json({
+    return Response.ok().json({
       'message': 'Hello!',
       'requestId': ctx.requestId,
     });
@@ -37,7 +37,7 @@ void main() async {
     await Future.delayed(Duration(milliseconds: 50));
 
     print('[${ctx.requestId}] User fetched successfully');
-    await ctx.res.json({
+    return Response.ok().json({
       'id': userId,
       'name': 'John Doe',
       'requestId': ctx.requestId,
