@@ -1,0 +1,13 @@
+# Benchmark directory (has external dependencies)
+benchmark/
+
+# Packages directory (separate packages)
+packages/
+
+# Development files
+.serena/
+.claude/
+CLAUDE.md
+
+# Test fixtures
+test/src/middleware/i18n/fixtures/

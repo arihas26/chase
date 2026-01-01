@@ -1,14 +1,20 @@
 name: chase
-description: A fast, lightweight web framework for Dart.
+description: A fast, lightweight web framework for Dart. Features trie-based routing, 18+ middleware, WebSocket/SSE support, and schema validation.
 version: 0.1.0
 repository: https://github.com/arihas26/chase
 homepage: https://github.com/arihas26/chase
 issue_tracker: https://github.com/arihas26/chase/issues
+topics:
+  - web
+  - server
+  - http
+  - framework
+  - middleware
+  - dart
 
 environment:
   sdk: ^3.10.7
 
-# Add regular dependencies here.
 dependencies:
   meta: ^1.11.0
   path: ^1.9.0
@@ -16,7 +22,7 @@ dependencies:
   crypto: ^3.0.3
   yaml: ^3.1.2
   zlogger: ^1.0.0
+  test: ^1.25.6
 
 dev_dependencies:
   lints: ^6.0.0
-  test: ^1.25.6
