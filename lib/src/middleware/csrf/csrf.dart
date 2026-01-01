@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:zlogger/zlogger.dart';
 
 /// Callback function for validating origin headers.
 /// Returns true if the origin is valid, false otherwise.
@@ -65,6 +66,8 @@ typedef SecFetchSiteValidator = bool Function(String secFetchSite, Context ctx);
 /// ));
 /// ```
 class Csrf implements Middleware {
+  static final _log = Log.named('Csrf');
+
   final OriginValidator? _originValidator;
   final SecFetchSiteValidator? _secFetchSiteValidator;
 
@@ -262,6 +265,17 @@ class Csrf implements Middleware {
 
   /// Sends a 403 Forbidden response.
   Future<void> _forbidden(Context ctx, String details) async {
+    _log.warn(
+      'CSRF validation failed: $details',
+      {
+        'method': ctx.req.method,
+        'path': ctx.req.path,
+        'ip': _safeGetIp(ctx),
+        'origin': ctx.req.header('origin'),
+        'sec_fetch_site': ctx.req.header('sec-fetch-site'),
+      },
+    );
+
     await ctx.res.json(
       {
         'error': errorMessage,
@@ -269,5 +283,14 @@ class Csrf implements Middleware {
       },
       status: HttpStatus.forbidden,
     );
+  }
+
+  /// Safely gets the remote IP address, returning null if not available.
+  String? _safeGetIp(Context ctx) {
+    try {
+      return ctx.req.remoteAddress;
+    } catch (_) {
+      return null;
+    }
   }
 }

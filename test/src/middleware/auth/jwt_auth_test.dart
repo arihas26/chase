@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chase/chase.dart';
+import 'package:chase/testing/testing.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:test/test.dart';
 
@@ -140,6 +141,8 @@ String _createToken(String secretKey, Map<String, dynamic> payload, {JWTAlgorith
 }
 
 void main() {
+  setUpAll(() => suppressTestLogs());
+
   const secretKey = 'test-secret-key-min-32-characters-long';
 
   group('JwtAuth', () {

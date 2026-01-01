@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chase/chase.dart';
+import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
 
 class _MockHeaders implements HttpHeaders {
@@ -138,6 +139,8 @@ String _encodeCredentials(String username, String password) {
 }
 
 void main() {
+  setUpAll(() => suppressTestLogs());
+
   group('BasicAuth', () {
     test('allows request with valid credentials', () async {
       final req = _MockRequest(

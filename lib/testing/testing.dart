@@ -2,6 +2,8 @@
 ///
 /// Provides mock implementations and helpers for testing Chase applications.
 ///
+/// Automatically suppresses framework logs during tests to keep output clean.
+///
 /// Example:
 /// ```dart
 /// import 'package:chase/testing/testing.dart';
@@ -27,6 +29,58 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chase/chase.dart';
+import 'package:zlogger/zlogger.dart';
+
+// -----------------------------------------------------------------------------
+// Log Suppression for Tests
+// -----------------------------------------------------------------------------
+
+bool _logsSuppressed = false;
+
+/// Suppresses all framework logs during tests.
+///
+/// Called automatically when using [TestContext] or [TestClient].
+/// Call this manually in setUpAll() if not using those utilities.
+///
+/// Example:
+/// ```dart
+/// import 'package:chase/testing/testing.dart';
+///
+/// void main() {
+///   setUpAll(() => suppressTestLogs());
+///   // ...tests...
+/// }
+/// ```
+void suppressTestLogs() {
+  if (!_logsSuppressed) {
+    LogConfig.global = _SilentLogger();
+    _logsSuppressed = true;
+  }
+}
+
+void _suppressLogs() => suppressTestLogs();
+
+class _SilentLogger implements Logger {
+  @override
+  void log(LogLevel level, String message,
+      [Map<String, dynamic>? fields, Object? error, StackTrace? stackTrace]) {}
+
+  @override
+  void debug(String message, [Map<String, dynamic>? fields]) {}
+
+  @override
+  void info(String message, [Map<String, dynamic>? fields]) {}
+
+  @override
+  void warn(String message, [Map<String, dynamic>? fields]) {}
+
+  @override
+  void error(String message,
+      [Map<String, dynamic>? fields, Object? error, StackTrace? stackTrace]) {}
+
+  @override
+  Logger withFields(Map<String, dynamic> fields) => this;
+}
 
 // -----------------------------------------------------------------------------
 // MockHttpHeaders
@@ -559,6 +613,7 @@ class TestContext {
     String remoteIp = '127.0.0.1',
     int? contentLength,
   }) {
+    _suppressLogs();
     String? bodyString;
     final effectiveHeaders = Map<String, String>.from(headers ?? {});
 
@@ -772,6 +827,7 @@ class TestClient {
   /// The app is started on an ephemeral port (port 0).
   /// Call [close] when done to stop the server.
   static Future<TestClient> start(Chase app) async {
+    _suppressLogs();
     await runZoned(
       () => app.start(port: 0),
       zoneSpecification: ZoneSpecification(

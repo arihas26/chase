@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:zlogger/zlogger.dart';
 
 /// HTTP Proxy middleware.
 ///
@@ -51,6 +52,8 @@ import 'package:chase/src/core/middleware.dart';
 /// });
 /// ```
 class Proxy implements Middleware {
+  static final _log = Log.named('Proxy');
+
   /// The base URL of the target server.
   /// Example: 'https://api.example.com'
   final String targetUrl;
@@ -118,20 +121,51 @@ class Proxy implements Middleware {
 
       // Stream response body to client
       await response.pipe(ctx.res.$raw);
-    } on TimeoutException {
+    } on TimeoutException catch (e, stackTrace) {
       // Handle timeout
+      _log.error(
+        'Proxy timeout to $targetUrl',
+        {
+          'target_url': targetUrl,
+          'method': ctx.req.method,
+          'path': ctx.req.path,
+          'timeout_seconds': timeout.inSeconds,
+        },
+        e,
+        stackTrace,
+      );
       await ctx.res.json({
         'error': 'Gateway Timeout',
         'message': 'The upstream server did not respond in time',
       }, status: HttpStatus.gatewayTimeout);
-    } on SocketException catch (e) {
+    } on SocketException catch (e, stackTrace) {
       // Handle connection errors
+      _log.error(
+        'Proxy connection failed to $targetUrl',
+        {
+          'target_url': targetUrl,
+          'method': ctx.req.method,
+          'path': ctx.req.path,
+        },
+        e,
+        stackTrace,
+      );
       await ctx.res.json({
         'error': 'Bad Gateway',
-        'message': 'Failed to connect to upstream server: ${e.message}',
+        'message': 'Failed to connect to upstream server',
       }, status: HttpStatus.badGateway);
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Handle other errors - don't expose internal error details
+      _log.error(
+        'Proxy error to $targetUrl',
+        {
+          'target_url': targetUrl,
+          'method': ctx.req.method,
+          'path': ctx.req.path,
+        },
+        e,
+        stackTrace,
+      );
       await ctx.res.json({
         'error': 'Internal Server Error',
         'message': 'An error occurred while processing the request',

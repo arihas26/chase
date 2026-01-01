@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:zlogger/zlogger.dart';
 
 /// Callback function for validating JWT payload.
 /// Returns true if the payload is valid, false otherwise.
@@ -75,6 +76,8 @@ typedef JwtPayloadValidator = FutureOr<bool> Function(Map<String, dynamic> paylo
 /// });
 /// ```
 class JwtAuth implements Middleware {
+  static final _log = Log.named('JwtAuth');
+
   /// The secret key used to verify JWT signatures.
   /// Should be a strong, randomly generated string.
   /// Minimum 32 characters recommended for HS256.
@@ -179,10 +182,28 @@ class JwtAuth implements Middleware {
 
   /// Sends a 401 Unauthorized response with the appropriate WWW-Authenticate header.
   Future<void> _unauthorized(Context ctx, String message) async {
+    _log.warn(
+      'JWT auth failed: $message',
+      {
+        'method': ctx.req.method,
+        'path': ctx.req.path,
+        'ip': _safeGetIp(ctx),
+      },
+    );
+
     ctx.res.headers.set(HttpHeaders.wwwAuthenticateHeader, 'Bearer realm="$realm"');
     await ctx.res.json({
       'error': 'Unauthorized',
       'message': message,
     }, status: HttpStatus.unauthorized);
+  }
+
+  /// Safely gets the remote IP address, returning null if not available.
+  String? _safeGetIp(Context ctx) {
+    try {
+      return ctx.req.remoteAddress;
+    } catch (_) {
+      return null;
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:zlogger/zlogger.dart';
 
 /// Function type for extracting a unique key from a request.
 ///
@@ -345,6 +346,8 @@ class RateLimitStore {
 /// - `X-RateLimit-Reset`: Unix timestamp when the window resets
 /// - `Retry-After`: Seconds until next request allowed (429 only)
 class RateLimit implements Middleware {
+  static final _log = Log.named('RateLimit');
+
   final RateLimitOptions options;
   final RateLimitStore _store;
 
@@ -382,6 +385,18 @@ class RateLimit implements Middleware {
 
     // Check if rate limit exceeded
     if (info.isExceeded) {
+      _log.warn(
+        'Rate limit exceeded',
+        {
+          'key': info.key,
+          'method': ctx.req.method,
+          'path': ctx.req.path,
+          'request_count': info.requestCount,
+          'max_requests': info.maxRequests,
+          'reset_in_seconds': (info.resetInMs / 1000).ceil(),
+        },
+      );
+
       options.onLimitReached?.call(ctx, info);
 
       final errorMsg = _buildErrorMessage(info);

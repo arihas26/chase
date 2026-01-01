@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:zlogger/zlogger.dart';
 
 /// Options for configuring body size limits.
 class BodyLimitOptions {
@@ -98,6 +99,8 @@ class BodyLimitOptions {
 /// - The check happens before body parsing, saving resources
 /// - No buffering or streaming of the body content is performed
 class BodyLimit implements Middleware {
+  static final _log = Log.named('BodyLimit');
+
   final BodyLimitOptions options;
 
   /// Creates a BodyLimit middleware with the given [options].
@@ -133,6 +136,17 @@ class BodyLimit implements Middleware {
 
     // Check if content length exceeds the limit
     if (contentLength > options.maxSize) {
+      _log.warn(
+        'Request body too large',
+        {
+          'method': ctx.req.method,
+          'path': ctx.req.path,
+          'ip': _safeGetIp(ctx),
+          'content_length': contentLength,
+          'max_size': options.maxSize,
+        },
+      );
+
       final errorMsg = _buildErrorMessage(contentLength);
 
       ctx.res.statusCode = HttpStatus.requestEntityTooLarge;
@@ -170,6 +184,15 @@ class BodyLimit implements Middleware {
       return '${(bytes / 1024).toStringAsFixed(1)} KB';
     } else {
       return '${(bytes / 1048576).toStringAsFixed(1)} MB';
+    }
+  }
+
+  /// Safely gets the remote IP address, returning null if not available.
+  String? _safeGetIp(Context ctx) {
+    try {
+      return ctx.req.remoteAddress;
+    } catch (_) {
+      return null;
     }
   }
 }

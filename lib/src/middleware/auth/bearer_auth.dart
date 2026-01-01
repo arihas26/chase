@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:zlogger/zlogger.dart';
 
 /// Callback function for validating bearer tokens.
 /// Returns true if the token is valid, false otherwise.
@@ -63,6 +64,8 @@ typedef BearerTokenValidator = FutureOr<bool> Function(String token);
 /// ));
 /// ```
 class BearerAuth implements Middleware {
+  static final _log = Log.named('BearerAuth');
+
   final String? _token;
   final BearerTokenValidator? _validator;
 
@@ -95,7 +98,7 @@ class BearerAuth implements Middleware {
 
     // No Authorization header or not Bearer token
     if (authHeader == null || !authHeader.toLowerCase().startsWith('bearer ')) {
-      await _unauthorized(ctx);
+      await _unauthorized(ctx, authHeader == null ? 'Missing Authorization header' : 'Not a Bearer token');
       return;
     }
 
@@ -104,7 +107,7 @@ class BearerAuth implements Middleware {
       final token = authHeader.substring(7).trim();
 
       if (token.isEmpty) {
-        await _unauthorized(ctx);
+        await _unauthorized(ctx, 'Empty token');
       return;
       }
 
@@ -112,7 +115,7 @@ class BearerAuth implements Middleware {
       final isValid = await _validateToken(token);
 
       if (!isValid) {
-        await _unauthorized(ctx);
+        await _unauthorized(ctx, 'Invalid token');
       return;
       }
 
@@ -120,7 +123,7 @@ class BearerAuth implements Middleware {
       await next();
     } catch (e) {
       // Any error during validation (e.g., JWT parsing error) is treated as unauthorized
-      await _unauthorized(ctx);
+      await _unauthorized(ctx, 'Token validation error');
       return;
     }
   }
@@ -159,11 +162,29 @@ class BearerAuth implements Middleware {
   }
 
   /// Sends a 401 Unauthorized response with the appropriate WWW-Authenticate header.
-  Future<void> _unauthorized(Context ctx) async {
+  Future<void> _unauthorized(Context ctx, String reason) async {
+    _log.warn(
+      'Bearer auth failed: $reason',
+      {
+        'method': ctx.req.method,
+        'path': ctx.req.path,
+        'ip': _safeGetIp(ctx),
+      },
+    );
+
     ctx.res.headers.set(HttpHeaders.wwwAuthenticateHeader, 'Bearer realm="$realm"');
     await ctx.res.json({
       'error': 'Unauthorized',
       'message': 'Invalid or missing token',
     }, status: HttpStatus.unauthorized);
+  }
+
+  /// Safely gets the remote IP address, returning null if unavailable.
+  String? _safeGetIp(Context ctx) {
+    try {
+      return ctx.req.remoteAddress;
+    } catch (_) {
+      return null;
+    }
   }
 }

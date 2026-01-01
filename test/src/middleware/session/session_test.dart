@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/context/cookie.dart';
 import 'package:chase/src/middleware/session/session.dart';
+import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
 
 // Mock HttpRequest for testing
@@ -129,6 +130,8 @@ class MockHttpResponse implements HttpResponse {
 }
 
 void main() {
+  setUpAll(() => suppressTestLogs());
+
   group('SessionData', () {
     test('create() creates new session with isNew=true', () {
       final session = SessionData.create('test-id');

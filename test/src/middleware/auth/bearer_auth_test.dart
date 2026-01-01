@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chase/chase.dart';
+import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart';
 
 class _MockHeaders implements HttpHeaders {
@@ -134,6 +135,8 @@ Handler _buildChain(List<Middleware> middlewares, Handler finalHandler) {
 }
 
 void main() {
+  setUpAll(() => suppressTestLogs());
+
   group('BearerAuth', () {
     test('allows request with valid token', () async {
       final req = _MockRequest(
