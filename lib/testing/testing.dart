@@ -29,7 +29,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:chase/chase.dart';
-import 'package:zlogger/zlogger.dart';
 
 // -----------------------------------------------------------------------------
 // Log Suppression for Tests
@@ -61,7 +60,6 @@ void suppressTestLogs() {
 void _suppressLogs() => suppressTestLogs();
 
 class _SilentLogger implements Logger {
-  @override
   void log(LogLevel level, String message,
       [Map<String, dynamic>? fields, Object? error, StackTrace? stackTrace]) {}
 
