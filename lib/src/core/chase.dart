@@ -460,6 +460,60 @@ class ChaseBuilder {
 }
 
 // =============================================================================
+// ChaseBuilderAll - Route Configuration for All Methods
+// =============================================================================
+
+/// All standard HTTP methods that [ChaseBuilderAll] registers handlers for.
+const _allHttpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+
+/// A builder for configuring routes that match ALL HTTP methods.
+///
+/// Similar to [ChaseBuilder] but registers the handler for every HTTP method.
+///
+/// ## Example
+///
+/// ```dart
+/// app.all('/api/*')
+///   .use(AuthMiddleware())
+///   .handle(proxyHandler);
+/// ```
+///
+/// ## See also
+///
+/// * [ChaseBuilder], for single-method route configuration.
+/// * [Middleware], for creating custom request/response interceptors.
+class ChaseBuilderAll {
+  final _ChaseRouteRegistrar _registrar;
+  final String _path;
+  final List<Middleware> _middlewares = [];
+
+  ChaseBuilderAll._(this._registrar, this._path);
+
+  /// Adds a middleware to this route.
+  ChaseBuilderAll use(Middleware middleware) {
+    _middlewares.add(middleware);
+    return this;
+  }
+
+  /// Adds multiple middlewares to this route.
+  ChaseBuilderAll useAll(List<Middleware> middlewares) {
+    _middlewares.addAll(middlewares);
+    return this;
+  }
+
+  /// Registers the handler for ALL HTTP methods on this route.
+  void handle(Handler handler) {
+    final wrappedHandler = _registrar._buildMiddlewareChain(
+      _middlewares,
+      handler,
+    );
+    for (final method in _allHttpMethods) {
+      _registrar._addRoute(method, _path, wrappedHandler);
+    }
+  }
+}
+
+// =============================================================================
 // Internal Route Registration Interface
 // =============================================================================
 
@@ -548,6 +602,25 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
   /// Creates a route builder for any HTTP method.
   ChaseBuilder route(String method, [String path = '/']) =>
       ChaseBuilder._(this, method.toUpperCase(), _joinPaths(_prefix, path));
+
+  /// Creates a route builder that matches ALL HTTP methods.
+  ///
+  /// This is useful for:
+  /// - Applying middleware to all methods on a path
+  /// - Proxy/forwarding handlers
+  /// - Fallback/catch-all routes
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// // Match all methods on /api/*
+  /// app.all('/api/*').use(AuthMiddleware()).handle((ctx) => ...);
+  ///
+  /// // Catch-all fallback
+  /// app.all('*').handle((ctx) => ctx.res.notFound());
+  /// ```
+  ChaseBuilderAll all([String path = '/']) =>
+      ChaseBuilderAll._(this, _joinPaths(_prefix, path));
 
   // ---------------------------------------------------------------------------
   // Middleware

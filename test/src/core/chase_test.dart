@@ -219,6 +219,34 @@ void main() {
 
       expect(router.routes, [(method: 'CUSTOM', path: '/endpoint')]);
     });
+
+    test('all registers all HTTP methods', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      app.all('/api').handle((c) => c);
+
+      expect(router.routes, [
+        (method: 'GET', path: '/api'),
+        (method: 'POST', path: '/api'),
+        (method: 'PUT', path: '/api'),
+        (method: 'DELETE', path: '/api'),
+        (method: 'PATCH', path: '/api'),
+        (method: 'HEAD', path: '/api'),
+        (method: 'OPTIONS', path: '/api'),
+      ]);
+    });
+
+    test('all works with groups', () {
+      final router = _RecordingRouter();
+      final app = Chase(router: router);
+
+      final api = app.path('/api');
+      api.all('/proxy').handle((c) => c);
+
+      expect(router.routes.length, 7);
+      expect(router.routes.first.path, '/api/proxy');
+    });
   });
 
   group('Lifecycle', () {
@@ -326,6 +354,31 @@ void main() {
       final res2 = await client.get('/api/v1/version');
       expect(res2.status, 200);
       expect(await res2.body, 'v1.0.0');
+    });
+
+    test('all() handles multiple HTTP methods', () async {
+      final app = Chase();
+
+      app.all('/echo').handle((ctx) => 'Method: ${ctx.req.method}');
+
+      final client = await TestClient.start(app);
+      addTearDown(() => client.close());
+
+      final getRes = await client.get('/echo');
+      expect(getRes.status, 200);
+      expect(await getRes.body, 'Method: GET');
+
+      final postRes = await client.post('/echo');
+      expect(postRes.status, 200);
+      expect(await postRes.body, 'Method: POST');
+
+      final putRes = await client.put('/echo');
+      expect(putRes.status, 200);
+      expect(await putRes.body, 'Method: PUT');
+
+      final deleteRes = await client.delete('/echo');
+      expect(deleteRes.status, 200);
+      expect(await deleteRes.body, 'Method: DELETE');
     });
   });
 }
