@@ -23,6 +23,7 @@ export 'timing/timing.dart';
 
 // Utilities
 export 'logger/request_logger.dart';
+export 'request_id/request_id.dart';
 export 'exception/exception_handler.dart';
 export 'session/session.dart';
 export 'i18n/i18n.dart';
