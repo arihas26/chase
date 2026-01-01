@@ -82,7 +82,8 @@ class MockHttpResponse implements HttpResponse {
   void writeln([Object? object = '']) {}
 
   @override
-  Future<Socket> detachSocket({bool writeHeaders = true}) => throw UnimplementedError();
+  Future<Socket> detachSocket({bool writeHeaders = true}) =>
+      throw UnimplementedError();
 }
 
 class MockHttpHeaders implements HttpHeaders {

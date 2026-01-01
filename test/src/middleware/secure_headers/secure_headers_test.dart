@@ -68,19 +68,31 @@ void main() {
 
   group('StrictTransportSecurity', () {
     test('standard configuration', () {
-      expect(StrictTransportSecurity.standard.build(), 'max-age=31536000; includeSubDomains');
+      expect(
+        StrictTransportSecurity.standard.build(),
+        'max-age=31536000; includeSubDomains',
+      );
     });
 
     test('preload configuration', () {
-      expect(StrictTransportSecurity.forPreload.build(), 'max-age=31536000; includeSubDomains; preload');
+      expect(
+        StrictTransportSecurity.forPreload.build(),
+        'max-age=31536000; includeSubDomains; preload',
+      );
     });
 
     test('custom max-age', () {
-      expect(const StrictTransportSecurity(maxAge: 86400).build(), contains('max-age=86400'));
+      expect(
+        const StrictTransportSecurity(maxAge: 86400).build(),
+        contains('max-age=86400'),
+      );
     });
 
     test('without includeSubDomains', () {
-      expect(const StrictTransportSecurity(includeSubDomains: false).build(), isNot(contains('includeSubDomains')));
+      expect(
+        const StrictTransportSecurity(includeSubDomains: false).build(),
+        isNot(contains('includeSubDomains')),
+      );
     });
   });
 
@@ -91,7 +103,10 @@ void main() {
       expect(options.frameOptions, XFrameOptions.sameOrigin);
       expect(options.hsts, isNull);
       expect(options.contentSecurityPolicy, isNull);
-      expect(options.referrerPolicy, ReferrerPolicy.strictOriginWhenCrossOrigin);
+      expect(
+        options.referrerPolicy,
+        ReferrerPolicy.strictOriginWhenCrossOrigin,
+      );
       expect(options.downloadOptions, 'noopen');
       expect(options.permittedCrossDomainPolicies, 'none');
     });
@@ -109,7 +124,10 @@ void main() {
       expect(options.frameOptions, XFrameOptions.deny);
       expect(options.hsts, isNotNull);
       expect(options.contentSecurityPolicy, isNotNull);
-      expect(options.crossOriginEmbedderPolicy, CrossOriginEmbedderPolicy.requireCorp);
+      expect(
+        options.crossOriginEmbedderPolicy,
+        CrossOriginEmbedderPolicy.requireCorp,
+      );
     });
   });
 
@@ -120,9 +138,15 @@ void main() {
 
       expect(ctx.response.headers.value('x-content-type-options'), 'nosniff');
       expect(ctx.response.headers.value('x-frame-options'), 'SAMEORIGIN');
-      expect(ctx.response.headers.value('referrer-policy'), 'strict-origin-when-cross-origin');
+      expect(
+        ctx.response.headers.value('referrer-policy'),
+        'strict-origin-when-cross-origin',
+      );
       expect(ctx.response.headers.value('x-download-options'), 'noopen');
-      expect(ctx.response.headers.value('x-permitted-cross-domain-policies'), 'none');
+      expect(
+        ctx.response.headers.value('x-permitted-cross-domain-policies'),
+        'none',
+      );
     });
 
     test('does not set HSTS by default', () async {
@@ -139,65 +163,100 @@ void main() {
 
     test('sets X-Frame-Options to DENY', () async {
       final ctx = TestContext.get('/');
-      await const SecureHeaders(SecureHeadersOptions(frameOptions: XFrameOptions.deny)).handle(ctx, () async {});
+      await const SecureHeaders(
+        SecureHeadersOptions(frameOptions: XFrameOptions.deny),
+      ).handle(ctx, () async {});
       expect(ctx.response.headers.value('x-frame-options'), 'DENY');
     });
 
     test('sets HSTS header', () async {
       final ctx = TestContext.get('/');
-      await const SecureHeaders(SecureHeadersOptions(hsts: StrictTransportSecurity.standard)).handle(ctx, () async {});
-      expect(ctx.response.headers.value('strict-transport-security'), contains('max-age=31536000'));
+      await const SecureHeaders(
+        SecureHeadersOptions(hsts: StrictTransportSecurity.standard),
+      ).handle(ctx, () async {});
+      expect(
+        ctx.response.headers.value('strict-transport-security'),
+        contains('max-age=31536000'),
+      );
     });
 
     test('sets Content-Security-Policy header', () async {
       final ctx = TestContext.get('/');
-      await SecureHeaders(SecureHeadersOptions(
-        contentSecurityPolicy: ContentSecurityPolicy()..defaultSrc(["'self'"]),
-      )).handle(ctx, () async {});
-      expect(ctx.response.headers.value('content-security-policy'), "default-src 'self'");
+      await SecureHeaders(
+        SecureHeadersOptions(
+          contentSecurityPolicy: ContentSecurityPolicy()
+            ..defaultSrc(["'self'"]),
+        ),
+      ).handle(ctx, () async {});
+      expect(
+        ctx.response.headers.value('content-security-policy'),
+        "default-src 'self'",
+      );
     });
 
     test('sets CSP in report-only mode', () async {
       final ctx = TestContext.get('/');
-      await SecureHeaders(SecureHeadersOptions(
-        contentSecurityPolicy: ContentSecurityPolicy()..defaultSrc(["'self'"]),
-        cspReportOnly: true,
-      )).handle(ctx, () async {});
+      await SecureHeaders(
+        SecureHeadersOptions(
+          contentSecurityPolicy: ContentSecurityPolicy()
+            ..defaultSrc(["'self'"]),
+          cspReportOnly: true,
+        ),
+      ).handle(ctx, () async {});
 
-      expect(ctx.response.headers.value('content-security-policy-report-only'), "default-src 'self'");
+      expect(
+        ctx.response.headers.value('content-security-policy-report-only'),
+        "default-src 'self'",
+      );
       expect(ctx.response.headers.value('content-security-policy'), isNull);
     });
 
     test('sets cross-origin headers', () async {
       final ctx = TestContext.get('/');
-      await const SecureHeaders(SecureHeadersOptions(
-        crossOriginEmbedderPolicy: CrossOriginEmbedderPolicy.requireCorp,
-        crossOriginOpenerPolicy: CrossOriginOpenerPolicy.sameOrigin,
-        crossOriginResourcePolicy: CrossOriginResourcePolicy.sameOrigin,
-      )).handle(ctx, () async {});
+      await const SecureHeaders(
+        SecureHeadersOptions(
+          crossOriginEmbedderPolicy: CrossOriginEmbedderPolicy.requireCorp,
+          crossOriginOpenerPolicy: CrossOriginOpenerPolicy.sameOrigin,
+          crossOriginResourcePolicy: CrossOriginResourcePolicy.sameOrigin,
+        ),
+      ).handle(ctx, () async {});
 
-      expect(ctx.response.headers.value('cross-origin-embedder-policy'), 'require-corp');
-      expect(ctx.response.headers.value('cross-origin-opener-policy'), 'same-origin');
-      expect(ctx.response.headers.value('cross-origin-resource-policy'), 'same-origin');
+      expect(
+        ctx.response.headers.value('cross-origin-embedder-policy'),
+        'require-corp',
+      );
+      expect(
+        ctx.response.headers.value('cross-origin-opener-policy'),
+        'same-origin',
+      );
+      expect(
+        ctx.response.headers.value('cross-origin-resource-policy'),
+        'same-origin',
+      );
     });
 
     test('sets Permissions-Policy header', () async {
       final ctx = TestContext.get('/');
-      await const SecureHeaders(SecureHeadersOptions(
-        permissionsPolicy: 'camera=(), microphone=()',
-      )).handle(ctx, () async {});
-      expect(ctx.response.headers.value('permissions-policy'), 'camera=(), microphone=()');
+      await const SecureHeaders(
+        SecureHeadersOptions(permissionsPolicy: 'camera=(), microphone=()'),
+      ).handle(ctx, () async {});
+      expect(
+        ctx.response.headers.value('permissions-policy'),
+        'camera=(), microphone=()',
+      );
     });
 
     test('disables headers when set to null', () async {
       final ctx = TestContext.get('/');
-      await const SecureHeaders(SecureHeadersOptions(
-        contentTypeOptions: null,
-        frameOptions: null,
-        referrerPolicy: null,
-        downloadOptions: null,
-        permittedCrossDomainPolicies: null,
-      )).handle(ctx, () async {});
+      await const SecureHeaders(
+        SecureHeadersOptions(
+          contentTypeOptions: null,
+          frameOptions: null,
+          referrerPolicy: null,
+          downloadOptions: null,
+          permittedCrossDomainPolicies: null,
+        ),
+      ).handle(ctx, () async {});
 
       expect(ctx.response.headers.value('x-content-type-options'), isNull);
       expect(ctx.response.headers.value('x-frame-options'), isNull);
@@ -206,7 +265,9 @@ void main() {
 
     test('minimal configuration', () async {
       final ctx = TestContext.get('/');
-      await const SecureHeaders(SecureHeadersOptions.minimal()).handle(ctx, () async {});
+      await const SecureHeaders(
+        SecureHeadersOptions.minimal(),
+      ).handle(ctx, () async {});
 
       expect(ctx.response.headers.value('x-content-type-options'), 'nosniff');
       expect(ctx.response.headers.value('x-frame-options'), 'SAMEORIGIN');
@@ -216,19 +277,29 @@ void main() {
 
     test('strict configuration', () async {
       final ctx = TestContext.get('/');
-      await SecureHeaders(SecureHeadersOptions.strict()).handle(ctx, () async {});
+      await SecureHeaders(
+        SecureHeadersOptions.strict(),
+      ).handle(ctx, () async {});
 
       expect(ctx.response.headers.value('x-content-type-options'), 'nosniff');
       expect(ctx.response.headers.value('x-frame-options'), 'DENY');
-      expect(ctx.response.headers.value('strict-transport-security'), isNotNull);
+      expect(
+        ctx.response.headers.value('strict-transport-security'),
+        isNotNull,
+      );
       expect(ctx.response.headers.value('content-security-policy'), isNotNull);
-      expect(ctx.response.headers.value('cross-origin-embedder-policy'), 'require-corp');
+      expect(
+        ctx.response.headers.value('cross-origin-embedder-policy'),
+        'require-corp',
+      );
     });
 
     test('all referrer policies', () async {
       for (final policy in ReferrerPolicy.values) {
         final ctx = TestContext.get('/');
-        await SecureHeaders(SecureHeadersOptions(referrerPolicy: policy)).handle(ctx, () async {});
+        await SecureHeaders(
+          SecureHeadersOptions(referrerPolicy: policy),
+        ).handle(ctx, () async {});
         expect(ctx.response.headers.value('referrer-policy'), policy.value);
       }
     });

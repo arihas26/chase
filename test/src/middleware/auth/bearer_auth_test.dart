@@ -55,11 +55,7 @@ class _MockRequest extends Stream<Uint8List> implements HttpRequest {
   @override
   final Uri uri;
 
-  _MockRequest({
-    required this.method,
-    required this.uri,
-    String? authHeader,
-  }) {
+  _MockRequest({required this.method, required this.uri, String? authHeader}) {
     if (authHeader != null) {
       headers.set('authorization', authHeader);
     }
@@ -178,7 +174,10 @@ void main() {
 
       expect(handlerCalled, isFalse);
       expect(res.statusCode, HttpStatus.unauthorized);
-      expect(res.headers.value('www-authenticate'), 'Bearer realm="Restricted Area"');
+      expect(
+        res.headers.value('www-authenticate'),
+        'Bearer realm="Restricted Area"',
+      );
       expect(res.body, contains('Unauthorized'));
     });
 
@@ -294,15 +293,15 @@ void main() {
       final res = _MockResponse();
       final ctx = Context(req, res);
 
-      final auth = BearerAuth(
-        token: 'secret-token-123',
-        realm: 'API Access',
-      );
+      final auth = BearerAuth(token: 'secret-token-123', realm: 'API Access');
       final chain = _buildChain([auth], (ctx) async {});
 
       await chain(ctx);
 
-      expect(res.headers.value('www-authenticate'), 'Bearer realm="API Access"');
+      expect(
+        res.headers.value('www-authenticate'),
+        'Bearer realm="API Access"',
+      );
     });
 
     test('handles very long tokens', () async {
@@ -329,11 +328,7 @@ void main() {
 
   group('BearerAuth.withValidator', () {
     test('validates with custom sync validator', () async {
-      final validTokens = {
-        'token-1',
-        'token-2',
-        'token-3',
-      };
+      final validTokens = {'token-1', 'token-2', 'token-3'};
 
       final req = _MockRequest(
         method: 'GET',
@@ -357,10 +352,7 @@ void main() {
     });
 
     test('rejects invalid token with custom validator', () async {
-      final validTokens = {
-        'token-1',
-        'token-2',
-      };
+      final validTokens = {'token-1', 'token-2'};
 
       final req = _MockRequest(
         method: 'GET',

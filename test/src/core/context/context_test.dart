@@ -130,7 +130,10 @@ void main() {
   });
 
   test('params exposes stored values and is unmodifiable', () {
-    final ctx = Context(_FakeRequest(), _RecordingResponse(), {'id': '1', 'name': 'alice'});
+    final ctx = Context(_FakeRequest(), _RecordingResponse(), {
+      'id': '1',
+      'name': 'alice',
+    });
 
     expect(ctx.req.params, {'id': '1', 'name': 'alice'});
     expect(() => ctx.req.params['id'] = '2', throwsUnsupportedError);
@@ -174,7 +177,9 @@ void main() {
 
   group('param<T>', () {
     test('returns String value', () {
-      final ctx = Context(_FakeRequest(), _RecordingResponse(), {'name': 'alice'});
+      final ctx = Context(_FakeRequest(), _RecordingResponse(), {
+        'name': 'alice',
+      });
       expect(ctx.req.param<String>('name'), 'alice');
     });
 
@@ -189,19 +194,29 @@ void main() {
     });
 
     test('parses double value', () {
-      final ctx = Context(_FakeRequest(), _RecordingResponse(), {'price': '19.99'});
+      final ctx = Context(_FakeRequest(), _RecordingResponse(), {
+        'price': '19.99',
+      });
       expect(ctx.req.param<double>('price'), 19.99);
     });
 
     test('returns null for invalid double', () {
-      final ctx = Context(_FakeRequest(), _RecordingResponse(), {'price': 'free'});
+      final ctx = Context(_FakeRequest(), _RecordingResponse(), {
+        'price': 'free',
+      });
       expect(ctx.req.param<double>('price'), isNull);
     });
 
     test('parses bool true values', () {
-      final ctx1 = Context(_FakeRequest(), _RecordingResponse(), {'active': 'true'});
-      final ctx2 = Context(_FakeRequest(), _RecordingResponse(), {'active': '1'});
-      final ctx3 = Context(_FakeRequest(), _RecordingResponse(), {'active': 'yes'});
+      final ctx1 = Context(_FakeRequest(), _RecordingResponse(), {
+        'active': 'true',
+      });
+      final ctx2 = Context(_FakeRequest(), _RecordingResponse(), {
+        'active': '1',
+      });
+      final ctx3 = Context(_FakeRequest(), _RecordingResponse(), {
+        'active': 'yes',
+      });
 
       expect(ctx1.req.param<bool>('active'), isTrue);
       expect(ctx2.req.param<bool>('active'), isTrue);
@@ -209,7 +224,9 @@ void main() {
     });
 
     test('parses bool false values', () {
-      final ctx = Context(_FakeRequest(), _RecordingResponse(), {'active': 'false'});
+      final ctx = Context(_FakeRequest(), _RecordingResponse(), {
+        'active': 'false',
+      });
       expect(ctx.req.param<bool>('active'), isFalse);
     });
 

@@ -127,7 +127,9 @@ void main() {
 
     test('hasJsonPath works with matchers', () async {
       app.get('/json/items').handle((ctx) async {
-        ctx.res.json({'items': [1, 2, 3, 4, 5]});
+        ctx.res.json({
+          'items': [1, 2, 3, 4, 5],
+        });
       });
 
       final res = await client.get('/json/items');

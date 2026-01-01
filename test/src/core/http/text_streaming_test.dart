@@ -27,7 +27,8 @@ class MockHttpResponse implements HttpResponse {
 
   bool get wasFlushed => _flushed;
 
-  List<String> get writtenText => writtenData.map((data) => utf8.decode(data)).toList();
+  List<String> get writtenText =>
+      writtenData.map((data) => utf8.decode(data)).toList();
 
   String get allText => writtenText.join();
 
@@ -160,7 +161,10 @@ void main() {
         await streaming.write('Tab:\t Newline:\n Return:\r Quote:"');
 
         expect(mockResponse.writtenText, hasLength(1));
-        expect(mockResponse.writtenText[0], equals('Tab:\t Newline:\n Return:\r Quote:"'));
+        expect(
+          mockResponse.writtenText[0],
+          equals('Tab:\t Newline:\n Return:\r Quote:"'),
+        );
       });
 
       test('encodes as UTF-8 bytes', () async {
@@ -174,10 +178,7 @@ void main() {
       test('throws when writing to closed stream', () async {
         await streaming.close();
 
-        expect(
-          () => streaming.write('test'),
-          throwsStateError,
-        );
+        expect(() => streaming.write('test'), throwsStateError);
       });
     });
 
@@ -215,10 +216,7 @@ void main() {
       test('throws when writing to closed stream', () async {
         await streaming.close();
 
-        expect(
-          () => streaming.writeln('test'),
-          throwsStateError,
-        );
+        expect(() => streaming.writeln('test'), throwsStateError);
       });
     });
 
@@ -249,7 +247,9 @@ void main() {
         expect(mockResponse.writtenText, hasLength(3));
         expect(
           mockResponse.allText,
-          equals('[INFO] Starting process\n[DEBUG] Loading configuration\n[INFO] Process complete\n'),
+          equals(
+            '[INFO] Starting process\n[DEBUG] Loading configuration\n[INFO] Process complete\n',
+          ),
         );
       });
 
@@ -286,7 +286,9 @@ void main() {
 
         expect(
           mockResponse.allText,
-          equals('<!DOCTYPE html><html><body><h1>Streaming Content</h1><p>This is progressive rendering.</p></body></html>'),
+          equals(
+            '<!DOCTYPE html><html><body><h1>Streaming Content</h1><p>This is progressive rendering.</p></body></html>',
+          ),
         );
       });
 

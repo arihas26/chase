@@ -22,9 +22,7 @@ void main() async {
   final app = Chase();
 
   // Create a session store
-  final store = MemorySessionStore(
-    cleanupInterval: const Duration(minutes: 5),
-  );
+  final store = MemorySessionStore(cleanupInterval: const Duration(minutes: 5));
 
   // Add session middleware globally
   app.use(Session(store));
@@ -92,9 +90,7 @@ void main() async {
   app.get('/secure-action').handle((ctx) async {
     final username = ctx.session.get<String>('username');
     if (username == null) {
-      return Response.unauthorized().json({
-        'error': 'Not logged in',
-      });
+      return Response.unauthorized().json({'error': 'Not logged in'});
     }
 
     // Regenerate session ID to prevent session fixation
@@ -133,18 +129,13 @@ void main() async {
 
   // Example 7: Admin - view store stats
   app.get('/admin/sessions').handle((ctx) async {
-    return Response.json({
-      'activeSessions': store.length,
-    });
+    return Response.json({'activeSessions': store.length});
   });
 
   // Example 8: Shopping cart simulation
   app.get('/cart').handle((ctx) async {
     final cart = ctx.session.get<List<dynamic>>('cart') ?? [];
-    return Response.json({
-      'items': cart,
-      'itemCount': cart.length,
-    });
+    return Response.json({'items': cart, 'itemCount': cart.length});
   });
 
   app.get('/cart/add').handle((ctx) async {
@@ -156,7 +147,9 @@ void main() async {
       });
     }
 
-    final cart = List<String>.from(ctx.session.get<List<dynamic>>('cart') ?? []);
+    final cart = List<String>.from(
+      ctx.session.get<List<dynamic>>('cart') ?? [],
+    );
     cart.add(item);
     ctx.session.set('cart', cart);
 
@@ -169,9 +162,7 @@ void main() async {
 
   app.get('/cart/clear').handle((ctx) async {
     ctx.session.remove('cart');
-    return Response.json({
-      'message': 'Cart cleared',
-    });
+    return Response.json({'message': 'Cart cleared'});
   });
 
   // Info endpoint

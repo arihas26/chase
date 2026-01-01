@@ -17,19 +17,16 @@ void main() async {
   final router = Router()
     // Plain text
     ..get('/', (context) => Response(body: 'Hello, World!'))
-
     // JSON response
     ..get('/json', (context) {
       return Response.json(
         body: {'message': 'Hello, World!', 'framework': 'dart_frog'},
       );
     })
-
     // Route parameter
     ..get('/user/<id>', (context, id) {
       return Response.json(body: {'id': id, 'name': 'User $id'});
     })
-
     // Echo JSON body
     ..post('/echo', (context) async {
       final body = await context.request.body();
@@ -38,7 +35,6 @@ void main() async {
         headers: {'content-type': 'application/json'},
       );
     })
-
     // Query parameters
     ..get('/query', (context) {
       final params = context.request.uri.queryParameters;
@@ -46,7 +42,6 @@ void main() async {
       final age = params['age'] ?? '0';
       return Response.json(body: {'name': name, 'age': age});
     })
-
     // Large JSON response
     ..get('/large', (context) {
       final items = List.generate(
@@ -61,7 +56,6 @@ void main() async {
       );
       return Response.json(body: {'items': items});
     })
-
     // Middleware chain endpoint (simulated inline)
     ..get('/middleware', (context) {
       // Simulate 3 middleware layers

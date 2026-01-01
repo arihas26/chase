@@ -74,11 +74,13 @@ class RegexRouter implements Router {
         // Named parameter with optional marker
         // e.g., :id, :id?, :id(\d+), :id(\d+)?
         final isOptional = segment.endsWith('?');
-        final segmentWithoutOptional =
-            isOptional ? segment.substring(0, segment.length - 1) : segment;
+        final segmentWithoutOptional = isOptional
+            ? segment.substring(0, segment.length - 1)
+            : segment;
 
-        final customPatternMatch =
-            RegExp(r'^:(\w+)\((.+)\)$').firstMatch(segmentWithoutOptional);
+        final customPatternMatch = RegExp(
+          r'^:(\w+)\((.+)\)$',
+        ).firstMatch(segmentWithoutOptional);
 
         String name;
         String pattern;
@@ -116,11 +118,7 @@ class RegexRouter implements Router {
 
     buffer.write(r'$');
 
-    return _RouteEntry(
-      RegExp(buffer.toString()),
-      paramNames,
-      handler,
-    );
+    return _RouteEntry(RegExp(buffer.toString()), paramNames, handler);
   }
 }
 
@@ -129,7 +127,7 @@ class _RegexMatch implements RouteMatch {
   final UnmodifiableMapView<String, String> _params;
 
   _RegexMatch(this._handler, Map<String, String> params)
-      : _params = UnmodifiableMapView(params);
+    : _params = UnmodifiableMapView(params);
 
   @override
   Handler get handler => _handler;

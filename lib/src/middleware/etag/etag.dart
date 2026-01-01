@@ -26,15 +26,10 @@ class ETagOptions {
   final ETagGenerator? generator;
 
   /// Creates ETag options with the specified configuration.
-  const ETagOptions({
-    this.weak = false,
-    this.generator,
-  });
+  const ETagOptions({this.weak = false, this.generator});
 
   /// Creates options for weak ETags.
-  const ETagOptions.weak()
-      : weak = true,
-        generator = null;
+  const ETagOptions.weak() : weak = true, generator = null;
 }
 
 /// Result of an ETag check.
@@ -45,10 +40,7 @@ class ETagCheckResult {
   /// Whether the client's cached version matches.
   final bool matches;
 
-  const ETagCheckResult({
-    required this.etag,
-    required this.matches,
-  });
+  const ETagCheckResult({required this.etag, required this.matches});
 }
 
 /// Extension on Context for ETag support.
@@ -247,7 +239,11 @@ class ETagHelper {
   /// Handles weak/strong comparison according to HTTP spec:
   /// - Strong comparison: Both must be strong and identical
   /// - Weak comparison: Values must match (ignoring W/ prefix)
-  static bool equals(String etag1, String etag2, {bool strongComparison = false}) {
+  static bool equals(
+    String etag1,
+    String etag2, {
+    bool strongComparison = false,
+  }) {
     if (strongComparison) {
       // Strong comparison: both must be strong and identical
       if (etag1.startsWith('W/') || etag2.startsWith('W/')) {

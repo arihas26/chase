@@ -67,7 +67,9 @@ void main() {
     group('route parameters', () {
       test('captures multiple params', () async {
         app = Chase();
-        app.get('/users/:userId/posts/:postId/comments/:commentId').handle((ctx) {
+        app.get('/users/:userId/posts/:postId/comments/:commentId').handle((
+          ctx,
+        ) {
           ctx.res.json({
             'userId': ctx.req.params['userId'],
             'postId': ctx.req.params['postId'],
@@ -83,8 +85,6 @@ void main() {
         expect(json['postId'], '2');
         expect(json['commentId'], '3');
       });
-
-
     });
 
     group('HTTP methods', () {
@@ -94,16 +94,26 @@ void main() {
         app.get('/resource').handle((ctx) => ctx.res.json({'method': 'GET'}));
         app.post('/resource').handle((ctx) => ctx.res.json({'method': 'POST'}));
         app.put('/resource').handle((ctx) => ctx.res.json({'method': 'PUT'}));
-        app.patch('/resource').handle((ctx) => ctx.res.json({'method': 'PATCH'}));
-        app.delete('/resource').handle((ctx) => ctx.res.json({'method': 'DELETE'}));
+        app
+            .patch('/resource')
+            .handle((ctx) => ctx.res.json({'method': 'PATCH'}));
+        app
+            .delete('/resource')
+            .handle((ctx) => ctx.res.json({'method': 'DELETE'}));
 
         client = await TestClient.start(app);
 
         expect((await (await client.get('/resource')).json)['method'], 'GET');
         expect((await (await client.post('/resource')).json)['method'], 'POST');
         expect((await (await client.put('/resource')).json)['method'], 'PUT');
-        expect((await (await client.patch('/resource')).json)['method'], 'PATCH');
-        expect((await (await client.delete('/resource')).json)['method'], 'DELETE');
+        expect(
+          (await (await client.patch('/resource')).json)['method'],
+          'PATCH',
+        );
+        expect(
+          (await (await client.delete('/resource')).json)['method'],
+          'DELETE',
+        );
       });
 
       test('custom method with route()', () async {

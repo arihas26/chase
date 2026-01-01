@@ -21,8 +21,9 @@ void main() {
     final request = await client.postUrl(
       Uri.parse('http://localhost:${server.port}/users'),
     );
-    request.headers.contentType =
-        ContentType.parse('application/x-www-form-urlencoded');
+    request.headers.contentType = ContentType.parse(
+      'application/x-www-form-urlencoded',
+    );
     request.write('name=Alice&city=hello%20world');
 
     final response = await request.close();
@@ -79,7 +80,8 @@ void main() {
 
     expect(response.statusCode, HttpStatus.ok);
     expect(decoded['fields'], {'title': 'hello'});
-    expect(decoded['files'], {'file': {'filename': 'a.txt'}});
+    expect(decoded['files'], {
+      'file': {'filename': 'a.txt'},
+    });
   });
 }
-

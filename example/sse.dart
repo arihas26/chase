@@ -48,11 +48,7 @@ void main() async {
         await sse.sleep(Duration(seconds: 2));
       }
 
-      await sse.writeSSE(
-        data: 'Stream complete',
-        event: 'done',
-        id: '11',
-      );
+      await sse.writeSSE(data: 'Stream complete', event: 'done', id: '11');
     });
   });
 
@@ -99,11 +95,7 @@ void main() async {
     return streamSSE(ctx, (sse) async {
       print('Starting task $taskId');
 
-      await sse.writeSSE(
-        data: 'Task started',
-        event: 'status',
-        id: '0',
-      );
+      await sse.writeSSE(data: 'Task started', event: 'status', id: '0');
 
       // Simulate progress
       for (var progress = 0; progress <= 100; progress += 10) {
@@ -112,20 +104,12 @@ void main() async {
         final data =
             '{"taskId":"$taskId","progress":$progress,"message":"${progress == 100 ? 'Complete!' : 'Processing...'}"}';
 
-        await sse.writeSSE(
-          data: data,
-          event: 'progress',
-          id: '$progress',
-        );
+        await sse.writeSSE(data: data, event: 'progress', id: '$progress');
 
         await sse.sleep(Duration(milliseconds: 500));
       }
 
-      await sse.writeSSE(
-        data: 'Task completed',
-        event: 'status',
-        id: '100',
-      );
+      await sse.writeSSE(data: 'Task completed', event: 'status', id: '100');
     });
   });
 

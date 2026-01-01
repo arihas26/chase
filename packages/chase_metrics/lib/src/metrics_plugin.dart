@@ -32,10 +32,8 @@ class MetricsPlugin extends Plugin {
   ///
   /// - [path]: The endpoint to expose metrics. Defaults to `/metrics`.
   /// - [metrics]: Optional custom Metrics instance. Defaults to a new instance.
-  MetricsPlugin({
-    this.path = '/metrics',
-    Metrics? metrics,
-  }) : metrics = metrics ?? Metrics();
+  MetricsPlugin({this.path = '/metrics', Metrics? metrics})
+    : metrics = metrics ?? Metrics();
 
   @override
   String get name => 'metrics';
@@ -87,7 +85,10 @@ class _MetricsMiddleware extends Middleware {
   String _normalizePath(String path) {
     // Replace UUID-like patterns
     var normalized = path.replaceAll(
-      RegExp(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', caseSensitive: false),
+      RegExp(
+        r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+        caseSensitive: false,
+      ),
       ':id',
     );
     // Replace numeric IDs

@@ -116,8 +116,8 @@ class MultipartBody {
   MultipartBody({
     Map<String, List<String>>? fields,
     Map<String, List<MultipartFile>>? files,
-  })  : _fields = fields ?? {},
-        _files = files ?? {};
+  }) : _fields = fields ?? {},
+       _files = files ?? {};
 
   // ---------------------------------------------------------------------------
   // Fields

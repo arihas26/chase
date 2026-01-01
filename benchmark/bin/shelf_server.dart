@@ -26,10 +26,7 @@ void main() async {
   // JSON response
   router.get('/json', (Request request) {
     return Response.ok(
-      jsonEncode({
-        'message': 'Hello, World!',
-        'framework': 'shelf',
-      }),
+      jsonEncode({'message': 'Hello, World!', 'framework': 'shelf'}),
       headers: {'content-type': 'application/json'},
     );
   });
@@ -89,7 +86,11 @@ void main() async {
     );
   });
 
-  final server = await shelf_io.serve(router.call, InternetAddress.anyIPv4, 3001);
+  final server = await shelf_io.serve(
+    router.call,
+    InternetAddress.anyIPv4,
+    3001,
+  );
   print('Shelf server running on http://localhost:${server.port}');
 }
 

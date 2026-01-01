@@ -60,8 +60,13 @@ void suppressTestLogs() {
 void _suppressLogs() => suppressTestLogs();
 
 class _SilentLogger implements Logger {
-  void log(LogLevel level, String message,
-      [Map<String, dynamic>? fields, Object? error, StackTrace? stackTrace]) {}
+  void log(
+    LogLevel level,
+    String message, [
+    Map<String, dynamic>? fields,
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {}
 
   @override
   void debug(String message, [Map<String, dynamic>? fields]) {}
@@ -73,8 +78,12 @@ class _SilentLogger implements Logger {
   void warn(String message, [Map<String, dynamic>? fields]) {}
 
   @override
-  void error(String message,
-      [Map<String, dynamic>? fields, Object? error, StackTrace? stackTrace]) {}
+  void error(
+    String message, [
+    Map<String, dynamic>? fields,
+    Object? error,
+    StackTrace? stackTrace,
+  ]) {}
 
   @override
   Logger withFields(Map<String, dynamic> fields) => this;
@@ -243,8 +252,8 @@ class MockInternetAddress implements InternetAddress {
 
   @override
   Uint8List get rawAddress => Uint8List.fromList(
-        address.split('.').map((e) => int.tryParse(e) ?? 0).toList(),
-      );
+    address.split('.').map((e) => int.tryParse(e) ?? 0).toList(),
+  );
 
   @override
   InternetAddressType get type => InternetAddressType.IPv4;
@@ -307,11 +316,11 @@ class MockHttpRequest extends Stream<Uint8List> implements HttpRequest {
     Map<String, String>? headers,
     String remoteIp = '127.0.0.1',
     int? contentLength,
-  })  : uri = uri ?? Uri.parse('/'),
-        requestedUri = uri ?? Uri.parse('http://localhost/'),
-        _bodyBytes = bodyBytes ?? (body != null ? utf8.encode(body) : const []),
-        connectionInfo = MockHttpConnectionInfo(remoteIp: remoteIp),
-        _contentLengthOverride = contentLength {
+  }) : uri = uri ?? Uri.parse('/'),
+       requestedUri = uri ?? Uri.parse('http://localhost/'),
+       _bodyBytes = bodyBytes ?? (body != null ? utf8.encode(body) : const []),
+       connectionInfo = MockHttpConnectionInfo(remoteIp: remoteIp),
+       _contentLengthOverride = contentLength {
     headers?.forEach((key, value) {
       this.headers.set(key, value);
     });
@@ -534,7 +543,13 @@ class TestContext {
     Map<String, String>? headers,
     String remoteIp = '127.0.0.1',
   }) {
-    return _create('POST', path, body: body, headers: headers, remoteIp: remoteIp);
+    return _create(
+      'POST',
+      path,
+      body: body,
+      headers: headers,
+      remoteIp: remoteIp,
+    );
   }
 
   /// Creates a test context with a PUT request.
@@ -544,7 +559,13 @@ class TestContext {
     Map<String, String>? headers,
     String remoteIp = '127.0.0.1',
   }) {
-    return _create('PUT', path, body: body, headers: headers, remoteIp: remoteIp);
+    return _create(
+      'PUT',
+      path,
+      body: body,
+      headers: headers,
+      remoteIp: remoteIp,
+    );
   }
 
   /// Creates a test context with a PATCH request.
@@ -554,7 +575,13 @@ class TestContext {
     Map<String, String>? headers,
     String remoteIp = '127.0.0.1',
   }) {
-    return _create('PATCH', path, body: body, headers: headers, remoteIp: remoteIp);
+    return _create(
+      'PATCH',
+      path,
+      body: body,
+      headers: headers,
+      remoteIp: remoteIp,
+    );
   }
 
   /// Creates a test context with a DELETE request.
@@ -671,7 +698,10 @@ extension TestContextExtension on Context {
 /// await chain(ctx);
 /// expect(ctx.response.statusCode, 200);
 /// ```
-Handler buildMiddlewareChain(List<Middleware> middlewares, Handler finalHandler) {
+Handler buildMiddlewareChain(
+  List<Middleware> middlewares,
+  Handler finalHandler,
+) {
   Handler current = finalHandler;
   for (var i = middlewares.length - 1; i >= 0; i--) {
     final mw = middlewares[i];
@@ -845,10 +875,7 @@ class TestClient {
   }
 
   /// Sends a GET request.
-  Future<TestResponse> get(
-    String path, {
-    Map<String, String>? headers,
-  }) =>
+  Future<TestResponse> get(String path, {Map<String, String>? headers}) =>
       request('GET', path, headers: headers);
 
   /// Sends a POST request.
@@ -856,30 +883,24 @@ class TestClient {
     String path, {
     Object? body,
     Map<String, String>? headers,
-  }) =>
-      request('POST', path, body: body, headers: headers);
+  }) => request('POST', path, body: body, headers: headers);
 
   /// Sends a PUT request.
   Future<TestResponse> put(
     String path, {
     Object? body,
     Map<String, String>? headers,
-  }) =>
-      request('PUT', path, body: body, headers: headers);
+  }) => request('PUT', path, body: body, headers: headers);
 
   /// Sends a PATCH request.
   Future<TestResponse> patch(
     String path, {
     Object? body,
     Map<String, String>? headers,
-  }) =>
-      request('PATCH', path, body: body, headers: headers);
+  }) => request('PATCH', path, body: body, headers: headers);
 
   /// Sends a DELETE request.
-  Future<TestResponse> delete(
-    String path, {
-    Map<String, String>? headers,
-  }) =>
+  Future<TestResponse> delete(String path, {Map<String, String>? headers}) =>
       request('DELETE', path, headers: headers);
 
   /// Sends a POST request with multipart/form-data body.
@@ -903,11 +924,13 @@ class TestClient {
     Map<String, MultipartFileData>? files,
     Map<String, String>? headers,
   }) async {
-    final boundary = 'chase-test-boundary-${DateTime.now().millisecondsSinceEpoch}';
+    final boundary =
+        'chase-test-boundary-${DateTime.now().millisecondsSinceEpoch}';
     final body = _buildMultipartBody(boundary, fields ?? {}, files ?? {});
 
     final effectiveHeaders = Map<String, String>.from(headers ?? {});
-    effectiveHeaders['content-type'] = 'multipart/form-data; boundary=$boundary';
+    effectiveHeaders['content-type'] =
+        'multipart/form-data; boundary=$boundary';
 
     final uri = Uri.parse('http://localhost:$_port$path');
     final req = await _client.openUrl('POST', uri);
@@ -933,8 +956,11 @@ class TestClient {
     // Add text fields
     for (final entry in fields.entries) {
       buffer.addAll(utf8.encode('--$boundary\r\n'));
-      buffer.addAll(utf8.encode(
-          'Content-Disposition: form-data; name="${entry.key}"\r\n\r\n'));
+      buffer.addAll(
+        utf8.encode(
+          'Content-Disposition: form-data; name="${entry.key}"\r\n\r\n',
+        ),
+      );
       buffer.addAll(utf8.encode(entry.value));
       buffer.addAll(crlf);
     }
@@ -943,8 +969,11 @@ class TestClient {
     for (final entry in files.entries) {
       final file = entry.value;
       buffer.addAll(utf8.encode('--$boundary\r\n'));
-      buffer.addAll(utf8.encode(
-          'Content-Disposition: form-data; name="${entry.key}"; filename="${file.filename}"\r\n'));
+      buffer.addAll(
+        utf8.encode(
+          'Content-Disposition: form-data; name="${entry.key}"; filename="${file.filename}"\r\n',
+        ),
+      );
       if (file.contentType != null) {
         buffer.addAll(utf8.encode('Content-Type: ${file.contentType}\r\n'));
       }

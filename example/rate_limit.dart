@@ -26,47 +26,59 @@ void main() async {
   app.use(RateLimit(const RateLimitOptions.perMinute(100)));
 
   // Example 2: Strict limit for login endpoint (prevent brute force)
-  app.post('/login')
-      .use(RateLimit(const RateLimitOptions(
-        maxRequests: 5,
-        windowMs: 900000, // 15 minutes
-        errorMessage: 'Too many login attempts. Please try again in 15 minutes.',
-      )))
+  app
+      .post('/login')
+      .use(
+        RateLimit(
+          const RateLimitOptions(
+            maxRequests: 5,
+            windowMs: 900000, // 15 minutes
+            errorMessage:
+                'Too many login attempts. Please try again in 15 minutes.',
+          ),
+        ),
+      )
       .handle((ctx) async {
-    return Response.json({'message': 'Login endpoint'});
-  });
+        return Response.json({'message': 'Login endpoint'});
+      });
 
   // Example 3: API endpoint with per-second limit
-  app.get('/api/data')
+  app
+      .get('/api/data')
       .use(RateLimit(const RateLimitOptions.perSecond(5)))
       .handle((ctx) async {
-    return Response.json({
-      'data': 'This endpoint allows 5 requests per second',
-      'timestamp': DateTime.now().toIso8601String(),
-    });
-  });
+        return Response.json({
+          'data': 'This endpoint allows 5 requests per second',
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+      });
 
   // Example 4: High-volume endpoint with per-hour limit
-  app.get('/api/batch')
+  app
+      .get('/api/batch')
       .use(RateLimit(const RateLimitOptions.perHour(1000)))
       .handle((ctx) async {
-    return Response.json({'message': 'Batch processing endpoint'});
-  });
+        return Response.json({'message': 'Batch processing endpoint'});
+      });
 
   // Example 5: Custom key extraction by API key header
   app.routes('/api/v1', (api) {
-    api.use(RateLimit(RateLimitOptions(
-      maxRequests: 100,
-      windowMs: 60000, // 1 minute
-      keyExtractor: (ctx) {
-        final apiKey = ctx.req.header('X-API-Key');
-        if (apiKey != null) {
-          return 'apikey:$apiKey';
-        }
-        // Fall back to IP if no API key
-        return ctx.req.remoteAddress;
-      },
-    )));
+    api.use(
+      RateLimit(
+        RateLimitOptions(
+          maxRequests: 100,
+          windowMs: 60000, // 1 minute
+          keyExtractor: (ctx) {
+            final apiKey = ctx.req.header('X-API-Key');
+            if (apiKey != null) {
+              return 'apikey:$apiKey';
+            }
+            // Fall back to IP if no API key
+            return ctx.req.remoteAddress;
+          },
+        ),
+      ),
+    );
 
     api.get('/users').handle((ctx) async {
       return Response.json({'users': [], 'limit': '100/min per API key'});
@@ -78,44 +90,58 @@ void main() async {
   });
 
   // Example 6: Rate limit with callback for logging/alerting
-  app.post('/api/expensive')
-      .use(RateLimit(RateLimitOptions(
-        maxRequests: 3,
-        windowMs: 60000,
-        onLimitReached: (ctx, info) {
-          print('Rate limit exceeded for ${info.key}');
-          print('  Requests: ${info.requestCount}/${info.maxRequests}');
-          print('  Reset in: ${info.resetInMs}ms');
-        },
-      )))
+  app
+      .post('/api/expensive')
+      .use(
+        RateLimit(
+          RateLimitOptions(
+            maxRequests: 3,
+            windowMs: 60000,
+            onLimitReached: (ctx, info) {
+              print('Rate limit exceeded for ${info.key}');
+              print('  Requests: ${info.requestCount}/${info.maxRequests}');
+              print('  Reset in: ${info.resetInMs}ms');
+            },
+          ),
+        ),
+      )
       .handle((ctx) async {
-    return Response.json({'message': 'Expensive operation completed'});
-  });
+        return Response.json({'message': 'Expensive operation completed'});
+      });
 
   // Example 7: Rate limit without headers (hide limit info)
-  app.get('/api/secure')
-      .use(RateLimit(const RateLimitOptions(
-        maxRequests: 10,
-        windowMs: 60000,
-        includeHeaders: false,
-        errorMessage: 'Request limit exceeded',
-      )))
+  app
+      .get('/api/secure')
+      .use(
+        RateLimit(
+          const RateLimitOptions(
+            maxRequests: 10,
+            windowMs: 60000,
+            includeHeaders: false,
+            errorMessage: 'Request limit exceeded',
+          ),
+        ),
+      )
       .handle((ctx) async {
-    return Response.json({'status': 'ok'});
-  });
+        return Response.json({'status': 'ok'});
+      });
 
   // Example 8: Per-user rate limiting (requires auth middleware first)
   app.routes('/user', (user) {
     // Simulate user ID extraction (in real app, this would come from auth)
-    user.use(RateLimit(RateLimitOptions(
-      maxRequests: 50,
-      windowMs: 60000,
-      keyExtractor: (ctx) {
-        // In a real app, get user ID from auth context
-        final userId = ctx.req.header('X-User-ID') ?? 'anonymous';
-        return 'user:$userId';
-      },
-    )));
+    user.use(
+      RateLimit(
+        RateLimitOptions(
+          maxRequests: 50,
+          windowMs: 60000,
+          keyExtractor: (ctx) {
+            // In a real app, get user ID from auth context
+            final userId = ctx.req.header('X-User-ID') ?? 'anonymous';
+            return 'user:$userId';
+          },
+        ),
+      ),
+    );
 
     user.get('/profile').handle((ctx) async {
       return Response.json({'profile': 'User profile data'});
@@ -298,7 +324,9 @@ done</code></pre>
   print('  curl -i http://localhost:$port/api/data');
   print('');
   print('  # Test rate limit (5 req/sec)');
-  print('  for i in {1..10}; do curl -s http://localhost:$port/api/data; echo ""; done');
+  print(
+    '  for i in {1..10}; do curl -s http://localhost:$port/api/data; echo ""; done',
+  );
 
   await app.start(port: port);
 }

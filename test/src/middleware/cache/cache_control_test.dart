@@ -54,10 +54,7 @@ class _MockRequest extends Stream<Uint8List> implements HttpRequest {
   @override
   final Uri uri;
 
-  _MockRequest({
-    required this.method,
-    required this.uri,
-  });
+  _MockRequest({required this.method, required this.uri});
 
   @override
   StreamSubscription<Uint8List> listen(
@@ -285,12 +282,17 @@ void main() {
       final res = _MockResponse();
       final ctx = Context(req, res);
 
-      final cache = CacheControl(staleWhileRevalidate: Duration(seconds: 86400));
+      final cache = CacheControl(
+        staleWhileRevalidate: Duration(seconds: 86400),
+      );
       final chain = _buildChain([cache], (ctx) async {});
 
       await chain(ctx);
 
-      expect(res.headers.value('cache-control'), 'stale-while-revalidate=86400');
+      expect(
+        res.headers.value('cache-control'),
+        'stale-while-revalidate=86400',
+      );
     });
 
     test('sets stale-if-error directive', () async {
@@ -352,7 +354,10 @@ void main() {
       final header = res.headers.value('cache-control');
       expect(header, contains('max-age=86400')); // 1 day = 86400 seconds
       expect(header, contains('s-maxage=7200')); // 2 hours = 7200 seconds
-      expect(header, contains('stale-while-revalidate=1800')); // 30 minutes = 1800 seconds
+      expect(
+        header,
+        contains('stale-while-revalidate=1800'),
+      ); // 30 minutes = 1800 seconds
     });
 
     test('does not set header when no directives are configured', () async {
@@ -424,7 +429,10 @@ void main() {
 
       await chain(ctx);
 
-      expect(res.headers.value('cache-control'), contains('max-age=604800')); // 7 days
+      expect(
+        res.headers.value('cache-control'),
+        contains('max-age=604800'),
+      ); // 7 days
     });
   });
 

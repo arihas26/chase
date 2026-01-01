@@ -113,7 +113,13 @@ class ContentSecurityPolicy {
 
   /// Creates a permissive CSP (for development).
   factory ContentSecurityPolicy.permissive() {
-    return ContentSecurityPolicy()..defaultSrc(["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https:', 'data:']);
+    return ContentSecurityPolicy()..defaultSrc([
+      "'self'",
+      "'unsafe-inline'",
+      "'unsafe-eval'",
+      'https:',
+      'data:',
+    ]);
   }
 
   /// Sets the default-src directive.
@@ -202,7 +208,9 @@ class ContentSecurityPolicy {
 
   /// Builds the CSP header value.
   String build() {
-    return _directives.entries.map((e) => '${e.key} ${e.value.join(' ')}').join('; ');
+    return _directives.entries
+        .map((e) => '${e.key} ${e.value.join(' ')}')
+        .join('; ');
   }
 
   /// Whether the CSP has any directives.
@@ -356,18 +364,18 @@ class SecureHeadersOptions {
 
   /// Creates a minimal configuration with essential security headers.
   const SecureHeadersOptions.minimal()
-      : contentTypeOptions = 'nosniff',
-        frameOptions = XFrameOptions.sameOrigin,
-        hsts = null,
-        contentSecurityPolicy = null,
-        cspReportOnly = false,
-        referrerPolicy = ReferrerPolicy.noReferrer,
-        permissionsPolicy = null,
-        crossOriginEmbedderPolicy = null,
-        crossOriginOpenerPolicy = null,
-        crossOriginResourcePolicy = null,
-        downloadOptions = null,
-        permittedCrossDomainPolicies = null;
+    : contentTypeOptions = 'nosniff',
+      frameOptions = XFrameOptions.sameOrigin,
+      hsts = null,
+      contentSecurityPolicy = null,
+      cspReportOnly = false,
+      referrerPolicy = ReferrerPolicy.noReferrer,
+      permissionsPolicy = null,
+      crossOriginEmbedderPolicy = null,
+      crossOriginOpenerPolicy = null,
+      crossOriginResourcePolicy = null,
+      downloadOptions = null,
+      permittedCrossDomainPolicies = null;
 
   /// Creates a strict configuration with all security headers enabled.
   factory SecureHeadersOptions.strict() {
@@ -448,7 +456,10 @@ class SecureHeaders implements Middleware {
   FutureOr<void> handle(Context ctx, NextFunction next) async {
     // X-Content-Type-Options
     if (options.contentTypeOptions != null) {
-      ctx.res.headers.set('X-Content-Type-Options', options.contentTypeOptions!);
+      ctx.res.headers.set(
+        'X-Content-Type-Options',
+        options.contentTypeOptions!,
+      );
     }
 
     // X-Frame-Options
@@ -462,8 +473,11 @@ class SecureHeaders implements Middleware {
     }
 
     // Content-Security-Policy
-    if (options.contentSecurityPolicy != null && !options.contentSecurityPolicy!.isEmpty) {
-      final headerName = options.cspReportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+    if (options.contentSecurityPolicy != null &&
+        !options.contentSecurityPolicy!.isEmpty) {
+      final headerName = options.cspReportOnly
+          ? 'Content-Security-Policy-Report-Only'
+          : 'Content-Security-Policy';
       ctx.res.headers.set(headerName, options.contentSecurityPolicy!.build());
     }
 
@@ -479,17 +493,26 @@ class SecureHeaders implements Middleware {
 
     // Cross-Origin-Embedder-Policy
     if (options.crossOriginEmbedderPolicy != null) {
-      ctx.res.headers.set('Cross-Origin-Embedder-Policy', options.crossOriginEmbedderPolicy!.value);
+      ctx.res.headers.set(
+        'Cross-Origin-Embedder-Policy',
+        options.crossOriginEmbedderPolicy!.value,
+      );
     }
 
     // Cross-Origin-Opener-Policy
     if (options.crossOriginOpenerPolicy != null) {
-      ctx.res.headers.set('Cross-Origin-Opener-Policy', options.crossOriginOpenerPolicy!.value);
+      ctx.res.headers.set(
+        'Cross-Origin-Opener-Policy',
+        options.crossOriginOpenerPolicy!.value,
+      );
     }
 
     // Cross-Origin-Resource-Policy
     if (options.crossOriginResourcePolicy != null) {
-      ctx.res.headers.set('Cross-Origin-Resource-Policy', options.crossOriginResourcePolicy!.value);
+      ctx.res.headers.set(
+        'Cross-Origin-Resource-Policy',
+        options.crossOriginResourcePolicy!.value,
+      );
     }
 
     // X-Download-Options
@@ -499,7 +522,10 @@ class SecureHeaders implements Middleware {
 
     // X-Permitted-Cross-Domain-Policies
     if (options.permittedCrossDomainPolicies != null) {
-      ctx.res.headers.set('X-Permitted-Cross-Domain-Policies', options.permittedCrossDomainPolicies!);
+      ctx.res.headers.set(
+        'X-Permitted-Cross-Domain-Policies',
+        options.permittedCrossDomainPolicies!,
+      );
     }
 
     await next();

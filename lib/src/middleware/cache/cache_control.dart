@@ -116,7 +116,10 @@ class CacheControl implements Middleware {
     this.immutable = false,
     this.staleWhileRevalidate,
     this.staleIfError,
-  }) : assert(!(public && private), 'Cache-Control cannot be both public and private');
+  }) : assert(
+         !(public && private),
+         'Cache-Control cannot be both public and private',
+       );
 
   /// Creates a CacheControl for static assets with long-term caching.
   ///
@@ -235,7 +238,9 @@ class CacheControl implements Middleware {
       directives.add('immutable');
     }
     if (staleWhileRevalidate != null) {
-      directives.add('stale-while-revalidate=${staleWhileRevalidate!.inSeconds}');
+      directives.add(
+        'stale-while-revalidate=${staleWhileRevalidate!.inSeconds}',
+      );
     }
     if (staleIfError != null) {
       directives.add('stale-if-error=${staleIfError!.inSeconds}');

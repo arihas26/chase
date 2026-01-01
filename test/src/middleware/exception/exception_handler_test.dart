@@ -152,38 +152,44 @@ void main() {
       expect(ctx.response.body, contains('OK'));
     });
 
-    test('error handler as first middleware catches all downstream errors', () async {
-      final ctx = TestContext.get('/');
-      final tracker = <String>[];
+    test(
+      'error handler as first middleware catches all downstream errors',
+      () async {
+        final ctx = TestContext.get('/');
+        final tracker = <String>[];
 
-      await buildMiddlewareChain([
-        ExceptionHandler(),
-        _TrackingMiddleware(tracker, 'mw1'),
-      ], (_) async {
-        tracker.add('handler-error');
-        throw ValidationException([
-          ValidationError(
-            field: 'data',
-            message: 'Validation failed',
-            rule: 'required',
-          ),
-        ]);
-      })(ctx);
+        await buildMiddlewareChain(
+          [ExceptionHandler(), _TrackingMiddleware(tracker, 'mw1')],
+          (_) async {
+            tracker.add('handler-error');
+            throw ValidationException([
+              ValidationError(
+                field: 'data',
+                message: 'Validation failed',
+                rule: 'required',
+              ),
+            ]);
+          },
+        )(ctx);
 
-      expect(tracker, ['mw1-before', 'handler-error']);
-      expect(ctx.response.statusCode, 422);
-    });
+        expect(tracker, ['mw1-before', 'handler-error']);
+        expect(ctx.response.statusCode, 422);
+      },
+    );
 
-    test('error handler not as first middleware does not catch upstream errors', () async {
-      final ctx = TestContext.get('/');
+    test(
+      'error handler not as first middleware does not catch upstream errors',
+      () async {
+        final ctx = TestContext.get('/');
 
-      final chain = buildMiddlewareChain([
-        _ThrowingMiddleware(),
-        ExceptionHandler(),
-      ], (_) async {});
+        final chain = buildMiddlewareChain([
+          _ThrowingMiddleware(),
+          ExceptionHandler(),
+        ], (_) async {});
 
-      expect(() => chain(ctx), throwsA(isA<NotFoundException>()));
-    });
+        expect(() => chain(ctx), throwsA(isA<NotFoundException>()));
+      },
+    );
   });
 
   group('ExceptionHandler - Edge Cases', () {

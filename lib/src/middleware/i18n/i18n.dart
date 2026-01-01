@@ -304,7 +304,10 @@ class Translator {
   }
 
   /// Handles pluralization.
-  String _pluralize(Map<String, dynamic> pluralMap, Map<String, dynamic>? params) {
+  String _pluralize(
+    Map<String, dynamic> pluralMap,
+    Map<String, dynamic>? params,
+  ) {
     final count = params?['count'];
     final n = count is num ? count.toInt() : 0;
 

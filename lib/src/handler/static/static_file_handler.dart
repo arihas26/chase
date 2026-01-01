@@ -153,8 +153,10 @@ class StaticFileHandler {
       String? contentEncoding;
       FileStat fileStat = stat;
       if (options.precompressed) {
-        final (compressedFile, encoding) =
-            await _findPrecompressedFile(file.path, ctx);
+        final (compressedFile, encoding) = await _findPrecompressedFile(
+          file.path,
+          ctx,
+        );
         if (compressedFile != null) {
           file = compressedFile;
           contentEncoding = encoding;
@@ -229,7 +231,9 @@ class StaticFileHandler {
   ///
   /// Returns the compressed file and encoding, or (null, null) if not available.
   Future<(File?, String?)> _findPrecompressedFile(
-      String filePath, Context ctx) async {
+    String filePath,
+    Context ctx,
+  ) async {
     final acceptEncoding = ctx.req.header(HttpHeaders.acceptEncodingHeader);
     if (acceptEncoding == null) return (null, null);
 

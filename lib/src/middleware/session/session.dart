@@ -6,7 +6,6 @@ import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/context/cookie.dart';
 import 'package:chase/src/core/middleware.dart';
 
-
 /// Session data container.
 class SessionData {
   final String id;
@@ -16,9 +15,9 @@ class SessionData {
   bool _isModified;
 
   SessionData._(this.id, Map<String, dynamic> data, this._lastAccess)
-      : _data = data,
-        _isNew = false,
-        _isModified = false;
+    : _data = data,
+      _isNew = false,
+      _isModified = false;
 
   /// Creates a new session with the given ID.
   factory SessionData.create(String id) {
@@ -28,7 +27,11 @@ class SessionData {
   }
 
   /// Creates a session from stored data.
-  factory SessionData.fromStore(String id, Map<String, dynamic> data, DateTime lastAccess) {
+  factory SessionData.fromStore(
+    String id,
+    Map<String, dynamic> data,
+    DateTime lastAccess,
+  ) {
     return SessionData._(id, Map<String, dynamic>.from(data), lastAccess);
   }
 
@@ -250,9 +253,9 @@ class SessionOptions {
     this.rolling = false,
     this.saveUnmodified = false,
     this.idGenerator,
-  })  : cookieHttpOnly = true,
-        cookieSecure = true,
-        cookieSameSite = SameSite.strict;
+  }) : cookieHttpOnly = true,
+       cookieSecure = true,
+       cookieSameSite = SameSite.strict;
 
   /// Creates options for short-lived sessions.
   const SessionOptions.shortLived({
@@ -262,10 +265,10 @@ class SessionOptions {
     this.rolling = true,
     this.saveUnmodified = false,
     this.idGenerator,
-  })  : maxAge = const Duration(minutes: 30),
-        cookieHttpOnly = true,
-        cookieSecure = false,
-        cookieSameSite = SameSite.lax;
+  }) : maxAge = const Duration(minutes: 30),
+       cookieHttpOnly = true,
+       cookieSecure = false,
+       cookieSameSite = SameSite.lax;
 }
 
 /// Middleware that provides session management.
@@ -325,16 +328,13 @@ class SessionOptions {
 ///
 /// The session is accessible via `ctx.session` after this middleware runs.
 class Session implements Middleware {
-
   final SessionStore store;
   final SessionOptions options;
   final String Function() _generateId;
 
   /// Creates a Session middleware with the given [store] and [options].
-  Session(
-    this.store, [
-    this.options = const SessionOptions(),
-  ]) : _generateId = options.idGenerator ?? _defaultIdGenerator;
+  Session(this.store, [this.options = const SessionOptions()])
+    : _generateId = options.idGenerator ?? _defaultIdGenerator;
 
   @override
   FutureOr<void> handle(Context ctx, NextFunction next) async {
@@ -365,7 +365,8 @@ class Session implements Middleware {
     // Save session if needed
     final currentSession = ctx.get<SessionData>('_session');
     if (currentSession != null) {
-      final shouldSave = currentSession.isModified ||
+      final shouldSave =
+          currentSession.isModified ||
           options.saveUnmodified ||
           currentSession.isNew ||
           options.rolling;
@@ -418,7 +419,9 @@ extension SessionContextExtension on Context {
   SessionData get session {
     final s = get<SessionData>('_session');
     if (s == null) {
-      throw StateError('Session not available. Did you add the Session middleware?');
+      throw StateError(
+        'Session not available. Did you add the Session middleware?',
+      );
     }
     return s;
   }

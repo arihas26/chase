@@ -25,10 +25,10 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', fields: {
-          'name': 'John Doe',
-          'email': 'john@example.com',
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          fields: {'name': 'John Doe', 'email': 'john@example.com'},
+        );
 
         expect(res.status, 200);
         final body = await res.json;
@@ -49,13 +49,16 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', files: {
-          'avatar': MultipartFileData(
-            filename: 'profile.png',
-            bytes: Uint8List.fromList([0x89, 0x50, 0x4E, 0x47]),
-            contentType: 'image/png',
-          ),
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          files: {
+            'avatar': MultipartFileData(
+              filename: 'profile.png',
+              bytes: Uint8List.fromList([0x89, 0x50, 0x4E, 0x47]),
+              contentType: 'image/png',
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final body = await res.json;
@@ -80,10 +83,7 @@ void main() {
         client = await TestClient.start(app);
         final res = await client.postMultipart(
           '/upload',
-          fields: {
-            'title': 'My Upload',
-            'description': 'Test files',
-          },
+          fields: {'title': 'My Upload', 'description': 'Test files'},
           files: {
             'doc1': MultipartFileData(
               filename: 'readme.txt',
@@ -140,9 +140,10 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', fields: {
-          'name': 'Test',
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          fields: {'name': 'Test'},
+        );
 
         expect(res.status, 200);
         final body = await res.json;
@@ -173,9 +174,11 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.post('/check',
-            body: '{"test": true}',
-            headers: {'content-type': 'application/json'});
+        final res = await client.post(
+          '/check',
+          body: '{"test": true}',
+          headers: {'content-type': 'application/json'},
+        );
 
         expect(res.status, 200);
         final body = await res.json;
@@ -193,8 +196,11 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.post('/upload',
-            body: 'plain text', headers: {'content-type': 'text/plain'});
+        final res = await client.post(
+          '/upload',
+          body: 'plain text',
+          headers: {'content-type': 'text/plain'},
+        );
 
         expect(res.status, 400);
       });
@@ -235,9 +241,7 @@ void main() {
         app.post('/upload').handle((ctx) async {
           final data = await ctx.req.multipart();
           final photo = data.file('photos');
-          await ctx.res.json({
-            'filename': photo?.filename,
-          });
+          await ctx.res.json({'filename': photo?.filename});
         });
 
         client = await TestClient.start(app);
@@ -298,14 +302,16 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload',
-            fields: {'name': 'John'},
-            files: {
-              'avatar': MultipartFileData(
-                filename: 'photo.png',
-                bytes: Uint8List.fromList([1, 2, 3]),
-              ),
-            });
+        final res = await client.postMultipart(
+          '/upload',
+          fields: {'name': 'John'},
+          files: {
+            'avatar': MultipartFileData(
+              filename: 'photo.png',
+              bytes: Uint8List.fromList([1, 2, 3]),
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final json = await res.json;
@@ -328,14 +334,20 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload',
-            fields: {'name': 'John', 'email': 'john@test.com'},
-            files: {
-              'doc1': MultipartFileData(
-                  filename: 'a.txt', bytes: Uint8List.fromList([1])),
-              'doc2': MultipartFileData(
-                  filename: 'b.txt', bytes: Uint8List.fromList([2])),
-            });
+        final res = await client.postMultipart(
+          '/upload',
+          fields: {'name': 'John', 'email': 'john@test.com'},
+          files: {
+            'doc1': MultipartFileData(
+              filename: 'a.txt',
+              bytes: Uint8List.fromList([1]),
+            ),
+            'doc2': MultipartFileData(
+              filename: 'b.txt',
+              bytes: Uint8List.fromList([2]),
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final json = await res.json;
@@ -356,12 +368,15 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', files: {
-          'doc': MultipartFileData(
-            filename: 'test.txt',
-            bytes: Uint8List.fromList([1, 2, 3, 4, 5]),
-          ),
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          files: {
+            'doc': MultipartFileData(
+              filename: 'test.txt',
+              bytes: Uint8List.fromList([1, 2, 3, 4, 5]),
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final json = await res.json;
@@ -377,12 +392,15 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', files: {
-          'doc': MultipartFileData(
-            filename: 'document.pdf',
-            bytes: Uint8List.fromList([1]),
-          ),
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          files: {
+            'doc': MultipartFileData(
+              filename: 'document.pdf',
+              bytes: Uint8List.fromList([1]),
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final json = await res.json;
@@ -401,13 +419,16 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', files: {
-          'img': MultipartFileData(
-            filename: 'photo.png',
-            bytes: Uint8List.fromList([0x89, 0x50, 0x4E, 0x47]),
-            contentType: 'image/png',
-          ),
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          files: {
+            'img': MultipartFileData(
+              filename: 'photo.png',
+              bytes: Uint8List.fromList([0x89, 0x50, 0x4E, 0x47]),
+              contentType: 'image/png',
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final json = await res.json;
@@ -424,13 +445,16 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', files: {
-          'doc': MultipartFileData(
-            filename: 'hello.txt',
-            bytes: utf8.encode('Hello, World!'),
-            contentType: 'text/plain',
-          ),
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          files: {
+            'doc': MultipartFileData(
+              filename: 'hello.txt',
+              bytes: utf8.encode('Hello, World!'),
+              contentType: 'text/plain',
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final json = await res.json;
@@ -441,7 +465,8 @@ void main() {
     group('file content', () {
       test('preserves binary content', () async {
         final originalBytes = Uint8List.fromList(
-            List.generate(256, (i) => i)); // All byte values 0-255
+          List.generate(256, (i) => i),
+        ); // All byte values 0-255
 
         final app = Chase();
         app.post('/upload').handle((ctx) async {
@@ -456,13 +481,16 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', files: {
-          'binary': MultipartFileData(
-            filename: 'binary.bin',
-            bytes: originalBytes,
-            contentType: 'application/octet-stream',
-          ),
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          files: {
+            'binary': MultipartFileData(
+              filename: 'binary.bin',
+              bytes: originalBytes,
+              contentType: 'application/octet-stream',
+            ),
+          },
+        );
 
         expect(res.status, 200);
         final body = await res.json;
@@ -483,10 +511,10 @@ void main() {
         });
 
         client = await TestClient.start(app);
-        final res = await client.postMultipart('/upload', fields: {
-          'greeting': 'こんにちは',
-          'name': '田中太郎',
-        });
+        final res = await client.postMultipart(
+          '/upload',
+          fields: {'greeting': 'こんにちは', 'name': '田中太郎'},
+        );
 
         expect(res.status, 200);
         final body = await res.json;

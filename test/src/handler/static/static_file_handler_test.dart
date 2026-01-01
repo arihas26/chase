@@ -37,7 +37,12 @@ void main() {
     late String root;
 
     setUp(() {
-      root = p.join(Directory.current.path, 'test', 'fixtures', 'static_public');
+      root = p.join(
+        Directory.current.path,
+        'test',
+        'fixtures',
+        'static_public',
+      );
     });
 
     test('serves index.html when param is empty', () async {
@@ -54,8 +59,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final response =
-          await (await client.getUrl(Uri.parse('http://localhost:${server.port}/assets'))).close();
+      final response = await (await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/assets'),
+      )).close();
       final body = await response.transform(utf8.decoder).join();
 
       expect(response.statusCode, HttpStatus.ok);
@@ -79,8 +85,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final response =
-          await (await client.getUrl(Uri.parse('http://localhost:${server.port}/assets/hello'))).close();
+      final response = await (await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/assets/hello'),
+      )).close();
       final body = await response.transform(utf8.decoder).join();
 
       expect(response.statusCode, HttpStatus.ok);
@@ -104,7 +111,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final url = Uri.parse('http://localhost:${server.port}/assets/hello.html');
+      final url = Uri.parse(
+        'http://localhost:${server.port}/assets/hello.html',
+      );
 
       final first = await (await client.getUrl(url)).close();
       final etag = first.headers.value(HttpHeaders.etagHeader);
@@ -136,8 +145,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final response =
-          await (await client.getUrl(Uri.parse('http://localhost:${server.port}/assets/traversal'))).close();
+      final response = await (await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/assets/traversal'),
+      )).close();
       final body = await response.transform(utf8.decoder).join();
 
       expect(response.statusCode, HttpStatus.notFound);
@@ -161,9 +171,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final response = await (await client
-              .getUrl(Uri.parse('http://localhost:${server.port}/assets/hello.html')))
-          .close();
+      final response = await (await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/assets/hello.html'),
+      )).close();
       await response.drain();
 
       expect(response.statusCode, HttpStatus.ok);
@@ -191,7 +201,8 @@ void main() {
       addTearDown(client.close);
 
       final request = await client.getUrl(
-          Uri.parse('http://localhost:${server.port}/assets/hello.html'));
+        Uri.parse('http://localhost:${server.port}/assets/hello.html'),
+      );
       request.headers.set(HttpHeaders.acceptEncodingHeader, 'gzip, deflate');
 
       final response = await request.close();
@@ -215,7 +226,8 @@ void main() {
       addTearDown(client.close);
 
       final request = await client.getUrl(
-          Uri.parse('http://localhost:${server.port}/assets/hello.html'));
+        Uri.parse('http://localhost:${server.port}/assets/hello.html'),
+      );
       request.headers.set(HttpHeaders.rangeHeader, 'bytes=0-4');
 
       final response = await request.close();
@@ -252,8 +264,8 @@ void main() {
       addTearDown(client.close);
 
       final response = await (await client.getUrl(
-              Uri.parse('http://localhost:${server.port}/assets/nonexistent.txt')))
-          .close();
+        Uri.parse('http://localhost:${server.port}/assets/nonexistent.txt'),
+      )).close();
       final body = await response.transform(utf8.decoder).join();
 
       expect(response.statusCode, HttpStatus.notFound);
@@ -285,8 +297,8 @@ void main() {
       addTearDown(client.close);
 
       final response = await (await client.getUrl(
-              Uri.parse('http://localhost:${server.port}/assets/hello.html')))
-          .close();
+        Uri.parse('http://localhost:${server.port}/assets/hello.html'),
+      )).close();
       await response.drain();
 
       expect(response.statusCode, HttpStatus.ok);
@@ -318,8 +330,8 @@ void main() {
       addTearDown(client.close);
 
       final response = await (await client.getUrl(
-              Uri.parse('http://localhost:${server.port}/assets/old-hello')))
-          .close();
+        Uri.parse('http://localhost:${server.port}/assets/old-hello'),
+      )).close();
       final body = await response.transform(utf8.decoder).join();
 
       expect(response.statusCode, HttpStatus.ok);
@@ -327,4 +339,3 @@ void main() {
     });
   });
 }
-

@@ -79,10 +79,7 @@ void main() {
 
       app.plugin(plugin1);
 
-      expect(
-        () => app.plugin(plugin2),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => app.plugin(plugin2), throwsA(isA<StateError>()));
     });
 
     test('multiple different plugins can be installed', () async {

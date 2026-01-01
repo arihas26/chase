@@ -78,7 +78,9 @@ void main() {
   group('Timeout middleware', () {
     test('allows fast requests to complete', () async {
       final ctx = TestContext.get('/');
-      const middleware = Timeout(TimeoutOptions(duration: Duration(milliseconds: 100)));
+      const middleware = Timeout(
+        TimeoutOptions(duration: Duration(milliseconds: 100)),
+      );
 
       await middleware.handle(ctx, () async {
         await Future.delayed(const Duration(milliseconds: 10));
@@ -89,7 +91,9 @@ void main() {
 
     test('times out slow requests', () async {
       final ctx = TestContext.get('/');
-      const middleware = Timeout(TimeoutOptions(duration: Duration(milliseconds: 50)));
+      const middleware = Timeout(
+        TimeoutOptions(duration: Duration(milliseconds: 50)),
+      );
 
       await middleware.handle(ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
@@ -102,10 +106,12 @@ void main() {
 
     test('uses custom status code', () async {
       final ctx = TestContext.get('/');
-      const middleware = Timeout(TimeoutOptions(
-        duration: Duration(milliseconds: 50),
-        statusCode: HttpStatus.gatewayTimeout,
-      ));
+      const middleware = Timeout(
+        TimeoutOptions(
+          duration: Duration(milliseconds: 50),
+          statusCode: HttpStatus.gatewayTimeout,
+        ),
+      );
 
       await middleware.handle(ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
@@ -116,10 +122,12 @@ void main() {
 
     test('uses custom error message', () async {
       final ctx = TestContext.get('/');
-      const middleware = Timeout(TimeoutOptions(
-        duration: Duration(milliseconds: 50),
-        errorMessage: 'Server overloaded',
-      ));
+      const middleware = Timeout(
+        TimeoutOptions(
+          duration: Duration(milliseconds: 50),
+          errorMessage: 'Server overloaded',
+        ),
+      );
 
       await middleware.handle(ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
@@ -130,10 +138,12 @@ void main() {
 
     test('includes duration when configured', () async {
       final ctx = TestContext.get('/');
-      const middleware = Timeout(TimeoutOptions(
-        duration: Duration(milliseconds: 50),
-        includeDuration: true,
-      ));
+      const middleware = Timeout(
+        TimeoutOptions(
+          duration: Duration(milliseconds: 50),
+          includeDuration: true,
+        ),
+      );
 
       await middleware.handle(ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
@@ -146,14 +156,16 @@ void main() {
     test('calls custom timeout handler', () async {
       var handlerCalled = false;
       final ctx = TestContext.get('/');
-      final middleware = Timeout(TimeoutOptions(
-        duration: const Duration(milliseconds: 50),
-        onTimeout: (ctx) async {
-          handlerCalled = true;
-          ctx.res.statusCode = 599;
-          await ctx.res.close();
-        },
-      ));
+      final middleware = Timeout(
+        TimeoutOptions(
+          duration: const Duration(milliseconds: 50),
+          onTimeout: (ctx) async {
+            handlerCalled = true;
+            ctx.res.statusCode = 599;
+            await ctx.res.close();
+          },
+        ),
+      );
 
       await middleware.handle(ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));

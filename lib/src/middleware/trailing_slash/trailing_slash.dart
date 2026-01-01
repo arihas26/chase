@@ -50,7 +50,9 @@ class TrailingSlash implements Middleware {
   /// ```dart
   /// app.use(trimTrailingSlash());
   /// ```
-  static TrailingSlash trim({int redirectStatus = HttpStatus.movedPermanently}) {
+  static TrailingSlash trim({
+    int redirectStatus = HttpStatus.movedPermanently,
+  }) {
     return TrailingSlash(
       mode: TrailingSlashMode.trim,
       redirectStatus: redirectStatus,
@@ -64,7 +66,9 @@ class TrailingSlash implements Middleware {
   /// ```dart
   /// app.use(appendTrailingSlash());
   /// ```
-  static TrailingSlash append({int redirectStatus = HttpStatus.movedPermanently}) {
+  static TrailingSlash append({
+    int redirectStatus = HttpStatus.movedPermanently,
+  }) {
     return TrailingSlash(
       mode: TrailingSlashMode.append,
       redirectStatus: redirectStatus,

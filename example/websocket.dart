@@ -38,7 +38,6 @@ void main() async {
     ws.onError((error) {
       print('❌ WebSocket error: $error');
     });
-
   });
 
   // Example 2: Chat room
@@ -49,7 +48,11 @@ void main() async {
     print('👥 Client joined chat (${chatClients.length} online)');
 
     // Notify others
-    _broadcast(chatClients, 'System: New user joined (${chatClients.length} online)', exclude: ws);
+    _broadcast(
+      chatClients,
+      'System: New user joined (${chatClients.length} online)',
+      exclude: ws,
+    );
 
     ws.onMessage((message) {
       print('💬 Chat message: $message');
@@ -60,14 +63,16 @@ void main() async {
     ws.onClose((code, reason) {
       chatClients.remove(ws);
       print('👥 Client left chat (${chatClients.length} online)');
-      _broadcast(chatClients, 'System: User left (${chatClients.length} online)');
+      _broadcast(
+        chatClients,
+        'System: User left (${chatClients.length} online)',
+      );
     });
 
     ws.onError((error) {
       print('❌ Chat error: $error');
       chatClients.remove(ws);
     });
-
   });
 
   // Example 3: Ping/Pong test
@@ -98,7 +103,6 @@ void main() async {
       timer.cancel();
       print('🏓 Ping/Pong client disconnected');
     });
-
   });
 
   // Example 4: Binary data transfer
@@ -121,7 +125,6 @@ void main() async {
     ws.onClose((code, reason) {
       print('📦 Binary client disconnected');
     });
-
   });
 
   // Example 5: Real-time counter
@@ -152,7 +155,6 @@ void main() async {
       timer.cancel();
       print('🔢 Counter client disconnected');
     });
-
   });
 
   // Serve HTML client for testing
@@ -331,7 +333,11 @@ void main() async {
 }
 
 /// Broadcasts a message to all connected clients
-void _broadcast(List<ChaseWebSocket> clients, String message, {ChaseWebSocket? exclude}) {
+void _broadcast(
+  List<ChaseWebSocket> clients,
+  String message, {
+  ChaseWebSocket? exclude,
+}) {
   for (final client in List.from(clients)) {
     if (client != exclude && !client.isClosed) {
       try {

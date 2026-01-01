@@ -27,8 +27,9 @@ typedef Handler = FutureOr<dynamic> Function(Context ctx);
 ///   return {'error': error.toString()};
 /// });
 /// ```
-typedef ErrorHandler = FutureOr<dynamic> Function(
-  Object error,
-  StackTrace stackTrace,
-  Context ctx,
-);
+typedef ErrorHandler =
+    FutureOr<dynamic> Function(
+      Object error,
+      StackTrace stackTrace,
+      Context ctx,
+    );

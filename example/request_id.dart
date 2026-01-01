@@ -22,10 +22,7 @@ void main() async {
 
   // Simple endpoint showing request ID
   app.get('/').handle((ctx) async {
-    return Response.json({
-      'message': 'Hello!',
-      'requestId': ctx.requestId,
-    });
+    return Response.json({'message': 'Hello!', 'requestId': ctx.requestId});
   });
 
   // Endpoint that uses request ID for logging

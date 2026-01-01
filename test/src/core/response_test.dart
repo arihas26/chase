@@ -95,7 +95,9 @@ void main() {
       });
 
       test('unauthorized() creates 401 response', () {
-        final response = Response.unauthorized().json({'error': 'Auth required'});
+        final response = Response.unauthorized().json({
+          'error': 'Auth required',
+        });
         expect(response.statusCode, HttpStatus.unauthorized);
       });
 
@@ -110,12 +112,16 @@ void main() {
       });
 
       test('methodNotAllowed() creates 405 response', () {
-        final response = Response.methodNotAllowed().json({'error': 'Method not allowed'});
+        final response = Response.methodNotAllowed().json({
+          'error': 'Method not allowed',
+        });
         expect(response.statusCode, HttpStatus.methodNotAllowed);
       });
 
       test('conflict() creates 409 response', () {
-        final response = Response.conflict().json({'error': 'Resource conflict'});
+        final response = Response.conflict().json({
+          'error': 'Resource conflict',
+        });
         expect(response.statusCode, HttpStatus.conflict);
       });
 
@@ -125,14 +131,18 @@ void main() {
       });
 
       test('tooManyRequests() creates 429 response', () {
-        final response = Response.tooManyRequests().json({'error': 'Rate limited'});
+        final response = Response.tooManyRequests().json({
+          'error': 'Rate limited',
+        });
         expect(response.statusCode, HttpStatus.tooManyRequests);
       });
     });
 
     group('server error responses (5xx)', () {
       test('internalServerError() creates 500 response', () {
-        final response = Response.internalServerError().json({'error': 'Server error'});
+        final response = Response.internalServerError().json({
+          'error': 'Server error',
+        });
         expect(response.statusCode, HttpStatus.internalServerError);
       });
 
@@ -142,11 +152,12 @@ void main() {
       });
 
       test('serviceUnavailable() creates 503 response', () {
-        final response = Response.serviceUnavailable().json({'error': 'Maintenance'});
+        final response = Response.serviceUnavailable().json({
+          'error': 'Maintenance',
+        });
         expect(response.statusCode, HttpStatus.serviceUnavailable);
       });
     });
-
 
     group('fluent API', () {
       test('Response.status() creates response with custom status', () {
@@ -429,7 +440,10 @@ void main() {
     test('creates builder with header and returns JSON response', () {
       final response = Response.header('X-Custom', 'value').json({'data': 1});
       expect(response.headers['X-Custom'], 'value');
-      expect(response.headers['content-type'], 'application/json; charset=utf-8');
+      expect(
+        response.headers['content-type'],
+        'application/json; charset=utf-8',
+      );
       expect(response.body, {'data': 1});
       expect(response.statusCode, HttpStatus.ok);
     });
@@ -441,7 +455,10 @@ void main() {
     });
 
     test('creates builder with header and returns HTML response', () {
-      final response = Response.header('X-Frame-Options', 'DENY').html('<p>Hi</p>');
+      final response = Response.header(
+        'X-Frame-Options',
+        'DENY',
+      ).html('<p>Hi</p>');
       expect(response.headers['X-Frame-Options'], 'DENY');
     });
 
@@ -456,23 +473,28 @@ void main() {
     });
 
     test('sanitizes header values (CRLF injection)', () {
-      final response = Response.header('X-Evil', 'value\r\nInjected: bad').json({});
+      final response = Response.header(
+        'X-Evil',
+        'value\r\nInjected: bad',
+      ).json({});
       expect(response.headers['X-Evil'], 'valueInjected: bad');
       expect(response.headers.containsKey('Injected'), isFalse);
     });
 
     test('can change status with .status()', () {
-      final response = Response.header('X-Custom', 'value')
-          .status(HttpStatus.created)
-          .json({'id': 1});
+      final response = Response.header(
+        'X-Custom',
+        'value',
+      ).status(HttpStatus.created).json({'id': 1});
       expect(response.statusCode, HttpStatus.created);
       expect(response.headers['X-Custom'], 'value');
     });
 
     test('later header overrides earlier one', () {
-      final response = Response.header('X-Override', 'first')
-          .header('X-Override', 'second')
-          .json({});
+      final response = Response.header(
+        'X-Override',
+        'first',
+      ).header('X-Override', 'second').json({});
       expect(response.headers['X-Override'], 'second');
     });
   });
@@ -482,7 +504,10 @@ void main() {
       final response = Response.json({'key': 'value'});
       expect(response.statusCode, HttpStatus.ok);
       expect(response.body, {'key': 'value'});
-      expect(response.headers['content-type'], 'application/json; charset=utf-8');
+      expect(
+        response.headers['content-type'],
+        'application/json; charset=utf-8',
+      );
     });
 
     test('json() with custom status', () {
@@ -578,7 +603,10 @@ void main() {
     test('escapes HTML entities', () {
       final response = Response.htmlEscaped('<script>alert("XSS")</script>');
       // HtmlEscape also escapes / as &#47;
-      expect(response.body, '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#47;script&gt;');
+      expect(
+        response.body,
+        '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#47;script&gt;',
+      );
       expect(response.statusCode, HttpStatus.ok);
       expect(response.headers['content-type'], 'text/html; charset=utf-8');
     });
@@ -605,8 +633,13 @@ void main() {
 
   group('ResponseBuilder.htmlEscaped()', () {
     test('escapes HTML entities', () {
-      final response = Response.ok().htmlEscaped('<script>alert("XSS")</script>');
-      expect(response.body, '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#47;script&gt;');
+      final response = Response.ok().htmlEscaped(
+        '<script>alert("XSS")</script>',
+      );
+      expect(
+        response.body,
+        '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#47;script&gt;',
+      );
     });
 
     test('preserves custom headers', () {
@@ -631,24 +664,39 @@ void main() {
       expect(response.statusCode, HttpStatus.ok);
       expect(response.body, data);
       expect(response.headers['content-type'], 'application/octet-stream');
-      expect(response.headers['content-disposition'], 'attachment; filename="file.pdf"');
+      expect(
+        response.headers['content-disposition'],
+        'attachment; filename="file.pdf"',
+      );
     });
 
     test('uses custom content-type', () {
-      final response = Response.ok().download([1, 2], 'image.png', contentType: 'image/png');
+      final response = Response.ok().download(
+        [1, 2],
+        'image.png',
+        contentType: 'image/png',
+      );
       expect(response.headers['content-type'], 'image/png');
-      expect(response.headers['content-disposition'], 'attachment; filename="image.png"');
+      expect(
+        response.headers['content-disposition'],
+        'attachment; filename="image.png"',
+      );
     });
 
     test('escapes quotes in filename', () {
       final response = Response.ok().download([1], 'file"with"quotes.txt');
-      expect(response.headers['content-disposition'], 'attachment; filename="file\\"with\\"quotes.txt"');
+      expect(
+        response.headers['content-disposition'],
+        'attachment; filename="file\\"with\\"quotes.txt"',
+      );
     });
 
     test('preserves custom headers', () {
-      final response = Response.ok()
-          .header('X-Custom', 'value')
-          .download([1, 2, 3], 'data.bin');
+      final response = Response.ok().header('X-Custom', 'value').download([
+        1,
+        2,
+        3,
+      ], 'data.bin');
       expect(response.headers['X-Custom'], 'value');
       expect(response.headers['content-disposition'], contains('data.bin'));
     });
@@ -694,7 +742,10 @@ void main() {
 
       test('headers() with empty map', () {
         final response = Response.ok().headers({}).json({'data': 1});
-        expect(response.headers['content-type'], 'application/json; charset=utf-8');
+        expect(
+          response.headers['content-type'],
+          'application/json; charset=utf-8',
+        );
       });
     });
 
@@ -750,9 +801,11 @@ void main() {
       });
 
       test('bytes() preserves custom headers', () {
-        final response = Response.ok()
-            .header('X-Custom', 'value')
-            .bytes([1, 2, 3], contentType: 'application/pdf');
+        final response = Response.ok().header('X-Custom', 'value').bytes([
+          1,
+          2,
+          3,
+        ], contentType: 'application/pdf');
 
         expect(response.headers['X-Custom'], 'value');
         expect(response.headers['content-type'], 'application/pdf');
@@ -770,7 +823,10 @@ void main() {
     group('content type methods', () {
       test('json() sets correct content-type', () {
         final response = Response.ok().json({'key': 'value'});
-        expect(response.headers['content-type'], 'application/json; charset=utf-8');
+        expect(
+          response.headers['content-type'],
+          'application/json; charset=utf-8',
+        );
       });
 
       test('html() sets correct content-type', () {
@@ -788,7 +844,10 @@ void main() {
             .header('content-type', 'text/plain')
             .json({'key': 'value'});
         // json() should set application/json
-        expect(response.headers['content-type'], 'application/json; charset=utf-8');
+        expect(
+          response.headers['content-type'],
+          'application/json; charset=utf-8',
+        );
       });
     });
   });
@@ -806,7 +865,10 @@ void main() {
     });
 
     test('allows custom status code', () {
-      final response = Response.safeRedirect('/new', status: HttpStatus.movedPermanently);
+      final response = Response.safeRedirect(
+        '/new',
+        status: HttpStatus.movedPermanently,
+      );
       expect(response.statusCode, HttpStatus.movedPermanently);
     });
 
@@ -847,16 +909,14 @@ void main() {
 
     test('rejects encoded bypass attempts', () {
       expect(
-        () => Response.safeRedirect('%68%74%74%70://evil.com'), // encoded "http"
+        () =>
+            Response.safeRedirect('%68%74%74%70://evil.com'), // encoded "http"
         throwsArgumentError,
       );
     });
 
     test('rejects empty URLs', () {
-      expect(
-        () => Response.safeRedirect(''),
-        throwsArgumentError,
-      );
+      expect(() => Response.safeRedirect(''), throwsArgumentError);
     });
   });
 
@@ -866,7 +926,10 @@ void main() {
       expect(response.headers['x-content-type-options'], 'nosniff');
       expect(response.headers['x-frame-options'], 'DENY');
       expect(response.headers['x-xss-protection'], '1; mode=block');
-      expect(response.headers['referrer-policy'], 'strict-origin-when-cross-origin');
+      expect(
+        response.headers['referrer-policy'],
+        'strict-origin-when-cross-origin',
+      );
     });
 
     test('noSniff() adds X-Content-Type-Options', () {
@@ -885,7 +948,9 @@ void main() {
     });
 
     test('csp() adds Content-Security-Policy', () {
-      final response = Response.ok().csp("default-src 'self'").html('<p>test</p>');
+      final response = Response.ok()
+          .csp("default-src 'self'")
+          .html('<p>test</p>');
       expect(response.headers['content-security-policy'], "default-src 'self'");
     });
 
@@ -896,12 +961,20 @@ void main() {
 
     test('hsts() with includeSubdomains', () {
       final response = Response.ok().hsts(includeSubdomains: true).json({});
-      expect(response.headers['strict-transport-security'], 'max-age=31536000; includeSubDomains');
+      expect(
+        response.headers['strict-transport-security'],
+        'max-age=31536000; includeSubDomains',
+      );
     });
 
     test('hsts() with preload', () {
-      final response = Response.ok().hsts(includeSubdomains: true, preload: true).json({});
-      expect(response.headers['strict-transport-security'], 'max-age=31536000; includeSubDomains; preload');
+      final response = Response.ok()
+          .hsts(includeSubdomains: true, preload: true)
+          .json({});
+      expect(
+        response.headers['strict-transport-security'],
+        'max-age=31536000; includeSubDomains; preload',
+      );
     });
 
     test('hsts() with custom maxAge', () {
@@ -911,7 +984,10 @@ void main() {
 
     test('noCache() adds cache control headers', () {
       final response = Response.ok().noCache().json({'sensitive': 'data'});
-      expect(response.headers['cache-control'], 'no-store, no-cache, must-revalidate, private');
+      expect(
+        response.headers['cache-control'],
+        'no-store, no-cache, must-revalidate, private',
+      );
     });
   });
 
@@ -948,10 +1024,7 @@ void main() {
 
     test('sanitizes header names in headers() bulk method', () {
       final response = Response.ok()
-          .headers({
-            'X-First\nEvil': 'first',
-            'X-Second:Bad': 'second',
-          })
+          .headers({'X-First\nEvil': 'first', 'X-Second:Bad': 'second'})
           .json({});
       expect(response.headers['X-FirstEvil'], 'first');
       expect(response.headers['X-SecondBad'], 'second');
@@ -976,7 +1049,9 @@ void main() {
     });
 
     test('temporaryRedirect sanitizes location header', () {
-      final response = Response.temporaryRedirect('/temp\r\nSet-Cookie: stolen');
+      final response = Response.temporaryRedirect(
+        '/temp\r\nSet-Cookie: stolen',
+      );
       expect(response.headers['location'], '/tempSet-Cookie: stolen');
     });
 
@@ -1024,9 +1099,9 @@ void main() {
     });
 
     test('status() with headers', () {
-      final response = Response.status(299)
-          .header('X-Custom', 'value')
-          .json({'custom': true});
+      final response = Response.status(
+        299,
+      ).header('X-Custom', 'value').json({'custom': true});
       expect(response.statusCode, 299);
       expect(response.headers['X-Custom'], 'value');
     });
@@ -1043,10 +1118,10 @@ void main() {
     });
 
     test('preserves headers when changing status', () {
-      final response = Response.header('X-First', 'first')
-          .header('X-Second', 'second')
-          .status(404)
-          .json({'error': 'Not found'});
+      final response = Response.header(
+        'X-First',
+        'first',
+      ).header('X-Second', 'second').status(404).json({'error': 'Not found'});
       expect(response.statusCode, 404);
       expect(response.headers['X-First'], 'first');
       expect(response.headers['X-Second'], 'second');
@@ -1064,7 +1139,9 @@ void main() {
 
   group('Server error responses (5xx) - additional', () {
     test('gatewayTimeout() creates 504 response', () {
-      final response = Response.gatewayTimeout().json({'error': 'Gateway timeout'});
+      final response = Response.gatewayTimeout().json({
+        'error': 'Gateway timeout',
+      });
       expect(response.statusCode, HttpStatus.gatewayTimeout);
       expect(response.body, {'error': 'Gateway timeout'});
     });
@@ -1090,7 +1167,9 @@ void main() {
     });
 
     test('writes JSON body correctly', () async {
-      app.get('/json').handle((ctx) => Response.json({'key': 'value', 'number': 42}));
+      app
+          .get('/json')
+          .handle((ctx) => Response.json({'key': 'value', 'number': 42}));
       final res = await client.get('/json');
       final body = jsonDecode(await res.body);
       expect(body['key'], 'value');
@@ -1141,16 +1220,17 @@ void main() {
     });
 
     test('writes nested object as JSON', () async {
-      app.get('/nested').handle((ctx) => Response.json({
-            'user': {
-              'name': 'John',
-              'address': {
-                'city': 'Tokyo',
-                'country': 'Japan',
+      app
+          .get('/nested')
+          .handle(
+            (ctx) => Response.json({
+              'user': {
+                'name': 'John',
+                'address': {'city': 'Tokyo', 'country': 'Japan'},
               },
-            },
-            'tags': ['tag1', 'tag2'],
-          }));
+              'tags': ['tag1', 'tag2'],
+            }),
+          );
       final res = await client.get('/nested');
       final body = jsonDecode(await res.body);
       expect(body['user']['name'], 'John');
@@ -1205,7 +1285,10 @@ void main() {
 
     test('ResponseBuilder with no headers', () {
       final response = Response.ok().json({'data': 1});
-      expect(response.headers['content-type'], 'application/json; charset=utf-8');
+      expect(
+        response.headers['content-type'],
+        'application/json; charset=utf-8',
+      );
     });
 
     test('Multiple status builders are independent', () {
@@ -1228,11 +1311,7 @@ class _User {
 
   _User({required this.id, required this.name, required this.email});
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'email': email,
-      };
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'email': email};
 }
 
 /// Test class with nested toJson() objects
@@ -1243,7 +1322,7 @@ class _Company {
   _Company({required this.name, required this.employees});
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'employees': employees.map((e) => e.toJson()).toList(),
-      };
+    'name': name,
+    'employees': employees.map((e) => e.toJson()).toList(),
+  };
 }

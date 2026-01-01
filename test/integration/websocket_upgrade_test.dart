@@ -112,10 +112,7 @@ void main() {
       await clientWs.close(1000, 'Client closing');
 
       // Verify server detected disconnect
-      await expectLater(
-        disconnectCompleter.future,
-        completes,
-      );
+      await expectLater(disconnectCompleter.future, completes);
     });
   });
 }

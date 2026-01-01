@@ -7,7 +7,8 @@ import 'package:test/test.dart';
 // Mock WebSocket for testing
 class MockWebSocket implements WebSocket {
   final List<dynamic> sentMessages = [];
-  final StreamController<dynamic> _messageController = StreamController<dynamic>.broadcast();
+  final StreamController<dynamic> _messageController =
+      StreamController<dynamic>.broadcast();
   final Completer<void> _doneCompleter = Completer<void>();
 
   int? _closeCode;
@@ -407,9 +408,12 @@ void main() {
 
         expect(mockSocket.sentMessages, hasLength(2));
         expect(textMessages, equals(['Incoming text']));
-        expect(binaryMessages, equals([
-          [4, 5, 6]
-        ]));
+        expect(
+          binaryMessages,
+          equals([
+            [4, 5, 6],
+          ]),
+        );
       });
     });
 
@@ -461,9 +465,7 @@ void main() {
 
       test('handles empty binary data', () {
         ws.sendBinary([]);
-        expect(mockSocket.sentMessages, equals([
-          []
-        ]));
+        expect(mockSocket.sentMessages, equals([[]]));
       });
 
       test('handles very long message', () {

@@ -66,7 +66,10 @@ void main() {
     });
 
     test('allows custom timeout', () {
-      final proxy = Proxy('https://api.example.com', timeout: Duration(minutes: 2));
+      final proxy = Proxy(
+        'https://api.example.com',
+        timeout: Duration(minutes: 2),
+      );
 
       expect(proxy.timeout, Duration(minutes: 2));
     });
@@ -84,7 +87,10 @@ void main() {
     });
 
     test('allows disabling forwarded headers', () {
-      const proxy = Proxy('https://api.example.com', addForwardedHeaders: false);
+      const proxy = Proxy(
+        'https://api.example.com',
+        addForwardedHeaders: false,
+      );
 
       expect(proxy.addForwardedHeaders, isFalse);
     });

@@ -22,7 +22,8 @@ class MockHttpResponse implements HttpResponse {
   @override
   Future<void> flush() async {}
 
-  List<String> get writtenText => writtenData.map((data) => utf8.decode(data)).toList();
+  List<String> get writtenText =>
+      writtenData.map((data) => utf8.decode(data)).toList();
 
   String get allText => writtenText.join();
 
@@ -172,12 +173,7 @@ void main() {
       });
 
       test('sends data with all optional parameters', () async {
-        await sse.send(
-          'Full message',
-          event: 'update',
-          id: '123',
-          retry: 3000,
-        );
+        await sse.send('Full message', event: 'update', id: '123', retry: 3000);
 
         final message = mockResponse.messages[0];
         expect(message, contains('event: update\n'));
@@ -268,12 +264,7 @@ void main() {
 
     group('SSE format compliance', () {
       test('follows W3C SSE specification format', () async {
-        await sse.send(
-          'test data',
-          event: 'message',
-          id: '1',
-          retry: 1000,
-        );
+        await sse.send('test data', event: 'message', id: '1', retry: 1000);
 
         final message = mockResponse.messages[0];
         final lines = message.split('\n').where((l) => l.isNotEmpty).toList();
@@ -325,10 +316,7 @@ void main() {
       test('throws when sending to closed stream', () async {
         await sse.close();
 
-        expect(
-          () => sse.send('Test'),
-          throwsStateError,
-        );
+        expect(() => sse.send('Test'), throwsStateError);
       });
     });
 
@@ -392,10 +380,10 @@ void main() {
 
       test('server time updates', () async {
         for (var i = 0; i < 3; i++) {
-          await sse.send(
-            {'timestamp': DateTime.now().toIso8601String(), 'value': i},
-            event: 'time',
-          );
+          await sse.send({
+            'timestamp': DateTime.now().toIso8601String(),
+            'value': i,
+          }, event: 'time');
         }
 
         expect(mockResponse.messages, hasLength(3));
@@ -433,9 +421,9 @@ void main() {
         await sse.send({
           'user': {
             'name': 'Alice',
-            'profile': {'age': 30, 'city': 'Tokyo'}
+            'profile': {'age': 30, 'city': 'Tokyo'},
           },
-          'messages': ['Hello', 'World']
+          'messages': ['Hello', 'World'],
         });
 
         final message = mockResponse.messages[0];

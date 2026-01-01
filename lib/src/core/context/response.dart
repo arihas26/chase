@@ -126,7 +126,10 @@ class Res {
   /// return Response.found('/login');
   /// ```
   @internal
-  Future<void> redirect(String location, {int status = HttpStatus.found}) async {
+  Future<void> redirect(
+    String location, {
+    int status = HttpStatus.found,
+  }) async {
     if (_sent) return;
     _sent = true;
     _raw

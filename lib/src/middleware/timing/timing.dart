@@ -94,10 +94,13 @@ class Timing implements Middleware {
         for (final entry in startTimes.entries) {
           if (entry.value.isRunning) {
             entry.value.stop();
-            _addMetric(ctx, _TimingMetric(
-              name: entry.key,
-              duration: entry.value.elapsedMicroseconds / 1000,
-            ));
+            _addMetric(
+              ctx,
+              _TimingMetric(
+                name: entry.key,
+                duration: entry.value.elapsedMicroseconds / 1000,
+              ),
+            );
           }
         }
       }
@@ -105,11 +108,14 @@ class Timing implements Middleware {
 
     // Add total time if enabled
     if (total) {
-      _addMetric(ctx, _TimingMetric(
-        name: 'total',
-        duration: totalStopwatch.elapsedMicroseconds / 1000,
-        description: totalDescription,
-      ));
+      _addMetric(
+        ctx,
+        _TimingMetric(
+          name: 'total',
+          duration: totalStopwatch.elapsedMicroseconds / 1000,
+          description: totalDescription,
+        ),
+      );
     }
 
     // Build and set Server-Timing header
@@ -207,11 +213,14 @@ void endTime(Context ctx, String name) {
   stopwatch.stop();
   final description = ctx.get<String>('_timing_desc_$name');
 
-  _addMetric(ctx, _TimingMetric(
-    name: name,
-    duration: stopwatch.elapsedMicroseconds / 1000,
-    description: description,
-  ));
+  _addMetric(
+    ctx,
+    _TimingMetric(
+      name: name,
+      duration: stopwatch.elapsedMicroseconds / 1000,
+      description: description,
+    ),
+  );
 }
 
 /// Sets a custom metric.
@@ -233,12 +242,15 @@ void setMetric(
   String? desc,
   String? value,
 }) {
-  _addMetric(ctx, _TimingMetric(
-    name: name,
-    duration: duration,
-    description: desc,
-    value: value,
-  ));
+  _addMetric(
+    ctx,
+    _TimingMetric(
+      name: name,
+      duration: duration,
+      description: desc,
+      value: value,
+    ),
+  );
 }
 
 /// Times an async operation and records the metric.

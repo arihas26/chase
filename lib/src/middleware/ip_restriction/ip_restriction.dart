@@ -67,8 +67,8 @@ class IpRestriction implements Middleware {
     this.denyList = const [],
     this.allowList = const [],
     this.onDenied,
-  })  : _denyRules = denyList.map(_IpRule.parse).toList(),
-        _allowRules = allowList.map(_IpRule.parse).toList();
+  }) : _denyRules = denyList.map(_IpRule.parse).toList(),
+       _allowRules = allowList.map(_IpRule.parse).toList();
 
   @override
   FutureOr<void> handle(Context ctx, NextFunction next) async {
@@ -82,10 +82,10 @@ class IpRestriction implements Middleware {
         }
         return;
       }
-      await ctx.res.json(
-        {'error': 'Forbidden', 'message': 'Access denied'},
-        status: HttpStatus.forbidden,
-      );
+      await ctx.res.json({
+        'error': 'Forbidden',
+        'message': 'Access denied',
+      }, status: HttpStatus.forbidden);
       return;
     }
 
@@ -218,8 +218,8 @@ class _Ipv4CidrRule implements _IpRule {
   final int _mask;
 
   _Ipv4CidrRule(String ip, int prefix)
-      : _network = _parseIpv4(ip),
-        _mask = prefix == 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF;
+    : _network = _parseIpv4(ip),
+      _mask = prefix == 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF;
 
   @override
   bool matches(String ip) {

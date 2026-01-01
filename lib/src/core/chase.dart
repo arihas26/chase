@@ -353,7 +353,8 @@ class Chase extends _ChaseBase<Chase> {
     final method = methodOverride ?? req.method;
     final route = _router.match(method, req.uri.path);
     // Handler already has middleware chain built at registration time
-    final handler = route?.handler ?? _cachedNotFoundHandler ?? _defaultNotFoundHandler;
+    final handler =
+        route?.handler ?? _cachedNotFoundHandler ?? _defaultNotFoundHandler;
     final ctx = Context(req, req.response, route?.params, methodOverride);
 
     try {
@@ -365,17 +366,27 @@ class Chase extends _ChaseBase<Chase> {
     }
   }
 
-  Future<void> _handleError(Object error, StackTrace stackTrace, Context ctx) async {
+  Future<void> _handleError(
+    Object error,
+    StackTrace stackTrace,
+    Context ctx,
+  ) async {
     if (_errorHandler != null) {
       try {
         final result = await _errorHandler!(error, stackTrace, ctx);
         await _sendResponse(ctx, result);
       } catch (e) {
         // Error handler itself threw
-        await ctx.res.text('Internal Server Error', status: HttpStatus.internalServerError);
+        await ctx.res.text(
+          'Internal Server Error',
+          status: HttpStatus.internalServerError,
+        );
       }
     } else {
-      await ctx.res.text('Internal Server Error', status: HttpStatus.internalServerError);
+      await ctx.res.text(
+        'Internal Server Error',
+        status: HttpStatus.internalServerError,
+      );
     }
   }
 
@@ -572,7 +583,15 @@ class ChaseBuilder with _BuilderMiddlewareSupport<ChaseBuilder> {
 // =============================================================================
 
 /// All standard HTTP methods that [ChaseBuilderAll] registers handlers for.
-const _allHttpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
+const _allHttpMethods = [
+  'GET',
+  'POST',
+  'PUT',
+  'DELETE',
+  'PATCH',
+  'HEAD',
+  'OPTIONS',
+];
 
 /// A builder for configuring routes that match ALL HTTP methods.
 ///
@@ -639,7 +658,7 @@ class ChaseBuilderOn with _BuilderMiddlewareSupport<ChaseBuilderOn> {
   final List<Middleware> _middlewares = [];
 
   ChaseBuilderOn._(this._registrar, List<String> methods, this._paths)
-      : _methods = methods.map((m) => m.toUpperCase()).toList();
+    : _methods = methods.map((m) => m.toUpperCase()).toList();
 
   /// Registers the handler for the specified HTTP methods on this route.
   void handle(Handler handler) {
@@ -740,8 +759,11 @@ abstract class _ChaseBase<T extends _ChaseBase<T>>
       ChaseBuilder._(this, 'OPTIONS', _normalizePaths(_prefix, path));
 
   /// Creates a route builder for any HTTP method with the given path(s).
-  ChaseBuilder route(String method, [Object path = '/']) =>
-      ChaseBuilder._(this, method.toUpperCase(), _normalizePaths(_prefix, path));
+  ChaseBuilder route(String method, [Object path = '/']) => ChaseBuilder._(
+    this,
+    method.toUpperCase(),
+    _normalizePaths(_prefix, path),
+  );
 
   /// Creates a route builder that matches ALL HTTP methods.
   ///
@@ -933,9 +955,5 @@ class MethodOverrideConfig {
   /// Query parameter name to check for method override.
   final String? query;
 
-  const MethodOverrideConfig({
-    this.form,
-    this.header,
-    this.query,
-  });
+  const MethodOverrideConfig({this.form, this.header, this.query});
 }

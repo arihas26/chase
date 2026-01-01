@@ -18,7 +18,9 @@ void main() {
     });
 
     test('custom generator', () {
-      final options = ETagOptions(generator: (content) => 'custom-${content.length}');
+      final options = ETagOptions(
+        generator: (content) => 'custom-${content.length}',
+      );
       expect(options.generator!(Uint8List.fromList([1, 2, 3])), 'custom-3');
     });
   });
@@ -32,7 +34,10 @@ void main() {
     });
 
     test('fromBytes generates weak ETag', () {
-      final etag = ETagHelper.fromBytes(Uint8List.fromList([1, 2, 3]), weak: true);
+      final etag = ETagHelper.fromBytes(
+        Uint8List.fromList([1, 2, 3]),
+        weak: true,
+      );
       expect(etag, startsWith('W/"'));
       expect(etag, endsWith('"'));
     });
@@ -77,9 +82,18 @@ void main() {
     });
 
     test('strong comparison requires both strong', () {
-      expect(ETagHelper.equals('"abc"', '"abc"', strongComparison: true), isTrue);
-      expect(ETagHelper.equals('W/"abc"', '"abc"', strongComparison: true), isFalse);
-      expect(ETagHelper.equals('"abc"', 'W/"abc"', strongComparison: true), isFalse);
+      expect(
+        ETagHelper.equals('"abc"', '"abc"', strongComparison: true),
+        isTrue,
+      );
+      expect(
+        ETagHelper.equals('W/"abc"', '"abc"', strongComparison: true),
+        isFalse,
+      );
+      expect(
+        ETagHelper.equals('"abc"', 'W/"abc"', strongComparison: true),
+        isFalse,
+      );
     });
   });
 
@@ -98,13 +112,18 @@ void main() {
     });
 
     test('generateEtag uses custom generator', () {
-      final middleware = ETag(ETagOptions(generator: (content) => 'custom-hash'));
+      final middleware = ETag(
+        ETagOptions(generator: (content) => 'custom-hash'),
+      );
       expect(middleware.generateEtagFromString('hello'), '"custom-hash"');
     });
 
     test('generateEtag consistent for same content', () {
       const middleware = ETag();
-      expect(middleware.generateEtagFromString('hello'), middleware.generateEtagFromString('hello'));
+      expect(
+        middleware.generateEtagFromString('hello'),
+        middleware.generateEtagFromString('hello'),
+      );
     });
   });
 
@@ -120,7 +139,10 @@ void main() {
     });
 
     test('ifNoneMatch parses multiple values', () {
-      final ctx = TestContext.get('/', headers: {'if-none-match': '"abc", "def", "ghi"'});
+      final ctx = TestContext.get(
+        '/',
+        headers: {'if-none-match': '"abc", "def", "ghi"'},
+      );
       expect(ctx.ifNoneMatch, ['"abc"', '"def"', '"ghi"']);
     });
 
@@ -140,7 +162,10 @@ void main() {
     });
 
     test('etagMatches handles weak ETags', () {
-      final ctx = TestContext.get('/', headers: {'if-none-match': 'W/"abc123"'});
+      final ctx = TestContext.get(
+        '/',
+        headers: {'if-none-match': 'W/"abc123"'},
+      );
       expect(ctx.etagMatches('"abc123"'), isTrue);
       expect(ctx.etagMatches('W/"abc123"'), isTrue);
     });
@@ -175,7 +200,10 @@ void main() {
     });
 
     test('checkEtag matches with multiple If-None-Match values', () async {
-      final ctx = TestContext.get('/', headers: {'if-none-match': '"old", "abc123", "other"'});
+      final ctx = TestContext.get(
+        '/',
+        headers: {'if-none-match': '"old", "abc123", "other"'},
+      );
       final result = await ctx.checkEtag('"abc123"');
 
       expect(result, isTrue);

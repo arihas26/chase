@@ -9,7 +9,10 @@ void main() {
         final v = V.isString();
         expect(v.validate('field', 'hello'), isEmpty);
         expect(v.validate('field', 123), hasLength(1));
-        expect(v.validate('field', null), isEmpty); // null is ok without required
+        expect(
+          v.validate('field', null),
+          isEmpty,
+        ); // null is ok without required
       });
 
       test('with required', () {
@@ -225,10 +228,7 @@ void main() {
         'age': V.isInt().required().min(18),
       });
 
-      final result = schema.validate({
-        'name': 'J',
-        'age': 15,
-      });
+      final result = schema.validate({'name': 'J', 'age': 15});
 
       expect(result.isValid, isFalse);
       expect(result.errors, hasLength(2));
@@ -237,9 +237,7 @@ void main() {
     });
 
     test('handles missing required fields', () {
-      final schema = Schema({
-        'name': V.isString().required(),
-      });
+      final schema = Schema({'name': V.isString().required()});
 
       final result = schema.validate({});
 
@@ -248,9 +246,7 @@ void main() {
     });
 
     test('handles null data', () {
-      final schema = Schema({
-        'name': V.isString().required(),
-      });
+      final schema = Schema({'name': V.isString().required()});
 
       final result = schema.validate(null);
 
@@ -258,15 +254,9 @@ void main() {
     });
 
     test('transforms values', () {
-      final schema = Schema({
-        'age': V.isInt(),
-        'active': V.isBool(),
-      });
+      final schema = Schema({'age': V.isInt(), 'active': V.isBool()});
 
-      final result = schema.validate({
-        'age': '25',
-        'active': 'true',
-      });
+      final result = schema.validate({'age': '25', 'active': 'true'});
 
       expect(result.isValid, isTrue);
       expect(result.data['age'], 25);
@@ -371,19 +361,17 @@ void main() {
           ctx.res.json({'validated': ctx.validatedBody});
         });
 
-        final res = await client.postJson(
-          '/users',
-          {'name': 'John', 'email': 'john@example.com'},
-        );
+        final res = await client.postJson('/users', {
+          'name': 'John',
+          'email': 'john@example.com',
+        });
 
         expect(res, isOkResponse);
         expect(await res.json, hasJsonPath('validated.name', 'John'));
       });
 
       test('returns 422 on validation failure', () async {
-        final schema = Schema({
-          'name': V.isString().required().min(2),
-        });
+        final schema = Schema({'name': V.isString().required().min(2)});
 
         // Add ExceptionHandler to convert exceptions to proper responses
         app.use(ExceptionHandler());
@@ -397,24 +385,22 @@ void main() {
       });
 
       test('with throwOnError: false stores errors in context', () async {
-        final schema = Schema({
-          'name': V.isString().required(),
-        });
+        final schema = Schema({'name': V.isString().required()});
 
         app
             .post('/users')
             .use(Validator(body: schema, throwOnError: false))
             .handle((ctx) async {
-          if (!ctx.isValid) {
-            ctx.res.json({
-              'errors': ctx.validationErrors['body']!
-                  .map((e) => e.toJson())
-                  .toList(),
+              if (!ctx.isValid) {
+                ctx.res.json({
+                  'errors': ctx.validationErrors['body']!
+                      .map((e) => e.toJson())
+                      .toList(),
+                });
+              } else {
+                ctx.res.json({'ok': true});
+              }
             });
-          } else {
-            ctx.res.json({'ok': true});
-          }
-        });
 
         final res = await client.postJson('/users', {});
 
@@ -463,14 +449,11 @@ void main() {
 
     group('params validation', () {
       test('validates route parameters', () async {
-        final schema = Schema({
-          'id': V.isInt().required().min(1),
-        });
+        final schema = Schema({'id': V.isInt().required().min(1)});
 
-        app
-            .get('/users/:id')
-            .use(Validator(params: schema))
-            .handle((ctx) async {
+        app.get('/users/:id').use(Validator(params: schema)).handle((
+          ctx,
+        ) async {
           ctx.res.json({'id': ctx.validatedParams!['id']});
         });
 
@@ -483,35 +466,30 @@ void main() {
 
     group('combined validation', () {
       test('validates body, query, and params together', () async {
-        final bodySchema = Schema({
-          'title': V.isString().required(),
-        });
-        final querySchema = Schema({
-          'publish': V.isBool().defaultValue(false),
-        });
-        final paramsSchema = Schema({
-          'userId': V.isInt().required(),
-        });
+        final bodySchema = Schema({'title': V.isString().required()});
+        final querySchema = Schema({'publish': V.isBool().defaultValue(false)});
+        final paramsSchema = Schema({'userId': V.isInt().required()});
 
         app
             .post('/users/:userId/posts')
-            .use(Validator(
-              body: bodySchema,
-              query: querySchema,
-              params: paramsSchema,
-            ))
+            .use(
+              Validator(
+                body: bodySchema,
+                query: querySchema,
+                params: paramsSchema,
+              ),
+            )
             .handle((ctx) async {
-          ctx.res.json({
-            'body': ctx.validatedBody,
-            'query': ctx.validatedQuery,
-            'params': ctx.validatedParams,
-          });
-        });
+              ctx.res.json({
+                'body': ctx.validatedBody,
+                'query': ctx.validatedQuery,
+                'params': ctx.validatedParams,
+              });
+            });
 
-        final res = await client.postJson(
-          '/users/1/posts?publish=true',
-          {'title': 'Hello World'},
-        );
+        final res = await client.postJson('/users/1/posts?publish=true', {
+          'title': 'Hello World',
+        });
 
         expect(res, isOkResponse);
         final json = await res.json;

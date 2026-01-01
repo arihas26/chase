@@ -77,7 +77,13 @@ class Cors implements Middleware {
   /// ```
   Cors([this.options = const CorsOptions()]);
 
-  static const _defaultAllowMethods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'];
+  static const _defaultAllowMethods = [
+    'GET',
+    'POST',
+    'PUT',
+    'DELETE',
+    'OPTIONS',
+  ];
 
   @override
   FutureOr<void> handle(Context ctx, NextFunction next) async {
@@ -124,7 +130,10 @@ class Cors implements Middleware {
   /// Sets the Access-Control-Allow-Credentials header if credentials are allowed.
   void _setCredentialsHeader(Context ctx) {
     if (options.allowCredentials) {
-      ctx.res.headers.set(HttpHeaders.accessControlAllowCredentialsHeader, 'true');
+      ctx.res.headers.set(
+        HttpHeaders.accessControlAllowCredentialsHeader,
+        'true',
+      );
     }
   }
 
@@ -148,7 +157,10 @@ class Cors implements Middleware {
   /// Sets the Access-Control-Allow-Methods header for preflight requests.
   void _setAllowMethodsHeader(Context ctx) {
     final methods = options.allowMethods ?? _defaultAllowMethods;
-    ctx.res.headers.set(HttpHeaders.accessControlAllowMethodsHeader, methods.join(', '));
+    ctx.res.headers.set(
+      HttpHeaders.accessControlAllowMethodsHeader,
+      methods.join(', '),
+    );
   }
 
   /// Sets the Access-Control-Allow-Headers header for preflight requests.
@@ -161,7 +173,10 @@ class Cors implements Middleware {
     } else {
       final requestHeaders = ctx.req.header('access-control-request-headers');
       if (requestHeaders != null && requestHeaders.isNotEmpty) {
-        ctx.res.headers.set(HttpHeaders.accessControlAllowHeadersHeader, requestHeaders);
+        ctx.res.headers.set(
+          HttpHeaders.accessControlAllowHeadersHeader,
+          requestHeaders,
+        );
       }
     }
   }

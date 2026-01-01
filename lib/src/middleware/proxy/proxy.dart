@@ -99,7 +99,9 @@ class Proxy implements Middleware {
       final targetUri = _buildTargetUri(ctx);
 
       // Open connection to target server
-      final request = await client.openUrl(ctx.req.method, targetUri).timeout(timeout);
+      final request = await client
+          .openUrl(ctx.req.method, targetUri)
+          .timeout(timeout);
 
       // Copy headers from original request
       _copyRequestHeaders(ctx, request);
@@ -199,7 +201,9 @@ class Proxy implements Middleware {
 
   /// Joins two paths, handling trailing/leading slashes.
   String _joinPaths(String basePath, String requestPath) {
-    final base = basePath.endsWith('/') ? basePath.substring(0, basePath.length - 1) : basePath;
+    final base = basePath.endsWith('/')
+        ? basePath.substring(0, basePath.length - 1)
+        : basePath;
     final request = requestPath.startsWith('/') ? requestPath : '/$requestPath';
 
     if (base.isEmpty) return request;

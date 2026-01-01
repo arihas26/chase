@@ -110,8 +110,8 @@ class RateLimitOptions {
     this.skipSuccessfulRequests = false,
     this.skipFailedRequests = false,
     this.onLimitReached,
-  })  : assert(maxRequests > 0, 'maxRequests must be greater than 0'),
-        assert(windowMs > 0, 'windowMs must be greater than 0');
+  }) : assert(maxRequests > 0, 'maxRequests must be greater than 0'),
+       assert(windowMs > 0, 'windowMs must be greater than 0');
 
   /// Creates options with window specified in seconds.
   ///
@@ -127,9 +127,9 @@ class RateLimitOptions {
     this.skipSuccessfulRequests = false,
     this.skipFailedRequests = false,
     this.onLimitReached,
-  })  : maxRequests = requests,
-        windowMs = 1000,
-        assert(requests > 0, 'requests must be greater than 0');
+  }) : maxRequests = requests,
+       windowMs = 1000,
+       assert(requests > 0, 'requests must be greater than 0');
 
   /// Creates options with window specified in minutes.
   ///
@@ -145,9 +145,9 @@ class RateLimitOptions {
     this.skipSuccessfulRequests = false,
     this.skipFailedRequests = false,
     this.onLimitReached,
-  })  : maxRequests = requests,
-        windowMs = 60000,
-        assert(requests > 0, 'requests must be greater than 0');
+  }) : maxRequests = requests,
+       windowMs = 60000,
+       assert(requests > 0, 'requests must be greater than 0');
 
   /// Creates options with window specified in hours.
   ///
@@ -163,9 +163,9 @@ class RateLimitOptions {
     this.skipSuccessfulRequests = false,
     this.skipFailedRequests = false,
     this.onLimitReached,
-  })  : maxRequests = requests,
-        windowMs = 3600000,
-        assert(requests > 0, 'requests must be greater than 0');
+  }) : maxRequests = requests,
+       windowMs = 3600000,
+       assert(requests > 0, 'requests must be greater than 0');
 
   /// Default key extractor using the client's IP address.
   static String _defaultKeyExtractor(Context ctx) {
@@ -178,10 +178,7 @@ class _RateLimitEntry {
   int count;
   DateTime windowStart;
 
-  _RateLimitEntry({
-    required this.count,
-    required this.windowStart,
-  });
+  _RateLimitEntry({required this.count, required this.windowStart});
 }
 
 /// In-memory store for rate limit data.
@@ -368,10 +365,8 @@ class RateLimit implements Middleware {
   /// final store = RateLimitStore();
   /// app.use(RateLimit(const RateLimitOptions(), store: store));
   /// ```
-  RateLimit([
-    this.options = const RateLimitOptions(),
-    RateLimitStore? store,
-  ]) : _store = store ?? RateLimitStore();
+  RateLimit([this.options = const RateLimitOptions(), RateLimitStore? store])
+    : _store = store ?? RateLimitStore();
 
   @override
   FutureOr<void> handle(Context ctx, NextFunction next) async {
@@ -385,18 +380,15 @@ class RateLimit implements Middleware {
 
     // Check if rate limit exceeded
     if (info.isExceeded) {
-      _log.warn(
-        'Rate limit exceeded',
-        {
-          'request_id': ctx.get<String>('_requestId'),
-          'key': info.key,
-          'method': ctx.req.method,
-          'path': ctx.req.path,
-          'request_count': info.requestCount,
-          'max_requests': info.maxRequests,
-          'reset_in_seconds': (info.resetInMs / 1000).ceil(),
-        },
-      );
+      _log.warn('Rate limit exceeded', {
+        'request_id': ctx.get<String>('_requestId'),
+        'key': info.key,
+        'method': ctx.req.method,
+        'path': ctx.req.path,
+        'request_count': info.requestCount,
+        'max_requests': info.maxRequests,
+        'reset_in_seconds': (info.resetInMs / 1000).ceil(),
+      });
 
       options.onLimitReached?.call(ctx, info);
 

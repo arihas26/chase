@@ -15,7 +15,8 @@ import 'package:zlogger/zlogger.dart';
 /// - Validating user roles or permissions
 /// - Verifying token scope
 /// - Additional business logic validation
-typedef JwtPayloadValidator = FutureOr<bool> Function(Map<String, dynamic> payload);
+typedef JwtPayloadValidator =
+    FutureOr<bool> Function(Map<String, dynamic> payload);
 
 /// JWT (JSON Web Token) Authentication middleware.
 ///
@@ -125,15 +126,11 @@ class JwtAuth implements Middleware {
 
       if (token.isEmpty) {
         await _unauthorized(ctx, 'Missing token');
-      return;
+        return;
       }
 
       // Verify JWT signature and expiration
-      final jwt = JWT.verify(
-        token,
-        SecretKey(secretKey),
-        checkExpiresIn: true,
-      );
+      final jwt = JWT.verify(token, SecretKey(secretKey), checkExpiresIn: true);
 
       // Extract payload
       final payload = jwt.payload as Map<String, dynamic>;
@@ -143,7 +140,7 @@ class JwtAuth implements Middleware {
         final isValid = await _validatePayload(payload);
         if (!isValid) {
           await _unauthorized(ctx, 'Invalid token payload');
-      return;
+          return;
         }
       }
 
@@ -182,17 +179,17 @@ class JwtAuth implements Middleware {
 
   /// Sends a 401 Unauthorized response with the appropriate WWW-Authenticate header.
   Future<void> _unauthorized(Context ctx, String message) async {
-    _log.warn(
-      'JWT auth failed: $message',
-      {
-        'request_id': ctx.get<String>('_requestId'),
-        'method': ctx.req.method,
-        'path': ctx.req.path,
-        'ip': _safeGetIp(ctx),
-      },
-    );
+    _log.warn('JWT auth failed: $message', {
+      'request_id': ctx.get<String>('_requestId'),
+      'method': ctx.req.method,
+      'path': ctx.req.path,
+      'ip': _safeGetIp(ctx),
+    });
 
-    ctx.res.headers.set(HttpHeaders.wwwAuthenticateHeader, 'Bearer realm="$realm"');
+    ctx.res.headers.set(
+      HttpHeaders.wwwAuthenticateHeader,
+      'Bearer realm="$realm"',
+    );
     await ctx.res.json({
       'error': 'Unauthorized',
       'message': message,
