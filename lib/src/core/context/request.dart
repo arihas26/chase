@@ -172,6 +172,156 @@ class Req {
   /// Accept header value.
   String? get accept => header('accept');
 
+  /// Accept-Language header value.
+  String? get acceptLanguage => header('accept-language');
+
+  /// Accept-Encoding header value.
+  String? get acceptEncoding => header('accept-encoding');
+
+  // ---------------------------------------------------------------------------
+  // Content Negotiation
+  // ---------------------------------------------------------------------------
+
+  /// Performs content negotiation for the Accept header.
+  ///
+  /// Returns the best match from [supported] types, or [defaultValue] if none match.
+  ///
+  /// ```dart
+  /// final type = ctx.req.accepts(['json', 'html', 'xml'], defaultValue: 'json');
+  /// if (type == 'json') {
+  ///   return ctx.res.json(data);
+  /// } else if (type == 'html') {
+  ///   return ctx.res.html(renderHtml(data));
+  /// }
+  /// ```
+  ///
+  /// Supports shorthand types:
+  /// - `'json'` → `'application/json'`
+  /// - `'html'` → `'text/html'`
+  /// - `'xml'` → `'application/xml'`
+  /// - `'text'` → `'text/plain'`
+  String accepts(List<String> supported, {required String defaultValue}) {
+    return _negotiate(accept, supported, defaultValue, _expandMimeType);
+  }
+
+  /// Performs content negotiation for the Accept-Language header.
+  ///
+  /// ```dart
+  /// final lang = ctx.req.acceptsLanguages(['en', 'ja', 'zh'], defaultValue: 'en');
+  /// ```
+  String acceptsLanguages(List<String> supported, {required String defaultValue}) {
+    return _negotiate(acceptLanguage, supported, defaultValue);
+  }
+
+  /// Performs content negotiation for the Accept-Encoding header.
+  ///
+  /// ```dart
+  /// final encoding = ctx.req.acceptsEncodings(['gzip', 'deflate', 'br'], defaultValue: 'identity');
+  /// ```
+  String acceptsEncodings(List<String> supported, {required String defaultValue}) {
+    return _negotiate(acceptEncoding, supported, defaultValue);
+  }
+
+  /// Performs content negotiation for the Accept-Charset header.
+  ///
+  /// ```dart
+  /// final charset = ctx.req.acceptsCharsets(['utf-8', 'iso-8859-1'], defaultValue: 'utf-8');
+  /// ```
+  String acceptsCharsets(List<String> supported, {required String defaultValue}) {
+    return _negotiate(header('accept-charset'), supported, defaultValue);
+  }
+
+  String _negotiate(
+    String? headerValue,
+    List<String> supported,
+    String defaultValue, [
+    String Function(String)? expand,
+  ]) {
+    if (headerValue == null || headerValue.isEmpty) {
+      return defaultValue;
+    }
+
+    final accepts = _parseAcceptHeader(headerValue);
+    final expandedSupported = expand != null
+        ? supported.map((s) => MapEntry(s, expand(s))).toList()
+        : supported.map((s) => MapEntry(s, s.toLowerCase())).toList();
+
+    for (final accept in accepts) {
+      // Wildcard matches first supported
+      if (accept.value == '*' || accept.value == '*/*') {
+        return supported.first;
+      }
+
+      for (final entry in expandedSupported) {
+        if (_matchesAccept(accept.value, entry.value)) {
+          return entry.key;
+        }
+      }
+    }
+
+    return defaultValue;
+  }
+
+  List<({String value, double quality})> _parseAcceptHeader(String header) {
+    final parts = header.split(',').map((p) => p.trim()).where((p) => p.isNotEmpty);
+    final result = <({String value, double quality})>[];
+
+    for (final part in parts) {
+      final segments = part.split(';').map((s) => s.trim()).toList();
+      final value = segments.first.toLowerCase();
+      var quality = 1.0;
+
+      for (var i = 1; i < segments.length; i++) {
+        if (segments[i].startsWith('q=')) {
+          quality = double.tryParse(segments[i].substring(2)) ?? 1.0;
+          break;
+        }
+      }
+
+      result.add((value: value, quality: quality));
+    }
+
+    // Sort by quality (descending)
+    result.sort((a, b) => b.quality.compareTo(a.quality));
+    return result;
+  }
+
+  bool _matchesAccept(String accept, String supported) {
+    if (accept == supported) return true;
+
+    // Handle wildcards like text/* or */xml
+    if (accept.contains('*')) {
+      final acceptParts = accept.split('/');
+      final supportedParts = supported.split('/');
+      if (acceptParts.length == 2 && supportedParts.length == 2) {
+        final typeMatch = acceptParts[0] == '*' || acceptParts[0] == supportedParts[0];
+        final subtypeMatch = acceptParts[1] == '*' || acceptParts[1] == supportedParts[1];
+        return typeMatch && subtypeMatch;
+      }
+    }
+
+    return false;
+  }
+
+  static String _expandMimeType(String type) {
+    return switch (type.toLowerCase()) {
+      'json' => 'application/json',
+      'html' => 'text/html',
+      'xml' => 'application/xml',
+      'text' => 'text/plain',
+      'css' => 'text/css',
+      'js' || 'javascript' => 'application/javascript',
+      'form' => 'application/x-www-form-urlencoded',
+      'multipart' => 'multipart/form-data',
+      'png' => 'image/png',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'gif' => 'image/gif',
+      'svg' => 'image/svg+xml',
+      'pdf' => 'application/pdf',
+      _ => type.toLowerCase(),
+    };
+  }
+
   /// User-Agent header value.
   String? get userAgent => header('user-agent');
 

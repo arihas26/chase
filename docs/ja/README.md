@@ -261,6 +261,26 @@ app.post('/users').handle((ctx) async {
 });
 ```
 
+#### コンテンツネゴシエーション
+
+```dart
+app.get('/data').handle((ctx) {
+  // Acceptヘッダーによるネゴシエーション
+  final type = ctx.req.accepts(['json', 'html', 'xml'], defaultValue: 'json');
+
+  if (type == 'html') {
+    return Response.html('<h1>Data</h1>');
+  }
+  return {'data': 'value'};
+});
+
+// 言語ネゴシエーション
+final lang = ctx.req.acceptsLanguages(['en', 'ja', 'zh'], defaultValue: 'en');
+
+// エンコーディングネゴシエーション
+final encoding = ctx.req.acceptsEncodings(['gzip', 'br'], defaultValue: 'identity');
+```
+
 ### レスポンス
 
 Chaseはシンプルな戻り値から完全なResponseオブジェクトまで、複数のレスポンススタイルをサポートしています。

@@ -239,18 +239,38 @@ app.post('/users').handle((ctx) async {
   final text = await ctx.req.text();           // Raw text
   final form = await ctx.req.formData();       // Form data
   final multipart = await ctx.req.multipart(); // Multipart
-  
+
   // Headers
   final contentType = ctx.req.header('content-type');
   final headers = ctx.req.headers;
-  
+
   // Request info
   final method = ctx.req.method;
   final path = ctx.req.path;
   final url = ctx.req.url;
-  
+
   ctx.res.json({'received': json});
 });
+```
+
+#### Content Negotiation
+
+```dart
+app.get('/data').handle((ctx) {
+  // Accept header negotiation
+  final type = ctx.req.accepts(['json', 'html', 'xml'], defaultValue: 'json');
+
+  if (type == 'html') {
+    return Response.html('<h1>Data</h1>');
+  }
+  return {'data': 'value'};
+});
+
+// Language negotiation
+final lang = ctx.req.acceptsLanguages(['en', 'ja', 'zh'], defaultValue: 'en');
+
+// Encoding negotiation
+final encoding = ctx.req.acceptsEncodings(['gzip', 'br'], defaultValue: 'identity');
 ```
 
 ### Response
