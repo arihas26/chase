@@ -1,278 +1,206 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
+import 'dart:math';
 
 import 'package:chase/src/core/context/context.dart';
-import 'package:chase/src/core/logger.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:zlogger/zlogger.dart';
 
-/// A structured log entry containing request/response information.
-class LogEntry {
-  /// Timestamp when the request started.
-  final DateTime timestamp;
+/// Function type for generating request IDs.
+typedef IdGenerator = String Function();
 
-  /// HTTP method (GET, POST, etc.).
-  final String method;
-
-  /// Request path.
-  final String path;
-
-  /// Query string (without leading '?').
-  final String? query;
-
-  /// HTTP status code.
-  final int status;
-
-  /// Request processing duration.
-  final Duration duration;
-
-  /// Request ID if available (from RequestId middleware).
-  final String? requestId;
-
-  /// Client IP address.
-  final String? ip;
-
-  /// User-Agent header.
-  final String? userAgent;
-
-  /// Log level based on status code.
-  final LogLevel level;
-
-  /// Additional message.
-  final String? message;
-
-  /// Error object if an exception occurred.
-  final Object? error;
-
-  /// Stack trace if an exception occurred.
-  final StackTrace? stackTrace;
-
-  const LogEntry({
-    required this.timestamp,
-    required this.method,
-    required this.path,
-    this.query,
-    required this.status,
-    required this.duration,
-    this.requestId,
-    this.ip,
-    this.userAgent,
-    required this.level,
-    this.message,
-    this.error,
-    this.stackTrace,
-  });
-
-  /// Converts the log entry to a JSON-serializable map.
-  Map<String, dynamic> toJson() {
-    return {
-      'timestamp': timestamp.toIso8601String(),
-      'method': method,
-      'path': path,
-      if (query != null && query!.isNotEmpty) 'query': query,
-      'status': status,
-      'duration_ms': duration.inMilliseconds,
-      if (requestId != null) 'request_id': requestId,
-      if (ip != null) 'ip': ip,
-      if (userAgent != null) 'user_agent': userAgent,
-      'level': level.name,
-      if (message != null) 'message': message,
-      if (error != null) 'error': error.toString(),
-    };
-  }
-
-  /// Formats the log entry as a human-readable string.
-  String toText() {
-    final buffer = StringBuffer();
-    buffer.write('${timestamp.toIso8601String()} ');
-    buffer.write('[${level.name.toUpperCase()}] ');
-    buffer.write('$method $path');
-    if (query != null && query!.isNotEmpty) {
-      buffer.write('?$query');
-    }
-    buffer.write(' $status ${duration.inMilliseconds}ms');
-    if (requestId != null) {
-      buffer.write(' req_id=$requestId');
-    }
-    if (message != null) {
-      buffer.write(' - $message');
-    }
-    if (error != null) {
-      buffer.write(' error=$error');
-    }
-    return buffer.toString();
-  }
-
-  @override
-  String toString() => toText();
-}
-
-/// ANSI color codes for terminal output.
-class _AnsiColor {
-  static const reset = '\x1B[0m';
-  static const dim = '\x1B[2m';
-
-  // Status code colors
-  static const green = '\x1B[32m'; // 2xx success
-  static const cyan = '\x1B[36m'; // 3xx redirect
-  static const yellow = '\x1B[33m'; // 4xx client error
-  static const red = '\x1B[31m'; // 5xx server error
-
-  // Log level colors
-  static const gray = '\x1B[90m'; // debug
-  static const blue = '\x1B[34m'; // info
-  static const magenta = '\x1B[35m'; // method
-
-  static String forStatus(int status) {
-    if (status >= 500) return red;
-    if (status >= 400) return yellow;
-    if (status >= 300) return cyan;
-    if (status >= 200) return green;
-    return reset;
-  }
-
-  static String forLevel(LogLevel level) {
-    switch (level) {
-      case LogLevel.debug:
-        return gray;
-      case LogLevel.info:
-        return blue;
-      case LogLevel.warn:
-        return yellow;
-      case LogLevel.error:
-        return red;
-    }
-  }
-}
-
-/// Structured logging middleware for HTTP requests.
+/// Structured HTTP request logging middleware with request ID and log context.
 ///
-/// Logs request method, path, status code, and duration.
-/// Supports JSON and text output formats.
+/// This middleware combines request ID generation, log context propagation,
+/// and request logging into a single middleware.
+///
+/// Features:
+/// - Generates unique request IDs (UUID v4) or uses existing from headers
+/// - Propagates request_id to all log calls via Zone context
+/// - Logs request method, path, status, and duration
+/// - Configurable log level, skip conditions, and fields
 ///
 /// ## Example
 ///
 /// ```dart
-/// // Basic usage - logs to stdout in text format with colors
-/// app.use(Logger());
+/// // Basic usage - all-in-one logging
+/// app.use(RequestLogger());
 ///
-/// // JSON format for log aggregation
-/// app.use(Logger(json: true));
+/// // Now all log calls include request_id automatically
+/// app.get('/users/:id').handle((ctx) async {
+///   log.info('Processing request');  // includes request_id
+///   final user = await userService.findUser(ctx.req.params['id']!);
+///   ctx.res.json(user);
+/// });
+/// ```
 ///
-/// // Disable colors (for log files)
-/// app.use(Logger(colored: false));
+/// ## Configuration
 ///
-/// // Custom log handler (e.g., send to external service)
-/// app.use(Logger(
-///   onLog: (entry) => myLogService.log(entry.toJson()),
-/// ));
+/// ```dart
+/// app.use(RequestLogger(
+///   // Request ID options
+///   requestIdHeader: 'X-Correlation-ID',
+///   useExistingRequestId: true,
+///   setResponseHeader: true,
+///   idGenerator: () => 'req-${DateTime.now().millisecondsSinceEpoch}',
 ///
-/// // Skip health check endpoints
-/// app.use(Logger(
+///   // Logging options
+///   minLevel: LogLevel.info,
 ///   skip: (ctx) => ctx.req.path == '/health',
+///   includeIp: true,
+///   includeUserAgent: false,
+///   slowThreshold: Duration(seconds: 1),
+///
+///   // Custom log context fields
+///   fieldsBuilder: (ctx) => {
+///     'tenant': ctx.get<String>('tenant'),
+///   },
 /// ));
 /// ```
-class Logger implements Middleware {
-  /// Minimum log level to output.
-  final LogLevel level;
+class RequestLogger implements Middleware {
+  // Request ID options
+  /// Header name for request ID. Default: 'X-Request-ID'
+  final String requestIdHeader;
 
-  /// Output format: true for JSON, false for text.
-  final bool json;
+  /// Whether to use existing request ID from headers. Default: true
+  final bool useExistingRequestId;
 
-  /// Custom log handler. If null, outputs to stdout/stderr.
-  final void Function(LogEntry entry)? onLog;
+  /// Whether to set request ID in response headers. Default: true
+  final bool setResponseHeader;
+
+  /// Custom request ID generator. Default: UUID v4
+  final IdGenerator _idGenerator;
+
+  // Logging options
+  /// Minimum log level to output. Default: LogLevel.info
+  final LogLevel minLevel;
 
   /// Skip logging for certain requests. Return true to skip.
   final bool Function(Context ctx)? skip;
 
-  /// Include request ID in log output.
-  final bool includeRequestId;
-
-  /// Include client IP in log output.
+  /// Include client IP in log output. Default: true
   final bool includeIp;
 
-  /// Include User-Agent in log output.
+  /// Include User-Agent in log output. Default: false
   final bool includeUserAgent;
 
-  /// Duration threshold for warning level (slow request).
+  /// Duration threshold for warning level (slow request). Default: 1 second
   final Duration slowThreshold;
 
-  /// Enable colored output for terminal.
-  final bool colored;
+  /// Custom fields builder for log context.
+  final Map<String, dynamic> Function(Context ctx)? fieldsBuilder;
 
-  /// Creates a Logger middleware.
-  const Logger({
-    this.level = LogLevel.info,
-    this.json = false,
-    this.onLog,
+  /// Named logger instance.
+  final Log _log;
+
+  /// Creates a RequestLogger middleware.
+  RequestLogger({
+    // Request ID options
+    this.requestIdHeader = 'X-Request-ID',
+    this.useExistingRequestId = true,
+    this.setResponseHeader = true,
+    IdGenerator? idGenerator,
+    // Logging options
+    this.minLevel = LogLevel.info,
     this.skip,
-    this.includeRequestId = true,
     this.includeIp = true,
     this.includeUserAgent = false,
     this.slowThreshold = const Duration(seconds: 1),
-    this.colored = true,
-  });
+    this.fieldsBuilder,
+    String? name,
+  })  : _idGenerator = idGenerator ?? _defaultIdGenerator,
+        _log = name != null ? Log.named(name) : log;
 
   @override
   FutureOr<void> handle(Context ctx, NextFunction next) async {
-    // Check if logging should be skipped
-    if (skip != null && skip!(ctx)) {
-      return next();
+    // Generate or use existing request ID
+    final requestId = _getOrGenerateRequestId(ctx);
+    ctx.set('requestId', requestId);
+
+    if (setResponseHeader) {
+      ctx.res.headers.set(requestIdHeader, requestId);
     }
 
-    final startTime = DateTime.now();
-    Object? error;
-    StackTrace? stackTrace;
+    // Build log context fields
+    final contextFields = <String, dynamic>{
+      'request_id': requestId,
+    };
+    if (fieldsBuilder != null) {
+      contextFields.addAll(fieldsBuilder!(ctx));
+    }
 
-    try {
-      await next();
-    } catch (e, st) {
-      error = e;
-      stackTrace = st;
-      rethrow;
-    } finally {
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
-
-      final entry = _createEntry(
-        ctx: ctx,
-        startTime: startTime,
-        duration: duration,
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      // Only log if level meets threshold
-      if (entry.level.index >= level.index) {
-        _log(entry);
+    // Run in log context zone
+    await Log.scope(contextFields, () async {
+      // Check if logging should be skipped
+      if (skip != null && skip!(ctx)) {
+        await next();
+        return;
       }
-    }
+
+      final startTime = DateTime.now();
+      Object? error;
+      StackTrace? stackTrace;
+
+      try {
+        await next();
+      } catch (e, st) {
+        error = e;
+        stackTrace = st;
+        rethrow;
+      } finally {
+        final duration = DateTime.now().difference(startTime);
+        final status = ctx.res.statusCode;
+        final level = _determineLevel(status, duration, error);
+
+        if (level.index >= minLevel.index) {
+          final fields = _buildFields(ctx, status, duration);
+          final message = '${ctx.req.method} ${ctx.req.path}';
+
+          switch (level) {
+            case LogLevel.debug:
+              _log.debug(message, fields);
+            case LogLevel.info:
+              _log.info(message, fields);
+            case LogLevel.warn:
+              _log.warn(message, fields);
+            case LogLevel.error:
+              _log.error(message, fields, error, stackTrace);
+          }
+        }
+      }
+    });
   }
 
-  LogEntry _createEntry({
-    required Context ctx,
-    required DateTime startTime,
-    required Duration duration,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
-    final status = ctx.res.statusCode;
-    final lvl = _determineLevel(status, duration, error);
+  String _getOrGenerateRequestId(Context ctx) {
+    if (useExistingRequestId) {
+      final existing = ctx.req.header(requestIdHeader);
+      if (existing != null) return existing;
+    }
+    return _idGenerator();
+  }
 
-    return LogEntry(
-      timestamp: startTime,
-      method: ctx.req.method,
-      path: ctx.req.path,
-      query: ctx.req.uri.query,
-      status: status,
-      duration: duration,
-      requestId: includeRequestId ? ctx.get<String>('requestId') : null,
-      ip: includeIp ? ctx.req.ip : null,
-      userAgent: includeUserAgent ? ctx.req.userAgent : null,
-      level: lvl,
-      error: error,
-      stackTrace: stackTrace,
-    );
+  Map<String, dynamic> _buildFields(Context ctx, int status, Duration duration) {
+    final fields = <String, dynamic>{
+      'status': status,
+      'duration_ms': duration.inMilliseconds,
+    };
+
+    final query = ctx.req.uri.query;
+    if (query.isNotEmpty) {
+      fields['query'] = query;
+    }
+
+    if (includeIp) {
+      fields['ip'] = ctx.req.ip;
+    }
+
+    if (includeUserAgent) {
+      final userAgent = ctx.req.userAgent;
+      if (userAgent != null) {
+        fields['user_agent'] = userAgent;
+      }
+    }
+
+    return fields;
   }
 
   LogLevel _determineLevel(int status, Duration duration, Object? error) {
@@ -288,71 +216,22 @@ class Logger implements Middleware {
     return LogLevel.info;
   }
 
-  void _log(LogEntry entry) {
-    if (onLog != null) {
-      onLog!(entry);
-    } else {
-      final output =
-          entry.level.index >= LogLevel.warn.index ? stderr : stdout;
-      final message = json
-          ? jsonEncode(entry.toJson())
-          : colored
-              ? _formatColored(entry)
-              : entry.toText();
-      output.writeln(message);
-    }
-  }
+  /// Default UUID v4 generator.
+  static String _defaultIdGenerator() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
 
-  String _formatColored(LogEntry entry) {
-    const reset = _AnsiColor.reset;
-    const dim = _AnsiColor.dim;
-    const magenta = _AnsiColor.magenta;
-    const red = _AnsiColor.red;
-    const yellow = _AnsiColor.yellow;
+    // Set version to 4
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    // Set variant to RFC 4122
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
-    final levelColor = _AnsiColor.forLevel(entry.level);
-    final statusColor = _AnsiColor.forStatus(entry.status);
+    final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 
-    final buffer = StringBuffer();
-
-    // Timestamp (dim)
-    buffer.write('$dim${entry.timestamp.toIso8601String()}$reset ');
-
-    // Level (colored)
-    buffer.write('$levelColor[${entry.level.name.toUpperCase()}]$reset ');
-
-    // Method (magenta/bold)
-    buffer.write('$magenta${entry.method}$reset ');
-
-    // Path
-    buffer.write(entry.path);
-    if (entry.query != null && entry.query!.isNotEmpty) {
-      buffer.write('$dim?${entry.query}$reset');
-    }
-
-    // Status (colored by status code)
-    buffer.write(' $statusColor${entry.status}$reset');
-
-    // Duration
-    final durationMs = entry.duration.inMilliseconds;
-    final durationColor = durationMs > 100 ? yellow : dim;
-    buffer.write(' $durationColor${durationMs}ms$reset');
-
-    // Request ID
-    if (entry.requestId != null) {
-      buffer.write(' ${dim}req_id=${entry.requestId}$reset');
-    }
-
-    // Message
-    if (entry.message != null) {
-      buffer.write(' - ${entry.message}');
-    }
-
-    // Error
-    if (entry.error != null) {
-      buffer.write(' ${red}error=${entry.error}$reset');
-    }
-
-    return buffer.toString();
+    return '${hex.substring(0, 8)}-'
+        '${hex.substring(8, 12)}-'
+        '${hex.substring(12, 16)}-'
+        '${hex.substring(16, 20)}-'
+        '${hex.substring(20)}';
   }
 }

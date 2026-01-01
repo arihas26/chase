@@ -1,13 +1,14 @@
-/// Example: Structured Logging
+/// Example: Structured Logging with RequestLogger
 ///
-/// This example demonstrates the structured logging capabilities of Chase,
-/// including Zone-based log context propagation (similar to Java's MDC).
+/// RequestLogger is an all-in-one middleware that handles:
+/// - Request ID generation (UUID v4) with header propagation
+/// - Log context propagation (via Zone) for automatic request_id in all logs
+/// - Request/response logging with status, duration, etc.
 ///
 /// Run with: dart run example/logger.dart
 /// Test with: curl http://localhost:3000/users/123
 library;
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:chase/chase.dart';
@@ -15,35 +16,42 @@ import 'package:chase/chase.dart';
 void main() async {
   final app = Chase();
 
-  // Configure the global logger
-  // - color: true (default) for colored terminal output
-  // - json: true for JSON output (no colors)
-  app.logger = DefaultLogger(minLevel: LogLevel.debug, color: true);
+  // Configure zlogger output (optional)
+  LogConfig.global = DefaultLogger(
+    minLevel: LogLevel.debug,
+    color: true,
+  );
 
   // Application-level logging (outside of request context)
-  app.log.info('Application starting', {'version': '1.0.0'});
+  log.info('Application starting', {'version': '1.0.0'});
 
-  // Add request ID middleware for request correlation
-  app.use(RequestId());
+  // Single middleware handles all logging concerns:
+  // - Generates request_id (UUID v4)
+  // - Sets X-Request-ID header in response
+  // - Propagates request_id to all log calls via Zone
+  // - Logs each request with method, path, status, duration
+  app.use(RequestLogger(
+    minLevel: LogLevel.info,
+    skip: (ctx) => ctx.req.path == '/health',
+    slowThreshold: Duration(seconds: 1),
+  ));
 
-  // Add LogContext middleware to propagate request_id to all Log calls
-  // This enables service classes to use Log.info() with automatic context
-  app.use(LogContext());
+  // Health check (logging skipped, but request_id still generated)
+  app.get('/health').handle((ctx) async {
+    await ctx.res.json({'status': 'ok'});
+  });
 
-  // Request logging middleware
-  app.use(_RequestLogger());
-
-  // Example routes demonstrating context logging
+  // Home page
   app.get('/').handle((ctx) {
     ctx.log.info('Home page accessed');
     ctx.res.text('Welcome to Chase!');
   });
 
-  // Demonstrates Log propagation to service layer
+  // Demonstrates log propagation to service layer
   app.get('/users/:id').handle((ctx) async {
     final userId = ctx.req.params['id']!;
 
-    // Service can use _log.info() and request_id is automatically included
+    // Service uses Log.named() - request_id is automatically included
     final user = await _userService.findUser(userId);
 
     ctx.res.json(user);
@@ -85,54 +93,57 @@ void main() async {
 
   // Start the server
   await app.start(port: 3000);
-  app.log.info('Server started', {'port': 3000, 'pid': pid});
+  log.info('Server started', {'port': 3000, 'pid': pid});
 
   print('''
 Structured Logging Example
 ==========================
 
+RequestLogger provides all-in-one logging:
+  1. Request ID - auto-generated UUID v4, set in X-Request-ID header
+  2. Log context - request_id propagated to all log calls via Zone
+  3. Request logging - method, path, status, duration_ms
+
 Features demonstrated:
-  1. ctx.log - Request-scoped logging with automatic request_id
-  2. Log.named('ClassName') - Named logger with class name (like Java)
-  3. log - Top-level logger for quick logging without class name
-  4. LogContext middleware - Propagates request_id to all Log calls via Zone
+  - ctx.log - Request-scoped logging with automatic request_id
+  - Log.named('ClassName') - Named logger with class name
+  - log - Top-level logger for quick logging
 
 Endpoints:
   GET  /           - Home page (info log)
-  GET  /users/:id  - Get user (service layer logging with _log.info)
-  POST /users      - Create user (service layer logging)
+  GET  /health     - Health check (logging skipped)
+  GET  /users/:id  - Get user (service layer logging)
+  POST /users      - Create user (validation logging)
   GET  /error      - Trigger error (error log with stack trace)
 
 Try these commands:
   curl http://localhost:3000/
+  curl -v http://localhost:3000/health  # Check X-Request-ID header
   curl http://localhost:3000/users/123
   curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d '{"name":"Alice"}'
-  curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d '{}'
   curl http://localhost:3000/error
 
-Log output appears in the console with request_id automatically included.
+Log output includes request_id automatically in all log calls.
 ''');
 }
 
 // =============================================================================
-// Service Layer - Uses Log.named('ClassName').info() instead of ctx.log
+// Service Layer - Uses Log.named('ClassName') for automatic class name tagging
 // =============================================================================
 
 final _userService = _UserService();
 final _userRepository = _UserRepository();
 
-/// Example service class that uses Log.named for logging.
+/// Example service class using Log.named for logging.
 ///
 /// The logger name and request_id are automatically included because
-/// LogContext middleware wraps the request in a Zone with context fields.
+/// RequestLogger wraps the request in a Zone with context fields.
 class _UserService {
-  // Create a named logger for this class (like Java's LoggerFactory.getLogger)
   static final _log = Log.named('UserService');
 
   Future<Map<String, dynamic>> findUser(String id) async {
     _log.info('Finding user', {'userId': id});
 
-    // Simulate service logic
     final user = await _userRepository.findById(id);
 
     _log.info('User found', {'userId': id, 'name': user['name']});
@@ -142,7 +153,6 @@ class _UserService {
   Future<Map<String, dynamic>> createUser(String name) async {
     _log.info('Creating user', {'name': name});
 
-    // Simulate user creation
     final user = await _userRepository.create(name);
 
     _log.info('User created', {'userId': user['id'], 'name': name});
@@ -150,14 +160,13 @@ class _UserService {
   }
 }
 
-/// Example repository class - also uses Log.named for logging.
+/// Example repository class with its own named logger.
 class _UserRepository {
   static final _log = Log.named('UserRepository');
 
   Future<Map<String, dynamic>> findById(String id) async {
     _log.debug('Querying database', {'table': 'users', 'id': id});
 
-    // Simulate database lookup
     await Future.delayed(Duration(milliseconds: 30));
 
     return {'id': id, 'name': 'John Doe', 'email': 'john@example.com'};
@@ -166,38 +175,9 @@ class _UserRepository {
   Future<Map<String, dynamic>> create(String name) async {
     _log.debug('Inserting into database', {'table': 'users'});
 
-    // Simulate database insert
     await Future.delayed(Duration(milliseconds: 50));
 
     final id = DateTime.now().millisecondsSinceEpoch;
     return {'id': id, 'name': name};
-  }
-}
-
-// =============================================================================
-// Middleware
-// =============================================================================
-
-/// Simple request logging middleware
-class _RequestLogger implements Middleware {
-  static final _log = Log.named('RequestLogger');
-
-  @override
-  FutureOr<void> handle(Context ctx, NextFunction next) async {
-    final stopwatch = Stopwatch()..start();
-    final method = ctx.req.method;
-    final path = ctx.req.path;
-
-    _log.debug('Request started', {'method': method, 'path': path});
-
-    await next();
-
-    stopwatch.stop();
-    _log.info('Request completed', {
-      'method': method,
-      'path': path,
-      'status': ctx.res.statusCode,
-      'duration_ms': stopwatch.elapsedMilliseconds,
-    });
   }
 }

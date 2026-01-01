@@ -3,7 +3,7 @@ library;
 
 export 'chase.dart';
 export 'handler.dart';
-export 'logger.dart';
+export 'package:zlogger/zlogger.dart';
 export 'middleware.dart';
 export 'response.dart';
 export 'plugin.dart';

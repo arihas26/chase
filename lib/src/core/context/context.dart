@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/request.dart';
 import 'package:chase/src/core/context/response.dart';
-import 'package:chase/src/core/logger.dart';
+import 'package:zlogger/zlogger.dart' as zlogger;
 
 /// The context for handling HTTP requests and responses.
 ///
@@ -75,11 +75,10 @@ class Context {
   // Logging
   // ---------------------------------------------------------------------------
 
-  ChaseLogger? _log;
-
   /// Logger for this request context.
   ///
-  /// Automatically includes request-specific fields like `request_id`.
+  /// When used with [LogContext] middleware, automatically includes
+  /// request-specific fields like `request_id` via Zone context.
   ///
   /// Example:
   /// ```dart
@@ -87,19 +86,5 @@ class Context {
   /// ctx.log.debug('User authenticated', {'userId': user.id});
   /// ctx.log.error('Failed to save', {'error': e.toString()}, e);
   /// ```
-  ChaseLogger get log {
-    if (_log != null) return _log!;
-
-    // Build context fields
-    final fields = <String, dynamic>{};
-    final requestId = get<String>('requestId');
-    if (requestId != null) {
-      fields['request_id'] = requestId;
-    }
-
-    _log = fields.isEmpty
-        ? ChaseLoggerConfig.global
-        : ChaseLoggerConfig.global.withFields(fields);
-    return _log!;
-  }
+  zlogger.Log get log => zlogger.log;
 }

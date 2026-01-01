@@ -22,7 +22,7 @@ void main() {
       final app = Chase();
 
       // Should be able to add middlewares without duplicates
-      app.use(Logger());
+      app.use(RequestLogger());
 
       expect(app, isNotNull);
     });
@@ -65,7 +65,7 @@ void main() {
       final app = Chase()..withDefaults();
 
       // Should be able to add more middlewares (duplicates are allowed)
-      app.use(Logger()); // Duplicate type allowed
+      app.use(RequestLogger()); // Duplicate type allowed
 
       expect(app, isNotNull);
     });
@@ -75,14 +75,14 @@ void main() {
     test('use() returns Chase for method chaining', () {
       final app = Chase();
 
-      final result = app.use(Logger());
+      final result = app.use(RequestLogger());
 
       expect(result, equals(app));
       expect(result, isA<Chase>());
     });
 
     test('use() can be chained multiple times', () {
-      final app = Chase().use(ExceptionHandler()).use(Logger());
+      final app = Chase().use(ExceptionHandler()).use(RequestLogger());
 
       expect(app, isNotNull);
       expect(app, isA<Chase>());
@@ -92,9 +92,9 @@ void main() {
       final app = Chase();
 
       // Should not throw, duplicates are allowed
-      app.use(Logger());
-      app.use(Logger());
-      app.use(Logger());
+      app.use(RequestLogger());
+      app.use(RequestLogger());
+      app.use(RequestLogger());
 
       expect(app, isNotNull);
     });
@@ -124,7 +124,7 @@ void main() {
 
       final app2 = Chase();
       app2.use(ExceptionHandler());
-      app2.use(Logger());
+      app2.use(RequestLogger());
 
       // Both should be valid Chase instances
       expect(app1, isA<Chase>());

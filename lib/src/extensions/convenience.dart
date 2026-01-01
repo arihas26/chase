@@ -9,7 +9,7 @@ extension ChaseConvenience on Chase {
   ///
   /// Adds:
   /// - [ExceptionHandler] - Catches exceptions and returns error responses
-  /// - [Logger] - Logs requests with method, path, status, and response time
+  /// - [RequestLogger] - Logs requests with method, path, status, and response time
   ///
   /// ## Example
   ///
@@ -18,7 +18,7 @@ extension ChaseConvenience on Chase {
   /// ```
   Chase withDefaults() {
     use(ExceptionHandler());
-    use(Logger());
+    use(RequestLogger());
     return this;
   }
 

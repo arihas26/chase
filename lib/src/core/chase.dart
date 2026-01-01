@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/handler.dart';
-import 'package:chase/src/core/logger.dart';
+import 'package:zlogger/zlogger.dart';
 import 'package:chase/src/core/middleware.dart';
 import 'package:chase/src/core/plugin.dart';
 import 'package:chase/src/core/response.dart';
@@ -100,7 +100,7 @@ class Chase extends _ChaseBase<Chase> {
   /// app.log.info('Server starting', {'port': 8080});
   /// app.log.error('Failed to connect to database', {'host': dbHost}, e);
   /// ```
-  ChaseLogger get log => ChaseLoggerConfig.global;
+  Logger get log => LogConfig.global;
 
   /// Sets a custom logger for the application.
   ///
@@ -114,7 +114,7 @@ class Chase extends _ChaseBase<Chase> {
   ///   json: true,
   /// );
   /// ```
-  set logger(ChaseLogger logger) => ChaseLoggerConfig.global = logger;
+  set logger(Logger logger) => LogConfig.global = logger;
 
   // ---------------------------------------------------------------------------
   // Plugins
