@@ -110,7 +110,7 @@ void main() {
       });
 
       test('methodNotAllowed() creates 405 response', () {
-        final response = Response.methodNotAllowed();
+        final response = Response.methodNotAllowed().json({'error': 'Method not allowed'});
         expect(response.statusCode, HttpStatus.methodNotAllowed);
       });
 
@@ -137,7 +137,7 @@ void main() {
       });
 
       test('badGateway() creates 502 response', () {
-        final response = Response.badGateway();
+        final response = Response.badGateway().json({'error': 'Bad gateway'});
         expect(response.statusCode, HttpStatus.badGateway);
       });
 

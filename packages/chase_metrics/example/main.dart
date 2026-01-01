@@ -6,22 +6,22 @@ void main() async {
     ..withDefaults()
     ..plugin(MetricsPlugin());
 
-  app.get('/').handle((ctx) => Response.ok().text('Hello, Chase!'));
+  app.get('/').handle((ctx) => Response.text('Hello, Chase!'));
 
   app.get('/users/:id').handle((ctx) {
     final id = ctx.req.param<String>('id');
-    return Response.ok().json({'id': id, 'name': 'User $id'});
+    return Response.json({'id': id, 'name': 'User $id'});
   });
 
   app.post('/users').handle((ctx) async {
     final body = await ctx.req.json();
-    return Response.ok().json({'created': true, 'data': body});
+    return Response.json({'created': true, 'data': body});
   });
 
   // Simulate slow endpoint
   app.get('/slow').handle((ctx) async {
     await Future.delayed(Duration(milliseconds: 500));
-    return Response.ok().text('Done!');
+    return Response.text('Done!');
   });
 
   await app.start(port: 3000);
