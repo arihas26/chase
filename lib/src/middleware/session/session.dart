@@ -5,7 +5,7 @@ import 'dart:math';
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/context/cookie.dart';
 import 'package:chase/src/core/middleware.dart';
-import 'package:zlogger/zlogger.dart';
+
 
 /// Session data container.
 class SessionData {
@@ -325,7 +325,6 @@ class SessionOptions {
 ///
 /// The session is accessible via `ctx.session` after this middleware runs.
 class Session implements Middleware {
-  static final _log = Log.named('Session');
 
   final SessionStore store;
   final SessionOptions options;
@@ -350,13 +349,6 @@ class Session implements Middleware {
         session.touch();
       } else {
         // Session ID exists but not in store (expired or invalid)
-        _log.debug(
-          'Session not found in store, creating new',
-          {
-            'method': ctx.req.method,
-            'path': ctx.req.path,
-          },
-        );
         session = SessionData.create(_generateId());
       }
     } else {

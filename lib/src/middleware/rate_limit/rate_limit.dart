@@ -388,6 +388,7 @@ class RateLimit implements Middleware {
       _log.warn(
         'Rate limit exceeded',
         {
+          'request_id': ctx.get<String>('_requestId'),
           'key': info.key,
           'method': ctx.req.method,
           'path': ctx.req.path,

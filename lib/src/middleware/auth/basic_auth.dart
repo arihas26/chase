@@ -167,6 +167,7 @@ class BasicAuth implements Middleware {
     _log.warn(
       'Basic auth failed: $reason',
       {
+        'request_id': ctx.get<String>('_requestId'),
         'method': ctx.req.method,
         'path': ctx.req.path,
         'ip': _safeGetIp(ctx),

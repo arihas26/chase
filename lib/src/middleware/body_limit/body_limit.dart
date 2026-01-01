@@ -139,6 +139,7 @@ class BodyLimit implements Middleware {
       _log.warn(
         'Request body too large',
         {
+          'request_id': ctx.get<String>('_requestId'),
           'method': ctx.req.method,
           'path': ctx.req.path,
           'ip': _safeGetIp(ctx),

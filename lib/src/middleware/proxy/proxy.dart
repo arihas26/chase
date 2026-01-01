@@ -126,6 +126,7 @@ class Proxy implements Middleware {
       _log.error(
         'Proxy timeout to $targetUrl',
         {
+          'request_id': ctx.get<String>('_requestId'),
           'target_url': targetUrl,
           'method': ctx.req.method,
           'path': ctx.req.path,
@@ -143,6 +144,7 @@ class Proxy implements Middleware {
       _log.error(
         'Proxy connection failed to $targetUrl',
         {
+          'request_id': ctx.get<String>('_requestId'),
           'target_url': targetUrl,
           'method': ctx.req.method,
           'path': ctx.req.path,
@@ -159,6 +161,7 @@ class Proxy implements Middleware {
       _log.error(
         'Proxy error to $targetUrl',
         {
+          'request_id': ctx.get<String>('_requestId'),
           'target_url': targetUrl,
           'method': ctx.req.method,
           'path': ctx.req.path,

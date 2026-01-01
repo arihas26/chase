@@ -185,6 +185,7 @@ class JwtAuth implements Middleware {
     _log.warn(
       'JWT auth failed: $message',
       {
+        'request_id': ctx.get<String>('_requestId'),
         'method': ctx.req.method,
         'path': ctx.req.path,
         'ip': _safeGetIp(ctx),

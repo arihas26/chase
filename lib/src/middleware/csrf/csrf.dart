@@ -268,6 +268,7 @@ class Csrf implements Middleware {
     _log.warn(
       'CSRF validation failed: $details',
       {
+        'request_id': ctx.get<String>('_requestId'),
         'method': ctx.req.method,
         'path': ctx.req.path,
         'ip': _safeGetIp(ctx),
