@@ -27,12 +27,43 @@ class StaticOptions {
   /// Helps with client-side caching.
   final bool lastModified;
 
+  /// Whether to serve precompressed files (.br, .gz) when available.
+  ///
+  /// When enabled, if the client accepts compressed content and a precompressed
+  /// file exists (e.g., 'file.js.br' or 'file.js.gz'), it will be served instead
+  /// of the original file.
+  ///
+  /// Compression priority: Brotli (.br) > Gzip (.gz)
+  final bool precompressed;
+
+  /// Threshold in bytes for using streaming instead of reading entire file.
+  /// Files larger than this will be streamed to reduce memory usage.
+  /// Defaults to 1MB (1048576 bytes). Set to 0 to always stream.
+  final int streamingThreshold;
+
+  /// Callback called when a file is found and about to be served.
+  /// Useful for setting custom headers or logging.
+  final void Function(String path, Context ctx)? onFound;
+
+  /// Callback called when a file is not found.
+  /// Useful for custom 404 handling or logging.
+  final void Function(String path, Context ctx)? onNotFound;
+
+  /// Function to rewrite the request path before resolving the file.
+  /// Return null to use the original path.
+  final String? Function(String path)? rewriteRequestPath;
+
   const StaticOptions({
     this.index = 'index.html',
     this.extensions = const [],
     this.maxAge,
     this.etag = false,
     this.lastModified = true,
+    this.precompressed = false,
+    this.streamingThreshold = 1048576, // 1MB
+    this.onFound,
+    this.onNotFound,
+    this.rewriteRequestPath,
   });
 }
 
@@ -46,6 +77,9 @@ class StaticOptions {
 /// - Cache-Control headers
 /// - Path traversal protection
 /// - MIME type detection
+/// - Precompressed files (.br, .gz)
+/// - Range requests for partial content
+/// - Streaming for large files
 ///
 /// Example usage:
 /// ```dart
@@ -53,6 +87,7 @@ class StaticOptions {
 /// app.static('/assets', './public', StaticOptions(
 ///   maxAge: Duration(days: 365),
 ///   etag: true,
+///   precompressed: true,
 /// ));
 /// ```
 class StaticFileHandler {
@@ -83,7 +118,12 @@ class StaticFileHandler {
   FutureOr<void> call(Context ctx) async {
     try {
       final raw = ctx.req.params[wildcardParam] ?? '';
-      final requested = raw.isEmpty ? options.index : raw;
+      var requested = raw.isEmpty ? options.index : raw;
+
+      // Apply path rewriting if configured
+      if (options.rewriteRequestPath != null) {
+        requested = options.rewriteRequestPath!(requested) ?? requested;
+      }
 
       // Resolve and validate the file path
       final root = p.normalize(p.absolute(rootDirectory));
@@ -91,41 +131,70 @@ class StaticFileHandler {
 
       // Security: Prevent directory traversal attacks
       if (!_isPathSafe(root, candidate)) {
-        _sendNotFound(ctx);
+        _handleNotFound(ctx, requested);
         return;
       }
 
       // Find the file (with extension fallback if configured)
-      final file = await _resolveFile(candidate);
+      var file = await _resolveFile(candidate);
       if (file == null) {
-        _sendNotFound(ctx);
+        _handleNotFound(ctx, requested);
         return;
       }
 
       // Verify it's actually a file, not a directory
       final stat = await file.stat();
       if (stat.type != FileSystemEntityType.file) {
-        _sendNotFound(ctx);
+        _handleNotFound(ctx, requested);
         return;
       }
 
+      // Check for precompressed version if enabled
+      String? contentEncoding;
+      FileStat fileStat = stat;
+      if (options.precompressed) {
+        final (compressedFile, encoding) =
+            await _findPrecompressedFile(file.path, ctx);
+        if (compressedFile != null) {
+          file = compressedFile;
+          contentEncoding = encoding;
+          fileStat = await compressedFile.stat();
+        }
+      }
+
       // Check if client's cached version is still valid (ETag)
-      if (options.etag && _isNotModifiedByETag(ctx, stat)) {
+      if (options.etag && _isNotModifiedByETag(ctx, fileStat)) {
         _sendNotModified(ctx);
         return;
       }
 
-      // Set caching headers
-      _setCachingHeaders(ctx, stat);
+      // Check for Range request
+      final rangeHeader = ctx.req.header(HttpHeaders.rangeHeader);
+      if (rangeHeader != null && contentEncoding == null) {
+        await _handleRangeRequest(ctx, file, fileStat, rangeHeader);
+        return;
+      }
 
-      // Set content type
-      _setContentType(ctx, file.path);
+      // Call onFound callback
+      options.onFound?.call(requested, ctx);
+
+      // Set caching headers
+      _setCachingHeaders(ctx, fileStat);
+
+      // Set content type (use original file path for MIME detection)
+      _setContentType(ctx, candidate);
+
+      // Set content encoding if serving precompressed file
+      if (contentEncoding != null) {
+        ctx.res.headers.set(HttpHeaders.contentEncodingHeader, contentEncoding);
+      }
 
       // Send the file
-      await _sendFile(ctx, file);
+      await _sendFile(ctx, file, fileStat);
     } catch (e) {
       // On any error (file I/O, permissions, etc.), return 404
-      _sendNotFound(ctx);
+      final raw = ctx.req.params[wildcardParam] ?? '';
+      _handleNotFound(ctx, raw);
     }
   }
 
@@ -143,8 +212,43 @@ class StaticFileHandler {
       return file;
     }
 
+    // Try index file for directories
+    final dir = Directory(candidate);
+    if (await dir.exists()) {
+      final indexFile = File(p.join(candidate, options.index));
+      if (await indexFile.exists()) {
+        return indexFile;
+      }
+    }
+
     // Try with extensions
     return await _resolveWithExtensions(candidate);
+  }
+
+  /// Finds a precompressed version of the file if available.
+  ///
+  /// Returns the compressed file and encoding, or (null, null) if not available.
+  Future<(File?, String?)> _findPrecompressedFile(
+      String filePath, Context ctx) async {
+    final acceptEncoding = ctx.req.header(HttpHeaders.acceptEncodingHeader);
+    if (acceptEncoding == null) return (null, null);
+
+    // Priority: Brotli > Gzip
+    if (acceptEncoding.contains('br')) {
+      final brFile = File('$filePath.br');
+      if (await brFile.exists()) {
+        return (brFile, 'br');
+      }
+    }
+
+    if (acceptEncoding.contains('gzip')) {
+      final gzFile = File('$filePath.gz');
+      if (await gzFile.exists()) {
+        return (gzFile, 'gzip');
+      }
+    }
+
+    return (null, null);
   }
 
   /// Checks if the client's cached version is still valid based on ETag.
@@ -193,10 +297,104 @@ class StaticFileHandler {
   }
 
   /// Sends the file contents to the client.
-  Future<void> _sendFile(Context ctx, File file) async {
-    final bytes = await file.readAsBytes();
-    ctx.res.add(bytes);
+  Future<void> _sendFile(Context ctx, File file, FileStat stat) async {
+    ctx.res.headers.contentLength = stat.size;
+
+    // Use streaming for large files
+    if (stat.size > options.streamingThreshold) {
+      await ctx.res.addStream(file.openRead());
+      await ctx.res.close();
+    } else {
+      final bytes = await file.readAsBytes();
+      ctx.res.add(bytes);
+      await ctx.res.close();
+    }
+  }
+
+  /// Handles Range requests for partial content.
+  Future<void> _handleRangeRequest(
+    Context ctx,
+    File file,
+    FileStat stat,
+    String rangeHeader,
+  ) async {
+    final range = _parseRangeHeader(rangeHeader, stat.size);
+    if (range == null) {
+      // Invalid range
+      ctx.res.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+      ctx.res.headers.set(
+        HttpHeaders.contentRangeHeader,
+        'bytes */${stat.size}',
+      );
+      await ctx.res.close();
+      return;
+    }
+
+    final (start, end) = range;
+    final length = end - start + 1;
+
+    ctx.res.statusCode = HttpStatus.partialContent;
+    ctx.res.headers.set(
+      HttpHeaders.contentRangeHeader,
+      'bytes $start-$end/${stat.size}',
+    );
+    ctx.res.headers.contentLength = length;
+    ctx.res.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
+
+    _setContentType(ctx, file.path);
+    _setCachingHeaders(ctx, stat);
+
+    // Stream the requested range
+    await ctx.res.addStream(file.openRead(start, end + 1));
     await ctx.res.close();
+  }
+
+  /// Parses a Range header and returns the start and end positions.
+  ///
+  /// Returns null if the range is invalid.
+  (int, int)? _parseRangeHeader(String header, int fileSize) {
+    if (!header.startsWith('bytes=')) return null;
+
+    final rangeSpec = header.substring(6);
+    final parts = rangeSpec.split('-');
+    if (parts.length != 2) return null;
+
+    int start;
+    int end;
+
+    if (parts[0].isEmpty) {
+      // Suffix range: -500 means last 500 bytes
+      final suffix = int.tryParse(parts[1]);
+      if (suffix == null || suffix <= 0) return null;
+      start = fileSize - suffix;
+      end = fileSize - 1;
+    } else if (parts[1].isEmpty) {
+      // Open-ended range: 500- means from 500 to end
+      start = int.tryParse(parts[0]) ?? -1;
+      if (start < 0) return null;
+      end = fileSize - 1;
+    } else {
+      // Normal range: 500-999
+      start = int.tryParse(parts[0]) ?? -1;
+      end = int.tryParse(parts[1]) ?? -1;
+      if (start < 0 || end < 0) return null;
+    }
+
+    // Validate range
+    if (start < 0) start = 0;
+    if (end >= fileSize) end = fileSize - 1;
+    if (start > end) return null;
+
+    return (start, end);
+  }
+
+  /// Handles not found - calls callback or sends 404.
+  void _handleNotFound(Context ctx, String path) {
+    if (options.onNotFound != null) {
+      options.onNotFound!(path, ctx);
+    } else {
+      _sendNotFound(ctx);
+    }
   }
 
   /// Sends a 404 Not Found response.
@@ -280,6 +478,8 @@ class StaticFileHandler {
       case '.tiff':
       case '.tif':
         return ContentType('image', 'tiff');
+      case '.avif':
+        return ContentType('image', 'avif');
     }
 
     // Font types
@@ -308,6 +508,16 @@ class StaticFileHandler {
         return ContentType('audio', 'ogg');
       case '.wav':
         return ContentType('audio', 'wav');
+      case '.m4a':
+        return ContentType('audio', 'mp4');
+      case '.flac':
+        return ContentType('audio', 'flac');
+      case '.avi':
+        return ContentType('video', 'x-msvideo');
+      case '.mov':
+        return ContentType('video', 'quicktime');
+      case '.mkv':
+        return ContentType('video', 'x-matroska');
     }
 
     // Application types
@@ -322,9 +532,10 @@ class StaticFileHandler {
         return ContentType('application', 'gzip');
       case '.wasm':
         return ContentType('application', 'wasm');
+      case '.map':
+        return ContentType.json; // Source maps
     }
 
     return null;
   }
 }
-

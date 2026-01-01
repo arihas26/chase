@@ -1,7 +1,7 @@
 import 'package:chase/src/core/chase.dart';
 import 'package:chase/src/middleware/exception/exception_handler.dart';
 import 'package:chase/src/middleware/logger/request_logger.dart';
-import 'package:chase/src/middleware/static/static_file_handler.dart';
+import 'package:chase/src/handler/static/static_file_handler.dart';
 
 /// Convenience extension for Chase with common middleware setup.
 extension ChaseConvenience on Chase {

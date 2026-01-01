@@ -7,6 +7,9 @@ export 'src/core/core.dart';
 // Middleware
 export 'src/middleware/middleware.dart';
 
+// Handler
+export 'src/handler/handler.dart';
+
 // Router
 export 'src/router/router.dart';
 
