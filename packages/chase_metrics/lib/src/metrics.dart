@@ -29,13 +29,15 @@ class Metrics {
     // Export counters
     for (final counter in _counters.values) {
       buffer.writeln('# TYPE ${counter.name} counter');
-      buffer.writeln('${counter.name}${_formatLabels(counter.labels)} ${counter.value}');
+      buffer.writeln(
+        '${counter.name}${_formatLabels(counter.labels)} ${counter.value}',
+      );
     }
 
     // Export histograms
     for (final histogram in _histograms.values) {
       buffer.writeln('# TYPE ${histogram.name} histogram');
-      
+
       var cumulative = 0;
       for (final bucket in histogram.buckets.keys.toList()..sort()) {
         cumulative += histogram.buckets[bucket]!;
@@ -76,7 +78,17 @@ class Metrics {
   }
 
   static const _defaultBuckets = [
-    0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    2.5,
+    5.0,
+    10.0,
   ];
 }
 
@@ -98,10 +110,7 @@ class _Histogram {
   int count = 0;
 
   _Histogram(this.name, this.labels, List<double> bucketBoundaries)
-      : buckets = {
-          for (final b in bucketBoundaries) b: 0,
-          double.infinity: 0,
-        };
+    : buckets = {for (final b in bucketBoundaries) b: 0, double.infinity: 0};
 
   void observe(double value) {
     sum += value;

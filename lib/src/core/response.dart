@@ -139,10 +139,9 @@ class Response {
   /// return Response.header('X-Custom', 'value').json({'data': 1});
   /// ```
   static ResponseBuilder header(String name, String value) {
-    return ResponseBuilder(
-      HttpStatus.ok,
-      {_sanitizeHeaderName(name): _sanitizeHeaderValue(value)},
-    );
+    return ResponseBuilder(HttpStatus.ok, {
+      _sanitizeHeaderName(name): _sanitizeHeaderValue(value),
+    });
   }
 
   /// Creates a 200 OK response builder.
@@ -191,7 +190,10 @@ class Response {
   /// return Response.safeRedirect('/dashboard');  // OK
   /// return Response.safeRedirect('https://evil.com');  // Throws!
   /// ```
-  static Response safeRedirect(String location, {int status = HttpStatus.found}) {
+  static Response safeRedirect(
+    String location, {
+    int status = HttpStatus.found,
+  }) {
     if (!_isRelativeUrl(location)) {
       throw ArgumentError.value(
         location,
@@ -604,7 +606,10 @@ class ResponseBuilder {
   /// return Response.ok().noCache().json({'sensitive': 'data'});
   /// ```
   ResponseBuilder noCache() {
-    return header('cache-control', 'no-store, no-cache, must-revalidate, private');
+    return header(
+      'cache-control',
+      'no-store, no-cache, must-revalidate, private',
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -617,7 +622,10 @@ class ResponseBuilder {
   /// return Response.ok().bytes(imageData, contentType: 'image/png');
   /// return Response.ok().bytes(pdfData); // defaults to application/octet-stream
   /// ```
-  Response bytes(List<int> data, {String contentType = 'application/octet-stream'}) {
+  Response bytes(
+    List<int> data, {
+    String contentType = 'application/octet-stream',
+  }) {
     return Response(
       _statusCode,
       body: data,

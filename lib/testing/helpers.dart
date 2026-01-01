@@ -40,8 +40,8 @@ class AuthHelper {
   /// );
   /// ```
   static Map<String, String> bearer(String token) => {
-        'authorization': 'Bearer $token',
-      };
+    'authorization': 'Bearer $token',
+  };
 
   /// Creates a Basic authentication header.
   ///
@@ -54,9 +54,7 @@ class AuthHelper {
   /// ```
   static Map<String, String> basic(String username, String password) {
     final credentials = base64Encode(utf8.encode('$username:$password'));
-    return {
-      'authorization': 'Basic $credentials',
-    };
+    return {'authorization': 'Basic $credentials'};
   }
 
   /// Creates a custom authorization header.
@@ -69,8 +67,8 @@ class AuthHelper {
   /// );
   /// ```
   static Map<String, String> custom(String scheme, String credentials) => {
-        'authorization': '$scheme $credentials',
-      };
+    'authorization': '$scheme $credentials',
+  };
 }
 
 // -----------------------------------------------------------------------------
@@ -134,8 +132,10 @@ class RequestHelper {
   /// ```
   static String encodeForm(Map<String, String> data) {
     return data.entries
-        .map((e) =>
-            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
         .join('&');
   }
 }
@@ -285,7 +285,9 @@ class ResponseExpect {
   Future<ResponseExpect> jsonEquals(Map<String, dynamic> expected) async {
     final json = await _response.json;
     if (json is! Map) {
-      throw ChaseTestFailure('Expected JSON object but got ${json.runtimeType}');
+      throw ChaseTestFailure(
+        'Expected JSON object but got ${json.runtimeType}',
+      );
     }
 
     for (final entry in expected.entries) {
@@ -372,14 +374,13 @@ extension TestClientExtensions on TestClient {
     String path,
     String token, {
     Map<String, String>? headers,
-  }) =>
-      get(
-        path,
-        headers: RequestHelper.mergeHeaders(
-          AuthHelper.bearer(token),
-          headers ?? {},
-        ),
-      );
+  }) => get(
+    path,
+    headers: RequestHelper.mergeHeaders(
+      AuthHelper.bearer(token),
+      headers ?? {},
+    ),
+  );
 
   /// Sends a POST request with JSON body and optional auth.
   Future<TestResponse> postJson(
@@ -387,16 +388,15 @@ extension TestClientExtensions on TestClient {
     Object body, {
     String? token,
     Map<String, String>? headers,
-  }) =>
-      post(
-        path,
-        body: body,
-        headers: RequestHelper.mergeHeaders(
-          RequestHelper.jsonHeaders,
-          token != null ? AuthHelper.bearer(token) : {},
-          headers ?? {},
-        ),
-      );
+  }) => post(
+    path,
+    body: body,
+    headers: RequestHelper.mergeHeaders(
+      RequestHelper.jsonHeaders,
+      token != null ? AuthHelper.bearer(token) : {},
+      headers ?? {},
+    ),
+  );
 
   /// Sends a PUT request with JSON body and optional auth.
   Future<TestResponse> putJson(
@@ -404,16 +404,15 @@ extension TestClientExtensions on TestClient {
     Object body, {
     String? token,
     Map<String, String>? headers,
-  }) =>
-      put(
-        path,
-        body: body,
-        headers: RequestHelper.mergeHeaders(
-          RequestHelper.jsonHeaders,
-          token != null ? AuthHelper.bearer(token) : {},
-          headers ?? {},
-        ),
-      );
+  }) => put(
+    path,
+    body: body,
+    headers: RequestHelper.mergeHeaders(
+      RequestHelper.jsonHeaders,
+      token != null ? AuthHelper.bearer(token) : {},
+      headers ?? {},
+    ),
+  );
 
   /// Sends a PATCH request with JSON body and optional auth.
   Future<TestResponse> patchJson(
@@ -421,14 +420,13 @@ extension TestClientExtensions on TestClient {
     Object body, {
     String? token,
     Map<String, String>? headers,
-  }) =>
-      patch(
-        path,
-        body: body,
-        headers: RequestHelper.mergeHeaders(
-          RequestHelper.jsonHeaders,
-          token != null ? AuthHelper.bearer(token) : {},
-          headers ?? {},
-        ),
-      );
+  }) => patch(
+    path,
+    body: body,
+    headers: RequestHelper.mergeHeaders(
+      RequestHelper.jsonHeaders,
+      token != null ? AuthHelper.bearer(token) : {},
+      headers ?? {},
+    ),
+  );
 }

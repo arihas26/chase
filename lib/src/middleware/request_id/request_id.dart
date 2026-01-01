@@ -97,7 +97,7 @@ class RequestId implements Middleware {
 
   /// Creates a RequestId middleware with the given [options].
   RequestId([this.options = const RequestIdOptions()])
-      : _generator = options.generator ?? _defaultGenerator;
+    : _generator = options.generator ?? _defaultGenerator;
 
   @override
   FutureOr<void> handle(Context ctx, NextFunction next) async {
@@ -158,13 +158,15 @@ RequestId requestId({
   String Function()? generator,
   bool Function(String id)? validator,
 }) {
-  return RequestId(RequestIdOptions(
-    headerName: headerName,
-    setResponseHeader: setResponseHeader,
-    useIncoming: useIncoming,
-    generator: generator,
-    validator: validator,
-  ));
+  return RequestId(
+    RequestIdOptions(
+      headerName: headerName,
+      setResponseHeader: setResponseHeader,
+      useIncoming: useIncoming,
+      generator: generator,
+      validator: validator,
+    ),
+  );
 }
 
 /// Extension on Context for request ID access.

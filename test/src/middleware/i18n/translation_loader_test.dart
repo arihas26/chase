@@ -9,27 +9,35 @@ void main() {
   group('TranslationLoader', () {
     group('fromDirectory', () {
       test('loads all translation files from directory', () async {
-        final translations = await TranslationLoader.fromDirectory(fixturesPath);
+        final translations = await TranslationLoader.fromDirectory(
+          fixturesPath,
+        );
 
         expect(translations.keys, containsAll(['en', 'ja']));
       });
 
       test('loads JSON files correctly', () async {
-        final translations = await TranslationLoader.fromDirectory(fixturesPath);
+        final translations = await TranslationLoader.fromDirectory(
+          fixturesPath,
+        );
 
         expect(translations['en']!['greeting'], 'Hello');
         expect(translations['en']!['welcome'], 'Welcome, {name}!');
       });
 
       test('loads YAML files correctly', () async {
-        final translations = await TranslationLoader.fromDirectory(fixturesPath);
+        final translations = await TranslationLoader.fromDirectory(
+          fixturesPath,
+        );
 
         expect(translations['ja']!['greeting'], 'こんにちは');
         expect(translations['ja']!['welcome'], 'ようこそ、{name}さん！');
       });
 
       test('loads nested keys correctly', () async {
-        final translations = await TranslationLoader.fromDirectory(fixturesPath);
+        final translations = await TranslationLoader.fromDirectory(
+          fixturesPath,
+        );
 
         final enNested = translations['en']!['nested'] as Map<String, dynamic>;
         final enDeep = enNested['deep'] as Map<String, dynamic>;
@@ -41,7 +49,9 @@ void main() {
       });
 
       test('loads pluralization rules', () async {
-        final translations = await TranslationLoader.fromDirectory(fixturesPath);
+        final translations = await TranslationLoader.fromDirectory(
+          fixturesPath,
+        );
 
         final enItems = translations['en']!['items'] as Map<String, dynamic>;
         expect(enItems['zero'], 'No items');
@@ -114,14 +124,18 @@ void main() {
 
     group('fromFile', () {
       test('loads a single JSON file', () async {
-        final content = await TranslationLoader.fromFile('$fixturesPath/en.json');
+        final content = await TranslationLoader.fromFile(
+          '$fixturesPath/en.json',
+        );
 
         expect(content, isNotNull);
         expect(content!['greeting'], 'Hello');
       });
 
       test('loads a single YAML file', () async {
-        final content = await TranslationLoader.fromFile('$fixturesPath/ja.yaml');
+        final content = await TranslationLoader.fromFile(
+          '$fixturesPath/ja.yaml',
+        );
 
         expect(content, isNotNull);
         expect(content!['greeting'], 'こんにちは');
@@ -218,7 +232,10 @@ void main() {
       );
 
       expect(translator.translate('greeting'), 'Hello');
-      expect(translator.translate('welcome', {'name': 'World'}), 'Welcome, World!');
+      expect(
+        translator.translate('welcome', {'name': 'World'}),
+        'Welcome, World!',
+      );
       expect(translator.translate('items', {'count': 5}), '5 items');
     });
 

@@ -13,32 +13,38 @@ class TestLogger implements Logger {
 
   @override
   void debug(String message, [Map<String, dynamic>? fields]) {
-    log(LogRecord(
-      level: LogLevel.debug,
-      message: message,
-      timestamp: DateTime.now(),
-      fields: fields ?? {},
-    ));
+    log(
+      LogRecord(
+        level: LogLevel.debug,
+        message: message,
+        timestamp: DateTime.now(),
+        fields: fields ?? {},
+      ),
+    );
   }
 
   @override
   void info(String message, [Map<String, dynamic>? fields]) {
-    log(LogRecord(
-      level: LogLevel.info,
-      message: message,
-      timestamp: DateTime.now(),
-      fields: fields ?? {},
-    ));
+    log(
+      LogRecord(
+        level: LogLevel.info,
+        message: message,
+        timestamp: DateTime.now(),
+        fields: fields ?? {},
+      ),
+    );
   }
 
   @override
   void warn(String message, [Map<String, dynamic>? fields]) {
-    log(LogRecord(
-      level: LogLevel.warn,
-      message: message,
-      timestamp: DateTime.now(),
-      fields: fields ?? {},
-    ));
+    log(
+      LogRecord(
+        level: LogLevel.warn,
+        message: message,
+        timestamp: DateTime.now(),
+        fields: fields ?? {},
+      ),
+    );
   }
 
   @override
@@ -48,14 +54,16 @@ class TestLogger implements Logger {
     Object? error,
     StackTrace? stackTrace,
   ]) {
-    log(LogRecord(
-      level: LogLevel.error,
-      message: message,
-      timestamp: DateTime.now(),
-      fields: fields ?? {},
-      error: error,
-      stackTrace: stackTrace,
-    ));
+    log(
+      LogRecord(
+        level: LogLevel.error,
+        message: message,
+        timestamp: DateTime.now(),
+        fields: fields ?? {},
+        error: error,
+        stackTrace: stackTrace,
+      ),
+    );
   }
 
   @override
@@ -132,8 +140,9 @@ void main() {
       test('uses custom header name', () async {
         final ctx = TestContext.get('/');
 
-        await RequestLogger(requestIdHeader: 'X-Correlation-ID')
-            .handle(ctx, () async {});
+        await RequestLogger(
+          requestIdHeader: 'X-Correlation-ID',
+        ).handle(ctx, () async {});
 
         expect(ctx.res.headers.value('X-Correlation-ID'), isNotNull);
       });
@@ -155,8 +164,9 @@ void main() {
           headers: {'X-Request-ID': 'existing-id-123'},
         );
 
-        await RequestLogger(useExistingRequestId: false)
-            .handle(ctx, () async {});
+        await RequestLogger(
+          useExistingRequestId: false,
+        ).handle(ctx, () async {});
 
         expect(ctx.get<String>('_requestId'), isNot('existing-id-123'));
       });
@@ -165,8 +175,9 @@ void main() {
         var counter = 0;
         final ctx = TestContext.get('/');
 
-        await RequestLogger(idGenerator: () => 'custom-${++counter}')
-            .handle(ctx, () async {});
+        await RequestLogger(
+          idGenerator: () => 'custom-${++counter}',
+        ).handle(ctx, () async {});
 
         expect(ctx.get<String>('_requestId'), 'custom-1');
       });
@@ -278,9 +289,7 @@ void main() {
       });
 
       test('skips logging when skip returns true', () async {
-        final logger = RequestLogger(
-          skip: (ctx) => ctx.req.path == '/health',
-        );
+        final logger = RequestLogger(skip: (ctx) => ctx.req.path == '/health');
 
         final ctx = TestContext.get('/health');
 
@@ -290,9 +299,7 @@ void main() {
       });
 
       test('still sets request ID even when skip returns true', () async {
-        final logger = RequestLogger(
-          skip: (ctx) => ctx.req.path == '/health',
-        );
+        final logger = RequestLogger(skip: (ctx) => ctx.req.path == '/health');
 
         final ctx = TestContext.get('/health');
 
@@ -302,9 +309,7 @@ void main() {
       });
 
       test('logs when skip returns false', () async {
-        final logger = RequestLogger(
-          skip: (ctx) => ctx.req.path == '/health',
-        );
+        final logger = RequestLogger(skip: (ctx) => ctx.req.path == '/health');
 
         final ctx = TestContext.get('/api/users');
 
@@ -404,7 +409,9 @@ void main() {
         await RequestLogger().handle(ctx, () async {});
 
         expect(
-            testLogger.lastRecord!.fields.containsKey('user_agent'), isFalse);
+          testLogger.lastRecord!.fields.containsKey('user_agent'),
+          isFalse,
+        );
       });
 
       test('includes query string in fields', () async {

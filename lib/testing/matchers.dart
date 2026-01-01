@@ -28,16 +28,25 @@ import 'testing.dart';
 const Matcher isOkResponse = _StatusRangeMatcher(200, 299, 'OK (2xx)');
 
 /// Matches a response with status code in the 3xx range.
-const Matcher isRedirectResponse =
-    _StatusRangeMatcher(300, 399, 'redirect (3xx)');
+const Matcher isRedirectResponse = _StatusRangeMatcher(
+  300,
+  399,
+  'redirect (3xx)',
+);
 
 /// Matches a response with status code in the 4xx range.
-const Matcher isClientErrorResponse =
-    _StatusRangeMatcher(400, 499, 'client error (4xx)');
+const Matcher isClientErrorResponse = _StatusRangeMatcher(
+  400,
+  499,
+  'client error (4xx)',
+);
 
 /// Matches a response with status code in the 5xx range.
-const Matcher isServerErrorResponse =
-    _StatusRangeMatcher(500, 599, 'server error (5xx)');
+const Matcher isServerErrorResponse = _StatusRangeMatcher(
+  500,
+  599,
+  'server error (5xx)',
+);
 
 /// Matches a response with the exact status code.
 ///
@@ -370,8 +379,7 @@ class _CookieMatcher extends Matcher {
       if (value == null) {
         return mismatchDescription.add('does not have cookie "$_name"');
       }
-      return mismatchDescription
-          .add('has cookie "$_name" with value "$value"');
+      return mismatchDescription.add('has cookie "$_name" with value "$value"');
     }
     return mismatchDescription.add('is not a TestResponse');
   }

@@ -42,9 +42,7 @@ void main() {
       final api = app.path('/api');
       api.get('/users').handle((c) => c);
 
-      expect(router.routes, [
-        (method: 'GET', path: '/api/users'),
-      ]);
+      expect(router.routes, [(method: 'GET', path: '/api/users')]);
     });
 
     test('routes() defines routes within a group', () {
@@ -117,9 +115,7 @@ void main() {
       final root = app.path('/');
       root.get('/users').handle((c) => c);
 
-      expect(router.routes, [
-        (method: 'GET', path: '/users'),
-      ]);
+      expect(router.routes, [(method: 'GET', path: '/users')]);
     });
 
     test('normalizes paths correctly', () {
@@ -151,9 +147,7 @@ void main() {
         });
       });
 
-      expect(router.routes, [
-        (method: 'GET', path: '/api/v1/admin/users'),
-      ]);
+      expect(router.routes, [(method: 'GET', path: '/api/v1/admin/users')]);
     });
 
     test('group returns this for chaining', () {

@@ -26,78 +26,90 @@ void main() async {
   // Example 2: Fast endpoint (completes before timeout)
   app.get('/fast').handle((ctx) async {
     await Future.delayed(const Duration(milliseconds: 100));
-    return Response.json({
-      'message': 'Fast response',
-      'duration_ms': 100,
-    });
+    return Response.json({'message': 'Fast response', 'duration_ms': 100});
   });
 
   // Example 3: Endpoint that will timeout
-  app.get('/slow')
+  app
+      .get('/slow')
       .use(const Timeout(TimeoutOptions(duration: Duration(seconds: 2))))
       .handle((ctx) async {
-    // This takes longer than the 2-second timeout
-    await Future.delayed(const Duration(seconds: 5));
-    return Response.json({'message': 'This will never be sent'});
-  });
+        // This takes longer than the 2-second timeout
+        await Future.delayed(const Duration(seconds: 5));
+        return Response.json({'message': 'This will never be sent'});
+      });
 
   // Example 4: Short timeout preset
-  app.get('/quick')
+  app
+      .get('/quick')
       .use(const Timeout(TimeoutOptions.short)) // 5 seconds
       .handle((ctx) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return Response.json({'message': 'Quick response'});
-  });
+        await Future.delayed(const Duration(milliseconds: 500));
+        return Response.json({'message': 'Quick response'});
+      });
 
   // Example 5: Long timeout for heavy operations
-  app.post('/process')
+  app
+      .post('/process')
       .use(const Timeout(TimeoutOptions.long)) // 120 seconds
       .handle((ctx) async {
-    // Simulate heavy processing
-    await Future.delayed(const Duration(seconds: 2));
-    return Response.json({'message': 'Processing complete'});
-  });
+        // Simulate heavy processing
+        await Future.delayed(const Duration(seconds: 2));
+        return Response.json({'message': 'Processing complete'});
+      });
 
   // Example 6: Custom timeout handler
-  app.get('/custom-timeout')
-      .use(Timeout(TimeoutOptions(
-        duration: const Duration(seconds: 1),
-        onTimeout: (ctx) async {
-          ctx.res.statusCode = HttpStatus.serviceUnavailable;
-          await ctx.res.json({
-            'error': 'Custom timeout response',
-            'suggestion': 'Please try again later',
-            'support': 'support@example.com',
-          });
-        },
-      )))
+  app
+      .get('/custom-timeout')
+      .use(
+        Timeout(
+          TimeoutOptions(
+            duration: const Duration(seconds: 1),
+            onTimeout: (ctx) async {
+              ctx.res.statusCode = HttpStatus.serviceUnavailable;
+              await ctx.res.json({
+                'error': 'Custom timeout response',
+                'suggestion': 'Please try again later',
+                'support': 'support@example.com',
+              });
+            },
+          ),
+        ),
+      )
       .handle((ctx) async {
-    await Future.delayed(const Duration(seconds: 3));
-    return Response.json({'message': 'Never reached'});
-  });
+        await Future.delayed(const Duration(seconds: 3));
+        return Response.json({'message': 'Never reached'});
+      });
 
   // Example 7: Gateway timeout status
-  app.get('/gateway')
-      .use(const Timeout(TimeoutOptions(
-        duration: Duration(seconds: 2),
-        statusCode: HttpStatus.gatewayTimeout,
-        errorMessage: 'Upstream server took too long',
-      )))
+  app
+      .get('/gateway')
+      .use(
+        const Timeout(
+          TimeoutOptions(
+            duration: Duration(seconds: 2),
+            statusCode: HttpStatus.gatewayTimeout,
+            errorMessage: 'Upstream server took too long',
+          ),
+        ),
+      )
       .handle((ctx) async {
-    await Future.delayed(const Duration(seconds: 5));
-    return Response.json({'data': 'from upstream'});
-  });
+        await Future.delayed(const Duration(seconds: 5));
+        return Response.json({'data': 'from upstream'});
+      });
 
   // Example 8: Include duration in error
-  app.get('/debug')
-      .use(const Timeout(TimeoutOptions(
-        duration: Duration(seconds: 1),
-        includeDuration: true,
-      )))
+  app
+      .get('/debug')
+      .use(
+        const Timeout(
+          TimeoutOptions(duration: Duration(seconds: 1), includeDuration: true),
+        ),
+      )
       .handle((ctx) async {
-    await Future.delayed(const Duration(seconds: 3));
-    return Response.json({'debug': true});
-  });
+        await Future.delayed(const Duration(seconds: 3));
+        return Response.json({'debug': true});
+      });
 
   // Example 9: Variable processing time
   app.get('/variable').handle((ctx) async {
@@ -110,26 +122,29 @@ void main() async {
   });
 
   // Example 10: Using deadline in handler
-  app.get('/deadline')
+  app
+      .get('/deadline')
       .use(const Timeout(TimeoutOptions(duration: Duration(seconds: 5))))
       .handle((ctx) async {
-    // Set deadline for internal use
-    ctx.setDeadline(DateTime.now().add(const Duration(seconds: 5)));
+        // Set deadline for internal use
+        ctx.setDeadline(DateTime.now().add(const Duration(seconds: 5)));
 
-    // Check deadline during processing
-    for (var i = 0; i < 3; i++) {
-      if (ctx.isExpired) {
-        return Response.json({'error': 'Deadline exceeded during processing'});
-      }
+        // Check deadline during processing
+        for (var i = 0; i < 3; i++) {
+          if (ctx.isExpired) {
+            return Response.json({
+              'error': 'Deadline exceeded during processing',
+            });
+          }
 
-      await Future.delayed(const Duration(seconds: 1));
-    }
+          await Future.delayed(const Duration(seconds: 1));
+        }
 
-    return Response.json({
-      'message': 'Completed before deadline',
-      'remaining_ms': ctx.remainingTime?.inMilliseconds,
-    });
-  });
+        return Response.json({
+          'message': 'Completed before deadline',
+          'remaining_ms': ctx.remainingTime?.inMilliseconds,
+        });
+      });
 
   // Info endpoint
   app.get('/').handle((ctx) async {

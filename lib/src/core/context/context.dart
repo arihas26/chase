@@ -22,8 +22,8 @@ class Context {
     HttpResponse res, [
     Map<String, String>? params,
     String? methodOverride,
-  ])  : _req = Req(req, params, methodOverride),
-        _res = Res(res);
+  ]) : _req = Req(req, params, methodOverride),
+       _res = Res(res);
 
   /// The HTTP request.
   Req get req => _req;
@@ -91,5 +91,4 @@ class Context {
   /// ctx.log.error('Failed to save', {'error': e.toString()}, e);
   /// ```
   zlogger.Log get log => zlogger.log;
-
 }

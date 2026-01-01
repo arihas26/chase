@@ -26,10 +26,10 @@ class ValidationError {
   });
 
   Map<String, dynamic> toJson() => {
-        'field': field,
-        'message': message,
-        'rule': rule,
-      };
+    'field': field,
+    'message': message,
+    'rule': rule,
+  };
 
   @override
   String toString() => '$field: $message';
@@ -77,8 +77,7 @@ class ValidationResult {
 // -----------------------------------------------------------------------------
 
 /// A validation rule that can be applied to a value.
-typedef ValidationRule = ValidationError? Function(
-    String field, dynamic value);
+typedef ValidationRule = ValidationError? Function(String field, dynamic value);
 
 /// Builder for creating validation rules.
 class V {
@@ -94,32 +93,41 @@ class V {
   static V isString() => V._().._addTypeCheck('string', (v) => v is String);
 
   /// Creates an integer validator.
-  static V isInt() => V._().._addTypeCheck('int', (v) {
-        if (v is int) return true;
-        if (v is String) return int.tryParse(v) != null;
-        return false;
-      }).._transform = (v) => v is int ? v : int.parse(v.toString());
+  static V isInt() => V._()
+    .._addTypeCheck('int', (v) {
+      if (v is int) return true;
+      if (v is String) return int.tryParse(v) != null;
+      return false;
+    })
+    .._transform = (v) => v is int ? v : int.parse(v.toString());
 
   /// Creates a double/number validator.
-  static V isDouble() => V._().._addTypeCheck('double', (v) {
-        if (v is num) return true;
-        if (v is String) return double.tryParse(v) != null;
-        return false;
-      }).._transform = (v) => v is double ? v : double.parse(v.toString());
+  static V isDouble() => V._()
+    .._addTypeCheck('double', (v) {
+      if (v is num) return true;
+      if (v is String) return double.tryParse(v) != null;
+      return false;
+    })
+    .._transform = (v) => v is double ? v : double.parse(v.toString());
 
   /// Creates a boolean validator.
-  static V isBool() => V._().._addTypeCheck('bool', (v) {
-        if (v is bool) return true;
-        if (v is String) {
-          final lower = v.toLowerCase();
-          return lower == 'true' || lower == 'false' || lower == '1' || lower == '0';
-        }
-        return false;
-      }).._transform = (v) {
-        if (v is bool) return v;
-        final s = v.toString().toLowerCase();
-        return s == 'true' || s == '1';
-      };
+  static V isBool() => V._()
+    .._addTypeCheck('bool', (v) {
+      if (v is bool) return true;
+      if (v is String) {
+        final lower = v.toLowerCase();
+        return lower == 'true' ||
+            lower == 'false' ||
+            lower == '1' ||
+            lower == '0';
+      }
+      return false;
+    })
+    .._transform = (v) {
+      if (v is bool) return v;
+      final s = v.toString().toLowerCase();
+      return s == 'true' || s == '1';
+    };
 
   /// Creates a list validator with optional item validation.
   static V list([V Function(dynamic)? itemValidator]) =>
@@ -318,11 +326,7 @@ class V {
     _rules.add((field, value) {
       if (value == null) return null;
       if (!validator(value)) {
-        return ValidationError(
-          field: field,
-          message: message,
-          rule: 'custom',
-        );
+        return ValidationError(field: field, message: message, rule: 'custom');
       }
       return null;
     });
@@ -443,9 +447,9 @@ class ValidationException extends HttpException {
 
   /// Returns the errors as JSON.
   Map<String, dynamic> toJson() => {
-        'message': message,
-        'errors': errors.map((e) => e.toJson()).toList(),
-      };
+    'message': message,
+    'errors': errors.map((e) => e.toJson()).toList(),
+  };
 }
 
 // -----------------------------------------------------------------------------

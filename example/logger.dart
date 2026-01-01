@@ -17,10 +17,7 @@ void main() async {
   final app = Chase();
 
   // Configure zlogger output (optional)
-  LogConfig.global = DefaultLogger(
-    minLevel: LogLevel.debug,
-    color: true,
-  );
+  LogConfig.global = DefaultLogger(minLevel: LogLevel.debug, color: true);
 
   // Application-level logging (outside of request context)
   log.info('Application starting', {'version': '1.0.0'});
@@ -30,11 +27,13 @@ void main() async {
   // - Sets X-Request-ID header in response
   // - Propagates request_id to all log calls via Zone
   // - Logs each request with method, path, status, duration
-  app.use(RequestLogger(
-    minLevel: LogLevel.info,
-    skip: (ctx) => ctx.req.path == '/health',
-    slowThreshold: Duration(seconds: 1),
-  ));
+  app.use(
+    RequestLogger(
+      minLevel: LogLevel.info,
+      skip: (ctx) => ctx.req.path == '/health',
+      slowThreshold: Duration(seconds: 1),
+    ),
+  );
 
   // Health check (logging skipped, but request_id still generated)
   app.get('/health').handle((ctx) async {
@@ -73,7 +72,9 @@ void main() async {
       return Response.created().json(user);
     } catch (e, st) {
       ctx.log.error('Failed to create user', {'error': e.toString()}, e, st);
-      return Response.internalServerError().json({'error': 'Internal server error'});
+      return Response.internalServerError().json({
+        'error': 'Internal server error',
+      });
     }
   });
 
@@ -82,7 +83,9 @@ void main() async {
       throw Exception('Something went wrong!');
     } catch (e, st) {
       ctx.log.error('Unhandled error occurred', {'path': '/error'}, e, st);
-      return Response.internalServerError().json({'error': 'Internal server error'});
+      return Response.internalServerError().json({
+        'error': 'Internal server error',
+      });
     }
   });
 

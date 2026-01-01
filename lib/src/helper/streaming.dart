@@ -19,8 +19,8 @@ class StreamingResponse extends Response {
     int status = HttpStatus.ok,
     Map<String, String> headers = const {},
     required Future<void> Function(HttpResponse response) callback,
-  })  : _callback = callback,
-        super(status, headers: headers);
+  }) : _callback = callback,
+       super(status, headers: headers);
 
   @override
   Future<void> writeTo(HttpResponse response, {bool prettyJson = false}) async {
@@ -145,12 +145,7 @@ class SSEMessage {
   /// Retry interval in milliseconds (optional).
   final int? retry;
 
-  const SSEMessage({
-    required this.data,
-    this.event,
-    this.id,
-    this.retry,
-  });
+  const SSEMessage({required this.data, this.event, this.id, this.retry});
 }
 
 /// SSE stream API for Server-Sent Events (Hono-style).

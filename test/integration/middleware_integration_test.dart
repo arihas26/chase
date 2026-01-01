@@ -91,7 +91,9 @@ void main() {
 
     test('rate limit middleware limits requests', () async {
       app = Chase();
-      app.use(RateLimit(const RateLimitOptions(maxRequests: 3, windowMs: 10000)));
+      app.use(
+        RateLimit(const RateLimitOptions(maxRequests: 3, windowMs: 10000)),
+      );
       app.get('/').handle((ctx) => ctx.res.text('OK'));
 
       client = await TestClient.start(app);

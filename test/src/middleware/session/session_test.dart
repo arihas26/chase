@@ -17,11 +17,12 @@ class MockHttpRequest implements HttpRequest {
   MockHttpRequest({
     String remoteAddress = '127.0.0.1',
     Map<String, String>? headers,
-  })  : _remoteAddress = remoteAddress,
-        _headers = MockHttpHeaders(headers ?? {});
+  }) : _remoteAddress = remoteAddress,
+       _headers = MockHttpHeaders(headers ?? {});
 
   @override
-  HttpConnectionInfo? get connectionInfo => MockHttpConnectionInfo(_remoteAddress);
+  HttpConnectionInfo? get connectionInfo =>
+      MockHttpConnectionInfo(_remoteAddress);
 
   @override
   HttpHeaders get headers => _headers;
@@ -173,7 +174,9 @@ void main() {
     });
 
     test('remove() marks session as modified', () {
-      final session = SessionData.fromStore('test-id', {'key': 'value'}, DateTime.now());
+      final session = SessionData.fromStore('test-id', {
+        'key': 'value',
+      }, DateTime.now());
       expect(session.isModified, isFalse);
 
       session.remove('key');
@@ -200,7 +203,10 @@ void main() {
     });
 
     test('clear() removes all data and marks modified', () {
-      final session = SessionData.fromStore('test-id', {'a': 1, 'b': 2}, DateTime.now());
+      final session = SessionData.fromStore('test-id', {
+        'a': 1,
+        'b': 2,
+      }, DateTime.now());
 
       session.clear();
 
@@ -230,11 +236,16 @@ void main() {
       final session = SessionData.create('test-id');
       session.set('key', 'value');
 
-      expect(() => session.data['new'] = 'test', throwsA(isA<UnsupportedError>()));
+      expect(
+        () => session.data['new'] = 'test',
+        throwsA(isA<UnsupportedError>()),
+      );
     });
 
     test('fromStore creates session with isNew=false', () {
-      final session = SessionData.fromStore('test-id', {'key': 'value'}, DateTime.now());
+      final session = SessionData.fromStore('test-id', {
+        'key': 'value',
+      }, DateTime.now());
 
       expect(session.isNew, isFalse);
       expect(session.isModified, isFalse);
@@ -276,11 +287,9 @@ void main() {
       final store = MemorySessionStore();
 
       // Create old session
-      final oldSession = SessionData.fromStore(
-        'old',
-        {'key': 'value'},
-        DateTime.now().subtract(const Duration(hours: 25)),
-      );
+      final oldSession = SessionData.fromStore('old', {
+        'key': 'value',
+      }, DateTime.now().subtract(const Duration(hours: 25)));
       store.set('old', oldSession);
 
       // Create recent session
@@ -433,9 +442,9 @@ void main() {
       store.set('existing-session-id', initialSession);
 
       // Request with session cookie
-      final request = MockHttpRequest(headers: {
-        'cookie': 'session_id=existing-session-id',
-      });
+      final request = MockHttpRequest(
+        headers: {'cookie': 'session_id=existing-session-id'},
+      );
       final ctx = Context(request, response);
       final middleware = Session(store);
 
@@ -448,9 +457,9 @@ void main() {
     });
 
     test('creates new session if cookie ID not in store', () async {
-      final request = MockHttpRequest(headers: {
-        'cookie': 'session_id=nonexistent-id',
-      });
+      final request = MockHttpRequest(
+        headers: {'cookie': 'session_id=nonexistent-id'},
+      );
       final ctx = Context(request, response);
       final middleware = Session(store);
 
@@ -483,9 +492,9 @@ void main() {
       final existingSession = SessionData.create('test-session');
       store.set('test-session', existingSession);
 
-      final request = MockHttpRequest(headers: {
-        'cookie': 'session_id=test-session',
-      });
+      final request = MockHttpRequest(
+        headers: {'cookie': 'session_id=test-session'},
+      );
       final ctx = Context(request, response);
       final middleware = Session(store);
 
@@ -504,11 +513,14 @@ void main() {
       final existingSession = SessionData.create('test-session');
       store.set('test-session', existingSession);
 
-      final request = MockHttpRequest(headers: {
-        'cookie': 'session_id=test-session',
-      });
+      final request = MockHttpRequest(
+        headers: {'cookie': 'session_id=test-session'},
+      );
       final ctx = Context(request, response);
-      final middleware = Session(store, const SessionOptions(saveUnmodified: true));
+      final middleware = Session(
+        store,
+        const SessionOptions(saveUnmodified: true),
+      );
 
       await middleware.handle(ctx, () async {
         final _ = ctx.session.id;
@@ -554,9 +566,9 @@ void main() {
       final existingSession = SessionData.create('test-session');
       store.set('test-session', existingSession);
 
-      final request = MockHttpRequest(headers: {
-        'cookie': 'session_id=test-session',
-      });
+      final request = MockHttpRequest(
+        headers: {'cookie': 'session_id=test-session'},
+      );
       final ctx = Context(request, response);
       final middleware = Session(store, const SessionOptions(rolling: true));
 
@@ -611,7 +623,6 @@ void main() {
 
         // Data should be gone
         expect(ctx.session.get<String>('data'), isNull);
-
       });
 
       expect(newId, isNot(equals(originalId)));
@@ -633,7 +644,6 @@ void main() {
         ctx.regenerateSession();
         newId = ctx.session.id;
         preservedData = ctx.session.get<String>('user');
-
       });
 
       expect(newId, isNot(equals(originalId)));
@@ -675,4 +685,3 @@ String _generateTestId() {
   final bytes = List<int>.generate(32, (_) => random.nextInt(256));
   return base64Url.encode(bytes).replaceAll('=', '');
 }
-

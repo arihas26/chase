@@ -126,8 +126,8 @@ void main() {
             .get('/protected')
             .use(_AddHeaderMiddleware('X-Auth', 'required'))
             .handle((ctx) {
-          ctx.res.text('Secret');
-        });
+              ctx.res.text('Secret');
+            });
         client = await TestClient.start(app);
 
         final res = await client.get('/protected');
@@ -166,7 +166,9 @@ void main() {
     group('TestResponse helpers', () {
       test('isOk returns true for 2xx', () async {
         app.get('/ok').handle((ctx) => ctx.res.text('OK'));
-        app.get('/created').handle((ctx) => ctx.res.text('Created', status: 201));
+        app
+            .get('/created')
+            .handle((ctx) => ctx.res.text('Created', status: 201));
         client = await TestClient.start(app);
 
         expect(await client.get('/ok'), isOkResponse);
@@ -175,7 +177,9 @@ void main() {
 
       test('isClientError returns true for 4xx', () async {
         app.get('/bad').handle((ctx) => ctx.res.text('Bad', status: 400));
-        app.get('/notfound').handle((ctx) => ctx.res.text('Not Found', status: 404));
+        app
+            .get('/notfound')
+            .handle((ctx) => ctx.res.text('Not Found', status: 404));
         client = await TestClient.start(app);
 
         expect(await client.get('/bad'), isClientErrorResponse);

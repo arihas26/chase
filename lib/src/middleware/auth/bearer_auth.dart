@@ -98,7 +98,12 @@ class BearerAuth implements Middleware {
 
     // No Authorization header or not Bearer token
     if (authHeader == null || !authHeader.toLowerCase().startsWith('bearer ')) {
-      await _unauthorized(ctx, authHeader == null ? 'Missing Authorization header' : 'Not a Bearer token');
+      await _unauthorized(
+        ctx,
+        authHeader == null
+            ? 'Missing Authorization header'
+            : 'Not a Bearer token',
+      );
       return;
     }
 
@@ -108,7 +113,7 @@ class BearerAuth implements Middleware {
 
       if (token.isEmpty) {
         await _unauthorized(ctx, 'Empty token');
-      return;
+        return;
       }
 
       // Validate token
@@ -116,7 +121,7 @@ class BearerAuth implements Middleware {
 
       if (!isValid) {
         await _unauthorized(ctx, 'Invalid token');
-      return;
+        return;
       }
 
       // Authentication successful, proceed to next middleware/handler
@@ -163,17 +168,17 @@ class BearerAuth implements Middleware {
 
   /// Sends a 401 Unauthorized response with the appropriate WWW-Authenticate header.
   Future<void> _unauthorized(Context ctx, String reason) async {
-    _log.warn(
-      'Bearer auth failed: $reason',
-      {
-        'request_id': ctx.get<String>('_requestId'),
-        'method': ctx.req.method,
-        'path': ctx.req.path,
-        'ip': _safeGetIp(ctx),
-      },
-    );
+    _log.warn('Bearer auth failed: $reason', {
+      'request_id': ctx.get<String>('_requestId'),
+      'method': ctx.req.method,
+      'path': ctx.req.path,
+      'ip': _safeGetIp(ctx),
+    });
 
-    ctx.res.headers.set(HttpHeaders.wwwAuthenticateHeader, 'Bearer realm="$realm"');
+    ctx.res.headers.set(
+      HttpHeaders.wwwAuthenticateHeader,
+      'Bearer realm="$realm"',
+    );
     await ctx.res.json({
       'error': 'Unauthorized',
       'message': 'Invalid or missing token',

@@ -36,11 +36,9 @@ void main() {
     });
 
     test('mergeHeaders combines multiple maps', () {
-      final merged = RequestHelper.mergeHeaders(
-        {'a': '1'},
-        {'b': '2'},
-        {'c': '3'},
-      );
+      final merged = RequestHelper.mergeHeaders({'a': '1'}, {'b': '2'}, {
+        'c': '3',
+      });
       expect(merged, {'a': '1', 'b': '2', 'c': '3'});
     });
 
@@ -124,7 +122,9 @@ void main() {
 
     test('expect.jsonPath checks JSON values', () async {
       app.get('/fluent/user').handle((ctx) async {
-        ctx.res.json({'user': {'name': 'Alice'}});
+        ctx.res.json({
+          'user': {'name': 'Alice'},
+        });
       });
 
       final res = await client.get('/fluent/user');
@@ -230,11 +230,9 @@ void main() {
         ctx.res.json({'auth': auth, ...body as Map});
       });
 
-      final res = await client.postJson(
-        '/ext/users/auth',
-        {'name': 'John'},
-        token: 'jwt-token',
-      );
+      final res = await client.postJson('/ext/users/auth', {
+        'name': 'John',
+      }, token: 'jwt-token');
       final json = await res.json;
       expect(json['auth'], 'Bearer jwt-token');
       expect(json['name'], 'John');

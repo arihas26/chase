@@ -17,7 +17,9 @@ void main() async {
   // Simple file upload endpoint
   app.post('/upload').handle((ctx) async {
     if (!ctx.req.isMultipart) {
-      return Response.badRequest().json({'error': 'Expected multipart/form-data'});
+      return Response.badRequest().json({
+        'error': 'Expected multipart/form-data',
+      });
     }
 
     final data = await ctx.req.multipart();
@@ -55,11 +57,13 @@ void main() async {
       'totalFiles': photos.length,
       'images': images.length,
       'files': photos
-          .map((f) => {
-                'filename': f.filename,
-                'size': f.size,
-                'extension': f.extension,
-              })
+          .map(
+            (f) => {
+              'filename': f.filename,
+              'size': f.size,
+              'extension': f.extension,
+            },
+          )
           .toList(),
     });
   });
@@ -92,11 +96,7 @@ void main() async {
     final uploadPath = 'uploads/${doc.filename}';
     await doc.saveTo(uploadPath);
 
-    return Response.json({
-      'saved': true,
-      'path': uploadPath,
-      'size': doc.size,
-    });
+    return Response.json({'saved': true, 'path': uploadPath, 'size': doc.size});
   });
 
   // Check available fields and files

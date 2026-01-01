@@ -87,26 +87,22 @@ void main() async {
 
   // Example 4: Stream JSON lines (NDJSON)
   app.get('/data-stream').handle((ctx) {
-    return streamText(
-      ctx,
-      (s) async {
-        // Stream 20 JSON objects
-        for (var i = 1; i <= 20; i++) {
-          if (s.isClosed) break;
+    return streamText(ctx, (s) async {
+      // Stream 20 JSON objects
+      for (var i = 1; i <= 20; i++) {
+        if (s.isClosed) break;
 
-          final data = {
-            'id': i,
-            'timestamp': DateTime.now().toIso8601String(),
-            'value': (i * 42) % 100,
-            'status': i % 2 == 0 ? 'even' : 'odd',
-          };
+        final data = {
+          'id': i,
+          'timestamp': DateTime.now().toIso8601String(),
+          'value': (i * 42) % 100,
+          'status': i % 2 == 0 ? 'even' : 'odd',
+        };
 
-          await s.writeln(data.toString());
-          await s.sleep(Duration(milliseconds: 200));
-        }
-      },
-      contentType: 'application/x-ndjson',
-    );
+        await s.writeln(data.toString());
+        await s.sleep(Duration(milliseconds: 200));
+      }
+    }, contentType: 'application/x-ndjson');
   });
 
   // Example 5: Chunked data transfer

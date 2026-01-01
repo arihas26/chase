@@ -55,11 +55,7 @@ class _MockRequest extends Stream<Uint8List> implements HttpRequest {
   @override
   final Uri uri;
 
-  _MockRequest({
-    required this.method,
-    required this.uri,
-    String? authHeader,
-  }) {
+  _MockRequest({required this.method, required this.uri, String? authHeader}) {
     if (authHeader != null) {
       headers.set('authorization', authHeader);
     }
@@ -182,7 +178,10 @@ void main() {
 
       expect(handlerCalled, isFalse);
       expect(res.statusCode, HttpStatus.unauthorized);
-      expect(res.headers.value('www-authenticate'), 'Basic realm="Restricted Area"');
+      expect(
+        res.headers.value('www-authenticate'),
+        'Basic realm="Restricted Area"',
+      );
       expect(res.body, contains('Unauthorized'));
     });
 
@@ -308,7 +307,10 @@ void main() {
 
       await chain(ctx);
 
-      expect(res.headers.value('www-authenticate'), 'Basic realm="Admin Portal"');
+      expect(
+        res.headers.value('www-authenticate'),
+        'Basic realm="Admin Portal"',
+      );
     });
 
     test('is case-insensitive for "Basic" scheme', () async {
@@ -354,10 +356,7 @@ void main() {
 
   group('BasicAuth.withValidator', () {
     test('validates with custom sync validator', () async {
-      final validUsers = {
-        'admin': 'secret',
-        'user': 'password',
-      };
+      final validUsers = {'admin': 'secret', 'user': 'password'};
 
       final req = _MockRequest(
         method: 'GET',
@@ -383,9 +382,7 @@ void main() {
     });
 
     test('rejects invalid credentials with custom validator', () async {
-      final validUsers = {
-        'admin': 'secret',
-      };
+      final validUsers = {'admin': 'secret'};
 
       final req = _MockRequest(
         method: 'GET',

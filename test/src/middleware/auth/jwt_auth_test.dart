@@ -56,11 +56,7 @@ class _MockRequest extends Stream<Uint8List> implements HttpRequest {
   @override
   final Uri uri;
 
-  _MockRequest({
-    required this.method,
-    required this.uri,
-    String? authHeader,
-  }) {
+  _MockRequest({required this.method, required this.uri, String? authHeader}) {
     if (authHeader != null) {
       headers.set('authorization', authHeader);
     }
@@ -135,7 +131,11 @@ Handler _buildChain(List<Middleware> middlewares, Handler finalHandler) {
   return current;
 }
 
-String _createToken(String secretKey, Map<String, dynamic> payload, {JWTAlgorithm algorithm = JWTAlgorithm.HS256}) {
+String _createToken(
+  String secretKey,
+  Map<String, dynamic> payload, {
+  JWTAlgorithm algorithm = JWTAlgorithm.HS256,
+}) {
   final jwt = JWT(payload);
   return jwt.sign(SecretKey(secretKey), algorithm: algorithm);
 }
@@ -200,7 +200,11 @@ void main() {
     test('rejects expired JWT token', () async {
       final payload = {
         'sub': 'user123',
-        'exp': DateTime.now().subtract(Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+        'exp':
+            DateTime.now()
+                .subtract(Duration(hours: 1))
+                .millisecondsSinceEpoch ~/
+            1000,
       };
       final token = _createToken(secretKey, payload);
 
@@ -228,7 +232,9 @@ void main() {
     test('allows non-expired JWT token', () async {
       final payload = {
         'sub': 'user123',
-        'exp': DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+        'exp':
+            DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch ~/
+            1000,
       };
       final token = _createToken(secretKey, payload);
 
@@ -347,15 +353,15 @@ void main() {
       final res = _MockResponse();
       final ctx = Context(req, res);
 
-      final auth = JwtAuth(
-        secretKey: secretKey,
-        realm: 'API Access',
-      );
+      final auth = JwtAuth(secretKey: secretKey, realm: 'API Access');
       final chain = _buildChain([auth], (ctx) async {});
 
       await chain(ctx);
 
-      expect(res.headers.value('www-authenticate'), 'Bearer realm="API Access"');
+      expect(
+        res.headers.value('www-authenticate'),
+        'Bearer realm="API Access"',
+      );
     });
 
     test('handles token with whitespace', () async {
@@ -384,7 +390,11 @@ void main() {
 
     test('supports different JWT algorithms', () async {
       final payload = {'sub': 'user123'};
-      final token = _createToken(secretKey, payload, algorithm: JWTAlgorithm.HS512);
+      final token = _createToken(
+        secretKey,
+        payload,
+        algorithm: JWTAlgorithm.HS512,
+      );
 
       final req = _MockRequest(
         method: 'GET',
@@ -395,10 +405,7 @@ void main() {
       final ctx = Context(req, res);
 
       var handlerCalled = false;
-      final auth = JwtAuth(
-        secretKey: secretKey,
-        algorithm: JWTAlgorithm.HS512,
-      );
+      final auth = JwtAuth(secretKey: secretKey, algorithm: JWTAlgorithm.HS512);
       final chain = _buildChain([auth], (ctx) async {
         handlerCalled = true;
       });
@@ -410,11 +417,7 @@ void main() {
     });
 
     test('stores JWT payload in context params', () async {
-      final payload = {
-        'sub': 'user123',
-        'name': 'John Doe',
-        'role': 'admin',
-      };
+      final payload = {'sub': 'user123', 'name': 'John Doe', 'role': 'admin'};
       final token = _createToken(secretKey, payload);
 
       final req = _MockRequest(
@@ -585,7 +588,9 @@ void main() {
         payloadValidator: (payload) {
           final role = payload['role'] as String?;
           final scope = payload['scope'] as String?;
-          return role == 'admin' && scope != null && scope.contains('write:users');
+          return role == 'admin' &&
+              scope != null &&
+              scope.contains('write:users');
         },
       );
       final chain = _buildChain([auth], (ctx) async {
@@ -701,7 +706,9 @@ void main() {
         final payloadPart = base64Url.decode(base64Url.normalize(parts[1]));
         final tamperedPayload = jsonDecode(utf8.decode(payloadPart));
         tamperedPayload['role'] = 'admin'; // Try to escalate privileges
-        final newPayloadPart = base64Url.encode(utf8.encode(jsonEncode(tamperedPayload)));
+        final newPayloadPart = base64Url.encode(
+          utf8.encode(jsonEncode(tamperedPayload)),
+        );
         token = '${parts[0]}.$newPayloadPart.${parts[2]}';
       }
 

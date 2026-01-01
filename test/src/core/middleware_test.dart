@@ -6,7 +6,9 @@ void main() {
   group('Middleware Execution - Basic', () {
     test('single middleware executes correctly', () async {
       final tracker = <String>[];
-      final chain = _buildTestChain([ExecutionTracker(tracker, 'MW1')], (ctx) async {
+      final chain = _buildTestChain([ExecutionTracker(tracker, 'MW1')], (
+        ctx,
+      ) async {
         tracker.add('handler');
       });
 
@@ -16,32 +18,35 @@ void main() {
       expect(tracker, ['MW1-before', 'handler', 'MW1-after']);
     });
 
-    test('multiple middlewares execute in correct order (Onion Model)', () async {
-      final tracker = <String>[];
-      final chain = _buildTestChain(
-        [
-          ExecutionTracker(tracker, 'MW1'),
-          ExecutionTracker(tracker, 'MW2'),
-          ExecutionTracker(tracker, 'MW3'),
-        ],
-        (ctx) async {
-          tracker.add('handler');
-        },
-      );
+    test(
+      'multiple middlewares execute in correct order (Onion Model)',
+      () async {
+        final tracker = <String>[];
+        final chain = _buildTestChain(
+          [
+            ExecutionTracker(tracker, 'MW1'),
+            ExecutionTracker(tracker, 'MW2'),
+            ExecutionTracker(tracker, 'MW3'),
+          ],
+          (ctx) async {
+            tracker.add('handler');
+          },
+        );
 
-      final ctx = _createMockContext();
-      await chain(ctx);
+        final ctx = _createMockContext();
+        await chain(ctx);
 
-      expect(tracker, [
-        'MW1-before',
-        'MW2-before',
-        'MW3-before',
-        'handler',
-        'MW3-after',
-        'MW2-after',
-        'MW1-after',
-      ]);
-    });
+        expect(tracker, [
+          'MW1-before',
+          'MW2-before',
+          'MW3-before',
+          'handler',
+          'MW3-after',
+          'MW2-after',
+          'MW1-after',
+        ]);
+      },
+    );
 
     test('empty middleware list passes through to handler', () async {
       final tracker = <String>[];
@@ -79,7 +84,10 @@ void main() {
     test('middleware after interruption does not execute', () async {
       final tracker = <String>[];
       final chain = _buildTestChain(
-        [AuthMiddleware(shouldPass: false), ExecutionTracker(tracker, 'ShouldNotRun')],
+        [
+          AuthMiddleware(shouldPass: false),
+          ExecutionTracker(tracker, 'ShouldNotRun'),
+        ],
         (ctx) async {
           tracker.add('handler');
         },
@@ -138,7 +146,9 @@ void main() {
     });
 
     test('uncaught error propagates', () async {
-      final chain = _buildTestChain([ExceptionMiddleware('Uncaught error')], (ctx) async {});
+      final chain = _buildTestChain([
+        ExceptionMiddleware('Uncaught error'),
+      ], (ctx) async {});
 
       final ctx = _createMockContext();
       expect(() => chain(ctx), throwsException);
@@ -159,14 +169,17 @@ void main() {
 
   group('Middleware Execution - Edge Cases', () {
     test('same handler instance with different middlewares', () async {
-      Future<void> sharedHandler(Context ctx) async {
-      }
+      Future<void> sharedHandler(Context ctx) async {}
 
       final tracker1 = <String>[];
-      final chain1 = _buildTestChain([ExecutionTracker(tracker1, 'MW1')], sharedHandler);
+      final chain1 = _buildTestChain([
+        ExecutionTracker(tracker1, 'MW1'),
+      ], sharedHandler);
 
       final tracker2 = <String>[];
-      final chain2 = _buildTestChain([ExecutionTracker(tracker2, 'MW2')], sharedHandler);
+      final chain2 = _buildTestChain([
+        ExecutionTracker(tracker2, 'MW2'),
+      ], sharedHandler);
 
       final ctx = _createMockContext();
 
@@ -197,32 +210,41 @@ void main() {
       expect(counter, 200); // 100 before + 100 after
     });
 
-    test('middleware modifying context is visible to subsequent middlewares', () async {
-      final modifications = <String>[];
+    test(
+      'middleware modifying context is visible to subsequent middlewares',
+      () async {
+        final modifications = <String>[];
 
-      final setter = _TestMiddleware((ctx, next) async {
-        modifications.add('set-before');
-        final result = await next();
-        modifications.add('set-after');
-        return result;
-      });
+        final setter = _TestMiddleware((ctx, next) async {
+          modifications.add('set-before');
+          final result = await next();
+          modifications.add('set-after');
+          return result;
+        });
 
-      final checker = _TestMiddleware((ctx, next) async {
-        modifications.add('check-before');
-        final result = await next();
-        modifications.add('check-after');
-        return result;
-      });
+        final checker = _TestMiddleware((ctx, next) async {
+          modifications.add('check-before');
+          final result = await next();
+          modifications.add('check-after');
+          return result;
+        });
 
-      final chain = _buildTestChain([setter, checker], (ctx) async {
-        modifications.add('handler');
-      });
+        final chain = _buildTestChain([setter, checker], (ctx) async {
+          modifications.add('handler');
+        });
 
-      final ctx = _createMockContext();
-      await chain(ctx);
+        final ctx = _createMockContext();
+        await chain(ctx);
 
-      expect(modifications, ['set-before', 'check-before', 'handler', 'check-after', 'set-after']);
-    });
+        expect(modifications, [
+          'set-before',
+          'check-before',
+          'handler',
+          'check-after',
+          'set-after',
+        ]);
+      },
+    );
 
     test('async middleware with delay maintains order', () async {
       final tracker = <String>[];
@@ -237,7 +259,11 @@ void main() {
       });
 
       final chain = _buildTestChain(
-        [ExecutionTracker(tracker, 'MW1'), delayedMW, ExecutionTracker(tracker, 'MW3')],
+        [
+          ExecutionTracker(tracker, 'MW1'),
+          delayedMW,
+          ExecutionTracker(tracker, 'MW3'),
+        ],
         (ctx) async {
           tracker.add('handler');
         },
@@ -288,9 +314,15 @@ void main() {
       final tracker = <String>[];
 
       final globalChain = _buildTestChain(
-        [ExecutionTracker(tracker, 'Global1'), ExecutionTracker(tracker, 'Global2')],
+        [
+          ExecutionTracker(tracker, 'Global1'),
+          ExecutionTracker(tracker, 'Global2'),
+        ],
         _buildTestChain(
-          [ExecutionTracker(tracker, 'Route1'), ExecutionTracker(tracker, 'Route2')],
+          [
+            ExecutionTracker(tracker, 'Route1'),
+            ExecutionTracker(tracker, 'Route2'),
+          ],
           (ctx) async {
             tracker.add('handler');
           },
@@ -332,7 +364,13 @@ void main() {
       final ctx = _createMockContext();
       await match!.handler(ctx);
 
-      expect(tracker, ['Global-before', 'Route-before', 'handler', 'Route-after', 'Global-after']);
+      expect(tracker, [
+        'Global-before',
+        'Route-before',
+        'handler',
+        'Route-after',
+        'Global-after',
+      ]);
     });
   });
 
@@ -341,7 +379,10 @@ void main() {
       final tracker = <String>[];
 
       final chain = _buildTestChain(
-        [ExecutionTracker(tracker, 'First'), ExecutionTracker(tracker, 'Second')],
+        [
+          ExecutionTracker(tracker, 'First'),
+          ExecutionTracker(tracker, 'Second'),
+        ],
         (ctx) async {
           tracker.add('handler');
         },
@@ -350,7 +391,13 @@ void main() {
       final ctx = _createMockContext();
       await chain(ctx);
 
-      expect(tracker, ['First-before', 'Second-before', 'handler', 'Second-after', 'First-after']);
+      expect(tracker, [
+        'First-before',
+        'Second-before',
+        'handler',
+        'Second-after',
+        'First-after',
+      ]);
     });
 
     test('three instances of same type all execute', () async {

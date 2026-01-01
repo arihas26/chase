@@ -94,9 +94,13 @@ void main() {
 
     group('X-Forwarded-For', () {
       test('ip uses X-Forwarded-For when present', () {
-        final ctx = TestContext.get('/', headers: {
-          'x-forwarded-for': '203.0.113.195, 70.41.3.18, 150.172.238.178',
-        }, remoteIp: '127.0.0.1');
+        final ctx = TestContext.get(
+          '/',
+          headers: {
+            'x-forwarded-for': '203.0.113.195, 70.41.3.18, 150.172.238.178',
+          },
+          remoteIp: '127.0.0.1',
+        );
 
         // ip should return first from X-Forwarded-For
         expect(ctx.req.ip, '203.0.113.195');

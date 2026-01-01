@@ -8,7 +8,8 @@ import 'package:zlogger/zlogger.dart';
 
 /// Callback function for validating credentials.
 /// Returns true if the credentials are valid, false otherwise.
-typedef CredentialValidator = FutureOr<bool> Function(String username, String password);
+typedef CredentialValidator =
+    FutureOr<bool> Function(String username, String password);
 
 /// Basic HTTP Authentication middleware.
 ///
@@ -67,9 +68,9 @@ class BasicAuth implements Middleware {
     required String username,
     required String password,
     this.realm = 'Restricted Area',
-  })  : _username = username,
-        _password = password,
-        _validator = null;
+  }) : _username = username,
+       _password = password,
+       _validator = null;
 
   /// Creates a BasicAuth middleware with a custom credential validator.
   ///
@@ -79,9 +80,9 @@ class BasicAuth implements Middleware {
   const BasicAuth.withValidator({
     required CredentialValidator validator,
     this.realm = 'Restricted Area',
-  })  : _username = null,
-        _password = null,
-        _validator = validator;
+  }) : _username = null,
+       _password = null,
+       _validator = validator;
 
   @override
   Future<void> handle(Context ctx, NextFunction next) async {
@@ -89,7 +90,10 @@ class BasicAuth implements Middleware {
 
     // No Authorization header or not Basic auth
     if (authHeader == null || !authHeader.toLowerCase().startsWith('basic ')) {
-      await _unauthorized(ctx, authHeader == null ? 'Missing Authorization header' : 'Not Basic auth');
+      await _unauthorized(
+        ctx,
+        authHeader == null ? 'Missing Authorization header' : 'Not Basic auth',
+      );
       return;
     }
 
@@ -99,7 +103,7 @@ class BasicAuth implements Middleware {
 
       if (encodedCredentials.isEmpty) {
         await _unauthorized(ctx, 'Empty credentials');
-      return;
+        return;
       }
 
       final decodedBytes = base64.decode(encodedCredentials);
@@ -109,7 +113,7 @@ class BasicAuth implements Middleware {
       final colonIndex = decodedString.indexOf(':');
       if (colonIndex == -1) {
         await _unauthorized(ctx, 'Invalid credential format');
-      return;
+        return;
       }
 
       final username = decodedString.substring(0, colonIndex);
@@ -120,7 +124,7 @@ class BasicAuth implements Middleware {
 
       if (!isValid) {
         await _unauthorized(ctx, 'Invalid credentials');
-      return;
+        return;
       }
 
       // Authentication successful, proceed to next middleware/handler
@@ -164,21 +168,21 @@ class BasicAuth implements Middleware {
 
   /// Sends a 401 Unauthorized response with the appropriate WWW-Authenticate header.
   Future<void> _unauthorized(Context ctx, String reason) async {
-    _log.warn(
-      'Basic auth failed: $reason',
-      {
-        'request_id': ctx.get<String>('_requestId'),
-        'method': ctx.req.method,
-        'path': ctx.req.path,
-        'ip': _safeGetIp(ctx),
-      },
-    );
+    _log.warn('Basic auth failed: $reason', {
+      'request_id': ctx.get<String>('_requestId'),
+      'method': ctx.req.method,
+      'path': ctx.req.path,
+      'ip': _safeGetIp(ctx),
+    });
 
-    ctx.res.headers.set(HttpHeaders.wwwAuthenticateHeader, 'Basic realm="$realm"');
-    await ctx.res.json(
-      {'error': 'Unauthorized', 'message': 'Invalid credentials'},
-      status: HttpStatus.unauthorized,
+    ctx.res.headers.set(
+      HttpHeaders.wwwAuthenticateHeader,
+      'Basic realm="$realm"',
     );
+    await ctx.res.json({
+      'error': 'Unauthorized',
+      'message': 'Invalid credentials',
+    }, status: HttpStatus.unauthorized);
   }
 
   /// Safely gets the remote IP address, returning null if not available.

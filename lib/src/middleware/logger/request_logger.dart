@@ -107,8 +107,8 @@ class RequestLogger implements Middleware {
     this.slowThreshold = const Duration(seconds: 1),
     this.fieldsBuilder,
     String? name,
-  })  : _idGenerator = idGenerator ?? _defaultIdGenerator,
-        _log = name != null ? Log.named(name) : log;
+  }) : _idGenerator = idGenerator ?? _defaultIdGenerator,
+       _log = name != null ? Log.named(name) : log;
 
   @override
   FutureOr<void> handle(Context ctx, NextFunction next) async {
@@ -121,9 +121,7 @@ class RequestLogger implements Middleware {
     }
 
     // Build log context fields
-    final contextFields = <String, dynamic>{
-      'request_id': requestId,
-    };
+    final contextFields = <String, dynamic>{'request_id': requestId};
     if (fieldsBuilder != null) {
       contextFields.addAll(fieldsBuilder!(ctx));
     }
@@ -178,7 +176,11 @@ class RequestLogger implements Middleware {
     return _idGenerator();
   }
 
-  Map<String, dynamic> _buildFields(Context ctx, int status, Duration duration) {
+  Map<String, dynamic> _buildFields(
+    Context ctx,
+    int status,
+    Duration duration,
+  ) {
     final fields = <String, dynamic>{
       'status': status,
       'duration_ms': duration.inMilliseconds,

@@ -31,15 +31,12 @@ class ExceptionHandler implements Middleware {
     } on HttpException catch (e) {
       // HttpExceptions are intentional - log at debug level for 4xx, warn for 5xx
       if (e.statusCode >= 500) {
-        _log.warn(
-          'HTTP ${e.statusCode}: ${e.message}',
-          {
-            'request_id': ctx.get<String>('_requestId'),
-            'method': ctx.req.method,
-            'path': ctx.req.path,
-            'status': e.statusCode,
-          },
-        );
+        _log.warn('HTTP ${e.statusCode}: ${e.message}', {
+          'request_id': ctx.get<String>('_requestId'),
+          'method': ctx.req.method,
+          'path': ctx.req.path,
+          'status': e.statusCode,
+        });
       }
 
       ctx.res
@@ -63,7 +60,9 @@ class ExceptionHandler implements Middleware {
       ctx.res
         ..statusCode = 500
         ..headers.contentType = ContentType.json
-        ..write(jsonEncode({'error': 'Internal Server Error', 'statusCode': 500}));
+        ..write(
+          jsonEncode({'error': 'Internal Server Error', 'statusCode': 500}),
+        );
       await ctx.res.close();
     }
   }

@@ -13,15 +13,15 @@
 
 include: package:lints/recommended.yaml
 
-# Uncomment the following section to specify additional rules.
+analyzer:
+  exclude:
+    - benchmark/**
+    - packages/**
 
-# linter:
-#   rules:
-#     - camel_case_types
-
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
+linter:
+  rules:
+    # Allow closures assigned to variables in tests for readability
+    prefer_function_declarations_over_variables: false
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints

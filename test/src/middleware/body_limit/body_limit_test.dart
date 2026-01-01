@@ -31,7 +31,10 @@ void main() {
     });
 
     test('creates with custom error message', () {
-      const options = BodyLimitOptions(maxSize: 1024, errorMessage: 'Custom error');
+      const options = BodyLimitOptions(
+        maxSize: 1024,
+        errorMessage: 'Custom error',
+      );
       expect(options.errorMessage, 'Custom error');
     });
 
@@ -41,14 +44,22 @@ void main() {
     });
 
     test('kb constructor with custom options', () {
-      const options = BodyLimitOptions.kb(100, errorMessage: 'Too large', includeLimit: false);
+      const options = BodyLimitOptions.kb(
+        100,
+        errorMessage: 'Too large',
+        includeLimit: false,
+      );
       expect(options.maxSize, 102400); // 100KB
       expect(options.errorMessage, 'Too large');
       expect(options.includeLimit, isFalse);
     });
 
     test('mb constructor with custom options', () {
-      const options = BodyLimitOptions.mb(5, errorMessage: 'File too big', includeLimit: false);
+      const options = BodyLimitOptions.mb(
+        5,
+        errorMessage: 'File too big',
+        includeLimit: false,
+      );
       expect(options.maxSize, 5242880); // 5MB
       expect(options.errorMessage, 'File too big');
       expect(options.includeLimit, isFalse);
@@ -59,7 +70,12 @@ void main() {
     test('allows requests with no Content-Length header', () async {
       final ctx = TestContext.create('GET', '/', contentLength: -1);
       var called = false;
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isTrue);
       expect(ctx.response.isClosed, isFalse);
     });
@@ -67,7 +83,12 @@ void main() {
     test('allows requests with zero Content-Length', () async {
       final ctx = TestContext.create('GET', '/', contentLength: 0);
       var called = false;
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isTrue);
       expect(ctx.response.isClosed, isFalse);
     });
@@ -75,7 +96,12 @@ void main() {
     test('allows requests below the size limit', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 512);
       var called = false;
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isTrue);
       expect(ctx.response.isClosed, isFalse);
     });
@@ -83,7 +109,12 @@ void main() {
     test('allows requests equal to the size limit', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 1024);
       var called = false;
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isTrue);
       expect(ctx.response.isClosed, isFalse);
     });
@@ -91,7 +122,12 @@ void main() {
     test('rejects requests exceeding the size limit', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 2048);
       var called = false;
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isFalse);
       expect(ctx.response.statusCode, HttpStatus.requestEntityTooLarge);
       expect(ctx.response.isClosed, isTrue);
@@ -100,7 +136,9 @@ void main() {
 
     test('rejects with default error message including sizes', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 2048);
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async {});
+      await BodyLimit(
+        const BodyLimitOptions(maxSize: 1024),
+      ).handle(ctx, () async {});
       expect(ctx.response.body, contains('too large'));
       expect(ctx.response.body, contains('Maximum size:'));
       expect(ctx.response.body, contains('received:'));
@@ -108,21 +146,29 @@ void main() {
 
     test('rejects with custom error message', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 2048);
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024, errorMessage: 'Custom error: body too large'))
-          .handle(ctx, () async {});
+      await BodyLimit(
+        const BodyLimitOptions(
+          maxSize: 1024,
+          errorMessage: 'Custom error: body too large',
+        ),
+      ).handle(ctx, () async {});
       expect(ctx.response.body, 'Custom error: body too large');
     });
 
     test('rejects with generic message when includeLimit is false', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 2048);
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024, includeLimit: false)).handle(ctx, () async {});
+      await BodyLimit(
+        const BodyLimitOptions(maxSize: 1024, includeLimit: false),
+      ).handle(ctx, () async {});
       expect(ctx.response.body, 'Request body too large');
       expect(ctx.response.body, isNot(contains('Maximum size:')));
     });
 
     test('formats bytes correctly in error message', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 512);
-      await BodyLimit(const BodyLimitOptions(maxSize: 256)).handle(ctx, () async {});
+      await BodyLimit(
+        const BodyLimitOptions(maxSize: 256),
+      ).handle(ctx, () async {});
       expect(ctx.response.body, contains('256 bytes'));
       expect(ctx.response.body, contains('512 bytes'));
     });
@@ -142,14 +188,18 @@ void main() {
     test('works with default constructor', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 512);
       var called = false;
-      await BodyLimit().handle(ctx, () async { called = true; });
+      await BodyLimit().handle(ctx, () async {
+        called = true;
+      });
       expect(called, isTrue);
     });
 
     test('rejects when exceeding default limit', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 2097152);
       var called = false;
-      await BodyLimit().handle(ctx, () async { called = true; });
+      await BodyLimit().handle(ctx, () async {
+        called = true;
+      });
       expect(called, isFalse);
       expect(ctx.response.statusCode, HttpStatus.requestEntityTooLarge);
     });
@@ -157,35 +207,51 @@ void main() {
     test('kb constructor creates correct limit', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 512000);
       var called = false;
-      await BodyLimit(const BodyLimitOptions.kb(500)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions.kb(500)).handle(ctx, () async {
+        called = true;
+      });
       expect(called, isTrue);
     });
 
     test('mb constructor creates correct limit', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 5242880);
       var called = false;
-      await BodyLimit(const BodyLimitOptions.mb(5)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions.mb(5)).handle(ctx, () async {
+        called = true;
+      });
       expect(called, isTrue);
     });
 
     test('handles edge case at exactly 1024 bytes boundary', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 1024);
       var called = false;
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isTrue);
     });
 
     test('handles edge case at exactly 1MB boundary', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 1048576);
       var called = false;
-      await BodyLimit(const BodyLimitOptions.mb(1)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions.mb(1)).handle(ctx, () async {
+        called = true;
+      });
       expect(called, isTrue);
     });
 
     test('rejects just over the boundary', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 1025);
       var called = false;
-      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(ctx, () async { called = true; });
+      await BodyLimit(const BodyLimitOptions(maxSize: 1024)).handle(
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isFalse);
       expect(ctx.response.statusCode, HttpStatus.requestEntityTooLarge);
     });

@@ -122,7 +122,10 @@ class Compress implements Middleware {
     if (currentVary == null) {
       ctx.res.headers.set(HttpHeaders.varyHeader, 'Accept-Encoding');
     } else if (!currentVary.contains('Accept-Encoding')) {
-      ctx.res.headers.set(HttpHeaders.varyHeader, '$currentVary, Accept-Encoding');
+      ctx.res.headers.set(
+        HttpHeaders.varyHeader,
+        '$currentVary, Accept-Encoding',
+      );
     }
 
     await next();
@@ -164,7 +167,9 @@ class Compress implements Middleware {
     final available = <_EncodingOption>[];
 
     if (enableBrotli && encodings.containsKey('br')) {
-      available.add(_EncodingOption('br', encodings['br']!, 3)); // Highest preference
+      available.add(
+        _EncodingOption('br', encodings['br']!, 3),
+      ); // Highest preference
     }
     if (enableGzip && encodings.containsKey('gzip')) {
       available.add(_EncodingOption('gzip', encodings['gzip']!, 2));

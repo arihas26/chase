@@ -65,17 +65,21 @@ void main() async {
 
   // Example 4: Custom CSP configuration
   app.routes('/api', (api) {
-    api.use(SecureHeaders(SecureHeadersOptions(
-      contentSecurityPolicy: ContentSecurityPolicy()
-        ..defaultSrc(["'self'"])
-        ..scriptSrc(["'self'", 'https://cdn.example.com'])
-        ..styleSrc(["'self'", "'unsafe-inline'"])
-        ..imgSrc(["'self'", 'data:', 'https:'])
-        ..connectSrc(["'self'", 'https://api.example.com'])
-        ..fontSrc(["'self'", 'https://fonts.googleapis.com'])
-        ..frameSrc(["'none'"])
-        ..objectSrc(["'none'"]),
-    )));
+    api.use(
+      SecureHeaders(
+        SecureHeadersOptions(
+          contentSecurityPolicy: ContentSecurityPolicy()
+            ..defaultSrc(["'self'"])
+            ..scriptSrc(["'self'", 'https://cdn.example.com'])
+            ..styleSrc(["'self'", "'unsafe-inline'"])
+            ..imgSrc(["'self'", 'data:', 'https:'])
+            ..connectSrc(["'self'", 'https://api.example.com'])
+            ..fontSrc(["'self'", 'https://fonts.googleapis.com'])
+            ..frameSrc(["'none'"])
+            ..objectSrc(["'none'"]),
+        ),
+      ),
+    );
 
     api.get('/users').handle((ctx) async {
       return Response.json({'users': [], 'csp': 'Custom CSP applied'});
@@ -84,10 +88,14 @@ void main() async {
 
   // Example 5: CSP Report-Only mode (for testing)
   app.routes('/test-csp', (test) {
-    test.use(SecureHeaders(SecureHeadersOptions(
-      contentSecurityPolicy: ContentSecurityPolicy.strict(),
-      cspReportOnly: true, // Won't block, just report
-    )));
+    test.use(
+      SecureHeaders(
+        SecureHeadersOptions(
+          contentSecurityPolicy: ContentSecurityPolicy.strict(),
+          cspReportOnly: true, // Won't block, just report
+        ),
+      ),
+    );
 
     test.get('/page').handle((ctx) async {
       return Response.html('''
@@ -108,13 +116,17 @@ void main() async {
 
   // Example 6: HSTS configuration
   app.routes('/hsts', (hsts) {
-    hsts.use(const SecureHeaders(SecureHeadersOptions(
-      hsts: StrictTransportSecurity(
-        maxAge: 31536000, // 1 year
-        includeSubDomains: true,
-        preload: false,
+    hsts.use(
+      const SecureHeaders(
+        SecureHeadersOptions(
+          hsts: StrictTransportSecurity(
+            maxAge: 31536000, // 1 year
+            includeSubDomains: true,
+            preload: false,
+          ),
+        ),
       ),
-    )));
+    );
 
     hsts.get('/info').handle((ctx) async {
       return Response.json({
@@ -128,11 +140,15 @@ void main() async {
 
   // Example 7: Cross-origin isolation
   app.routes('/isolated', (isolated) {
-    isolated.use(const SecureHeaders(SecureHeadersOptions(
-      crossOriginEmbedderPolicy: CrossOriginEmbedderPolicy.requireCorp,
-      crossOriginOpenerPolicy: CrossOriginOpenerPolicy.sameOrigin,
-      crossOriginResourcePolicy: CrossOriginResourcePolicy.sameOrigin,
-    )));
+    isolated.use(
+      const SecureHeaders(
+        SecureHeadersOptions(
+          crossOriginEmbedderPolicy: CrossOriginEmbedderPolicy.requireCorp,
+          crossOriginOpenerPolicy: CrossOriginOpenerPolicy.sameOrigin,
+          crossOriginResourcePolicy: CrossOriginResourcePolicy.sameOrigin,
+        ),
+      ),
+    );
 
     isolated.get('/status').handle((ctx) async {
       return Response.json({
@@ -144,9 +160,14 @@ void main() async {
 
   // Example 8: Custom Permissions-Policy
   app.routes('/restricted', (restricted) {
-    restricted.use(const SecureHeaders(SecureHeadersOptions(
-      permissionsPolicy: 'camera=(), microphone=(), geolocation=(self), payment=()',
-    )));
+    restricted.use(
+      const SecureHeaders(
+        SecureHeadersOptions(
+          permissionsPolicy:
+              'camera=(), microphone=(), geolocation=(self), payment=()',
+        ),
+      ),
+    );
 
     restricted.get('/features').handle((ctx) async {
       return Response.json({

@@ -81,12 +81,12 @@ class Csrf implements Middleware {
     OriginValidator? originValidator,
     SecFetchSiteValidator? secFetchSiteValidator,
     this.errorMessage = 'Potential CSRF attack detected',
-  })  : _originValidator = originValidator,
-        _secFetchSiteValidator = secFetchSiteValidator,
-        assert(
-          originValidator != null || secFetchSiteValidator != null,
-          'At least one validator must be provided',
-        );
+  }) : _originValidator = originValidator,
+       _secFetchSiteValidator = secFetchSiteValidator,
+       assert(
+         originValidator != null || secFetchSiteValidator != null,
+         'At least one validator must be provided',
+       );
 
   /// Creates a CSRF middleware that validates against a single origin.
   ///
@@ -135,10 +135,7 @@ class Csrf implements Middleware {
     OriginValidator validator, {
     String errorMessage = 'Potential CSRF attack detected',
   }) {
-    return Csrf._(
-      originValidator: validator,
-      errorMessage: errorMessage,
-    );
+    return Csrf._(originValidator: validator, errorMessage: errorMessage);
   }
 
   /// Creates a CSRF middleware that validates against a single Sec-Fetch-Site value.
@@ -191,10 +188,7 @@ class Csrf implements Middleware {
     SecFetchSiteValidator validator, {
     String errorMessage = 'Potential CSRF attack detected',
   }) {
-    return Csrf._(
-      secFetchSiteValidator: validator,
-      errorMessage: errorMessage,
-    );
+    return Csrf._(secFetchSiteValidator: validator, errorMessage: errorMessage);
   }
 
   /// HTTP methods that require CSRF validation.
@@ -265,25 +259,19 @@ class Csrf implements Middleware {
 
   /// Sends a 403 Forbidden response.
   Future<void> _forbidden(Context ctx, String details) async {
-    _log.warn(
-      'CSRF validation failed: $details',
-      {
-        'request_id': ctx.get<String>('_requestId'),
-        'method': ctx.req.method,
-        'path': ctx.req.path,
-        'ip': _safeGetIp(ctx),
-        'origin': ctx.req.header('origin'),
-        'sec_fetch_site': ctx.req.header('sec-fetch-site'),
-      },
-    );
+    _log.warn('CSRF validation failed: $details', {
+      'request_id': ctx.get<String>('_requestId'),
+      'method': ctx.req.method,
+      'path': ctx.req.path,
+      'ip': _safeGetIp(ctx),
+      'origin': ctx.req.header('origin'),
+      'sec_fetch_site': ctx.req.header('sec-fetch-site'),
+    });
 
-    await ctx.res.json(
-      {
-        'error': errorMessage,
-        'message': details,
-      },
-      status: HttpStatus.forbidden,
-    );
+    await ctx.res.json({
+      'error': errorMessage,
+      'message': details,
+    }, status: HttpStatus.forbidden);
   }
 
   /// Safely gets the remote IP address, returning null if not available.

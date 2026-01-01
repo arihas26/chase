@@ -7,15 +7,9 @@ void main() {
     'en': {
       'greeting': 'Hello',
       'welcome': 'Welcome, {name}!',
-      'items': {
-        'zero': 'No items',
-        'one': '1 item',
-        'other': '{count} items',
-      },
+      'items': {'zero': 'No items', 'one': '1 item', 'other': '{count} items'},
       'nested': {
-        'deep': {
-          'key': 'Nested value',
-        },
+        'deep': {'key': 'Nested value'},
       },
       'errors': {
         'required': 'This field is required',
@@ -25,18 +19,12 @@ void main() {
     'ja': {
       'greeting': 'こんにちは',
       'welcome': 'ようこそ、{name}さん！',
-      'items': {
-        'other': '{count}個のアイテム',
-      },
+      'items': {'other': '{count}個のアイテム'},
       'nested': {
-        'deep': {
-          'key': 'ネストされた値',
-        },
+        'deep': {'key': 'ネストされた値'},
       },
     },
-    'es': {
-      'greeting': 'Hola',
-    },
+    'es': {'greeting': 'Hola'},
   };
 
   group('Translator', () {
@@ -150,7 +138,10 @@ void main() {
 
       // Spanish has greeting but not welcome
       expect(translator.translate('greeting'), 'Hola');
-      expect(translator.translate('welcome', {'name': 'Juan'}), 'Welcome, Juan!');
+      expect(
+        translator.translate('welcome', {'name': 'Juan'}),
+        'Welcome, Juan!',
+      );
     });
 
     test('translates in different locales', () {
@@ -172,10 +163,7 @@ void main() {
         enTranslator.translate('welcome', {'name': 'John'}),
         'Welcome, John!',
       );
-      expect(
-        jaTranslator.translate('welcome', {'name': '太郎'}),
-        'ようこそ、太郎さん！',
-      );
+      expect(jaTranslator.translate('welcome', {'name': '太郎'}), 'ようこそ、太郎さん！');
     });
   });
 
@@ -199,7 +187,10 @@ void main() {
     });
 
     test('detects locale from Accept-Language header', () async {
-      final ctx = TestContext.get('/', headers: {'accept-language': 'ja-JP,ja;q=0.9,en;q=0.8'});
+      final ctx = TestContext.get(
+        '/',
+        headers: {'accept-language': 'ja-JP,ja;q=0.9,en;q=0.8'},
+      );
 
       await I18n(translations).handle(ctx, () async {});
 
@@ -208,7 +199,10 @@ void main() {
 
     test('handles Accept-Language with quality values', () async {
       // Prefers Spanish over Japanese based on quality
-      final ctx = TestContext.get('/', headers: {'accept-language': 'ja;q=0.8,es;q=0.9'});
+      final ctx = TestContext.get(
+        '/',
+        headers: {'accept-language': 'ja;q=0.8,es;q=0.9'},
+      );
 
       await I18n(translations).handle(ctx, () async {});
 
@@ -233,7 +227,10 @@ void main() {
     });
 
     test('query parameter takes precedence over cookie', () async {
-      final ctx = TestContext.get('/?lang=en', headers: {'cookie': 'locale=ja'});
+      final ctx = TestContext.get(
+        '/?lang=en',
+        headers: {'cookie': 'locale=ja'},
+      );
 
       await I18n(translations).handle(ctx, () async {});
 
@@ -243,10 +240,7 @@ void main() {
     test('cookie takes precedence over Accept-Language', () async {
       final ctx = TestContext.get(
         '/',
-        headers: {
-          'cookie': 'locale=ja',
-          'accept-language': 'en-US',
-        },
+        headers: {'cookie': 'locale=ja', 'accept-language': 'en-US'},
       );
 
       await I18n(translations).handle(ctx, () async {});
@@ -255,7 +249,10 @@ void main() {
     });
 
     test('custom locale resolver takes highest precedence', () async {
-      final ctx = TestContext.get('/?lang=en', headers: {'cookie': 'locale=ja'});
+      final ctx = TestContext.get(
+        '/?lang=en',
+        headers: {'cookie': 'locale=ja'},
+      );
 
       await I18n(
         translations,
@@ -376,12 +373,16 @@ void main() {
 
       app.get('/welcome').handle((ctx) async {
         final name = ctx.req.query('name') ?? 'Guest';
-        await ctx.res.json({'message': ctx.t('welcome', {'name': name})});
+        await ctx.res.json({
+          'message': ctx.t('welcome', {'name': name}),
+        });
       });
 
       app.get('/items').handle((ctx) async {
         final count = ctx.req.query<int>('count') ?? 0;
-        await ctx.res.json({'message': ctx.t('items', {'count': count})});
+        await ctx.res.json({
+          'message': ctx.t('items', {'count': count}),
+        });
       });
 
       app.get('/locale').handle((ctx) async {

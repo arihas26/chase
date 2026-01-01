@@ -38,9 +38,12 @@ class BodyLimitOptions {
   /// ```dart
   /// BodyLimitOptions.kb(500) // 500 KB
   /// ```
-  const BodyLimitOptions.kb(int kilobytes, {this.errorMessage, this.includeLimit = true})
-      : maxSize = kilobytes * 1024,
-        assert(kilobytes > 0, 'kilobytes must be greater than 0');
+  const BodyLimitOptions.kb(
+    int kilobytes, {
+    this.errorMessage,
+    this.includeLimit = true,
+  }) : maxSize = kilobytes * 1024,
+       assert(kilobytes > 0, 'kilobytes must be greater than 0');
 
   /// Creates options with size specified in megabytes.
   ///
@@ -48,9 +51,12 @@ class BodyLimitOptions {
   /// ```dart
   /// BodyLimitOptions.mb(10) // 10 MB
   /// ```
-  const BodyLimitOptions.mb(int megabytes, {this.errorMessage, this.includeLimit = true})
-      : maxSize = megabytes * 1024 * 1024,
-        assert(megabytes > 0, 'megabytes must be greater than 0');
+  const BodyLimitOptions.mb(
+    int megabytes, {
+    this.errorMessage,
+    this.includeLimit = true,
+  }) : maxSize = megabytes * 1024 * 1024,
+       assert(megabytes > 0, 'megabytes must be greater than 0');
 }
 
 /// Middleware that limits the size of request bodies.
@@ -136,17 +142,14 @@ class BodyLimit implements Middleware {
 
     // Check if content length exceeds the limit
     if (contentLength > options.maxSize) {
-      _log.warn(
-        'Request body too large',
-        {
-          'request_id': ctx.get<String>('_requestId'),
-          'method': ctx.req.method,
-          'path': ctx.req.path,
-          'ip': _safeGetIp(ctx),
-          'content_length': contentLength,
-          'max_size': options.maxSize,
-        },
-      );
+      _log.warn('Request body too large', {
+        'request_id': ctx.get<String>('_requestId'),
+        'method': ctx.req.method,
+        'path': ctx.req.path,
+        'ip': _safeGetIp(ctx),
+        'content_length': contentLength,
+        'max_size': options.maxSize,
+      });
 
       final errorMsg = _buildErrorMessage(contentLength);
 

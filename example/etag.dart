@@ -23,7 +23,10 @@ void main() async {
 
   // Simulated data with version
   var dataVersion = 1;
-  var data = {'items': ['apple', 'banana', 'cherry'], 'version': dataVersion};
+  var data = {
+    'items': ['apple', 'banana', 'cherry'],
+    'version': dataVersion,
+  };
 
   // Example 1: Version-based ETag
   // Use when you track data versions explicitly
@@ -84,8 +87,7 @@ void main() async {
     // For truly static content, you can use a fixed ETag
     const etag = '"config-v1"';
 
-    if (await ctx.checkEtag(etag)) {
-    }
+    if (await ctx.checkEtag(etag)) {}
 
     return Response.json(config);
   });

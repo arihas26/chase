@@ -46,8 +46,8 @@ class Req {
   MultipartBody? _cachedMultipart;
 
   Req(this._raw, [Map<String, String>? params, String? methodOverride])
-      : _params = params ?? {},
-        _methodOverride = methodOverride;
+    : _params = params ?? {},
+      _methodOverride = methodOverride;
 
   // ---------------------------------------------------------------------------
   // Basic Request Info
@@ -161,17 +161,14 @@ class Req {
   /// print('Address type: ${info.remote.addressType}');
   /// ```
   ConnInfo get connInfo => ConnInfo._(
-        remote: NetAddrInfo._(
-          address: remoteAddress,
-          port: remotePort,
-          addressType: _detectAddressType(remoteAddress),
-          transport: 'tcp',
-        ),
-        local: NetAddrInfo._(
-          port: localPort,
-          transport: 'tcp',
-        ),
-      );
+    remote: NetAddrInfo._(
+      address: remoteAddress,
+      port: remotePort,
+      addressType: _detectAddressType(remoteAddress),
+      transport: 'tcp',
+    ),
+    local: NetAddrInfo._(port: localPort, transport: 'tcp'),
+  );
 
   static AddressType? _detectAddressType(String address) {
     if (address == 'unknown') return null;
@@ -243,7 +240,10 @@ class Req {
   /// ```dart
   /// final lang = ctx.req.acceptsLanguages(['en', 'ja', 'zh'], defaultValue: 'en');
   /// ```
-  String acceptsLanguages(List<String> supported, {required String defaultValue}) {
+  String acceptsLanguages(
+    List<String> supported, {
+    required String defaultValue,
+  }) {
     return _negotiate(acceptLanguage, supported, defaultValue);
   }
 
@@ -252,7 +252,10 @@ class Req {
   /// ```dart
   /// final encoding = ctx.req.acceptsEncodings(['gzip', 'deflate', 'br'], defaultValue: 'identity');
   /// ```
-  String acceptsEncodings(List<String> supported, {required String defaultValue}) {
+  String acceptsEncodings(
+    List<String> supported, {
+    required String defaultValue,
+  }) {
     return _negotiate(acceptEncoding, supported, defaultValue);
   }
 
@@ -261,7 +264,10 @@ class Req {
   /// ```dart
   /// final charset = ctx.req.acceptsCharsets(['utf-8', 'iso-8859-1'], defaultValue: 'utf-8');
   /// ```
-  String acceptsCharsets(List<String> supported, {required String defaultValue}) {
+  String acceptsCharsets(
+    List<String> supported, {
+    required String defaultValue,
+  }) {
     return _negotiate(header('accept-charset'), supported, defaultValue);
   }
 
@@ -297,7 +303,10 @@ class Req {
   }
 
   List<({String value, double quality})> _parseAcceptHeader(String header) {
-    final parts = header.split(',').map((p) => p.trim()).where((p) => p.isNotEmpty);
+    final parts = header
+        .split(',')
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty);
     final result = <({String value, double quality})>[];
 
     for (final part in parts) {
@@ -328,8 +337,10 @@ class Req {
       final acceptParts = accept.split('/');
       final supportedParts = supported.split('/');
       if (acceptParts.length == 2 && supportedParts.length == 2) {
-        final typeMatch = acceptParts[0] == '*' || acceptParts[0] == supportedParts[0];
-        final subtypeMatch = acceptParts[1] == '*' || acceptParts[1] == supportedParts[1];
+        final typeMatch =
+            acceptParts[0] == '*' || acceptParts[0] == supportedParts[0];
+        final subtypeMatch =
+            acceptParts[1] == '*' || acceptParts[1] == supportedParts[1];
         return typeMatch && subtypeMatch;
       }
     }
@@ -652,7 +663,8 @@ class Req {
     final ct = contentType;
     if (ct == null || ct.mimeType != 'multipart/form-data') {
       throw BadRequestException(
-          'Invalid Content-Type for multipart form data.');
+        'Invalid Content-Type for multipart form data.',
+      );
     }
     final boundary = ct.parameters['boundary'];
     if (boundary == null || boundary.isEmpty) {
@@ -730,17 +742,23 @@ class Req {
         continue;
       }
 
-      final filename =
-          _parseContentDispositionParam(contentDisposition, 'filename');
+      final filename = _parseContentDispositionParam(
+        contentDisposition,
+        'filename',
+      );
       final partCt = headers['content-type'];
       final partContentType = partCt == null ? null : ContentType.parse(partCt);
 
       if (filename != null && filename.isNotEmpty) {
-        files.putIfAbsent(name, () => []).add(MultipartFile(
-          filename: filename,
-          bytes: Uint8List.fromList(contentBytes),
-          contentType: partContentType,
-        ));
+        files
+            .putIfAbsent(name, () => [])
+            .add(
+              MultipartFile(
+                filename: filename,
+                bytes: Uint8List.fromList(contentBytes),
+                contentType: partContentType,
+              ),
+            );
       } else {
         fields.putIfAbsent(name, () => []).add(utf8.decode(contentBytes));
       }

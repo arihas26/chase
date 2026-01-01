@@ -48,7 +48,11 @@ void main() {
     });
 
     test('perSecond with custom options', () {
-      const options = RateLimitOptions.perSecond(5, errorMessage: 'Too fast', includeHeaders: false);
+      const options = RateLimitOptions.perSecond(
+        5,
+        errorMessage: 'Too fast',
+        includeHeaders: false,
+      );
       expect(options.maxRequests, 5);
       expect(options.windowMs, 1000);
       expect(options.errorMessage, 'Too fast');
@@ -171,15 +175,23 @@ void main() {
 
     test('allows requests within limit', () async {
       final ctx = TestContext.get('/');
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 5, windowMs: 60000), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 5, windowMs: 60000),
+        store,
+      );
       var called = false;
-      await middleware.handle(ctx, () async { called = true; });
+      await middleware.handle(ctx, () async {
+        called = true;
+      });
       expect(called, isTrue);
       expect(ctx.response.isClosed, isFalse);
     });
 
     test('rejects requests exceeding limit', () async {
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 2, windowMs: 60000), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 2, windowMs: 60000),
+        store,
+      );
 
       for (var i = 0; i < 2; i++) {
         final ctx = TestContext.get('/');
@@ -188,7 +200,9 @@ void main() {
 
       final ctx = TestContext.get('/');
       var called = false;
-      await middleware.handle(ctx, () async { called = true; });
+      await middleware.handle(ctx, () async {
+        called = true;
+      });
       expect(called, isFalse);
       expect(ctx.response.statusCode, HttpStatus.tooManyRequests);
       expect(ctx.response.isClosed, isTrue);
@@ -196,7 +210,10 @@ void main() {
 
     test('adds rate limit headers', () async {
       final ctx = TestContext.get('/');
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 10, windowMs: 60000), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 10, windowMs: 60000),
+        store,
+      );
       await middleware.handle(ctx, () async {});
       expect(ctx.response.headers.value('x-ratelimit-limit'), '10');
       expect(ctx.response.headers.value('x-ratelimit-remaining'), '9');
@@ -206,7 +223,11 @@ void main() {
     test('does not add headers when disabled', () async {
       final ctx = TestContext.get('/');
       final middleware = RateLimit(
-        const RateLimitOptions(maxRequests: 10, windowMs: 60000, includeHeaders: false),
+        const RateLimitOptions(
+          maxRequests: 10,
+          windowMs: 60000,
+          includeHeaders: false,
+        ),
         store,
       );
       await middleware.handle(ctx, () async {});
@@ -214,7 +235,10 @@ void main() {
     });
 
     test('adds Retry-After header on 429', () async {
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 1, windowMs: 60000), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 1, windowMs: 60000),
+        store,
+      );
       await middleware.handle(TestContext.get('/'), () async {});
 
       final ctx = TestContext.get('/');
@@ -224,7 +248,11 @@ void main() {
 
     test('uses custom error message', () async {
       final middleware = RateLimit(
-        const RateLimitOptions(maxRequests: 1, windowMs: 60000, errorMessage: 'Custom limit message'),
+        const RateLimitOptions(
+          maxRequests: 1,
+          windowMs: 60000,
+          errorMessage: 'Custom limit message',
+        ),
         store,
       );
       await middleware.handle(TestContext.get('/'), () async {});
@@ -235,32 +263,63 @@ void main() {
     });
 
     test('tracks different IPs separately', () async {
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 2, windowMs: 60000), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 2, windowMs: 60000),
+        store,
+      );
 
       for (var i = 0; i < 2; i++) {
-        await middleware.handle(TestContext.get('/', remoteIp: '192.168.1.1'), () async {});
+        await middleware.handle(
+          TestContext.get('/', remoteIp: '192.168.1.1'),
+          () async {},
+        );
       }
 
       var called = false;
-      await middleware.handle(TestContext.get('/', remoteIp: '192.168.1.1'), () async { called = true; });
+      await middleware.handle(
+        TestContext.get('/', remoteIp: '192.168.1.1'),
+        () async {
+          called = true;
+        },
+      );
       expect(called, isFalse);
 
       called = false;
-      await middleware.handle(TestContext.get('/', remoteIp: '192.168.1.2'), () async { called = true; });
+      await middleware.handle(
+        TestContext.get('/', remoteIp: '192.168.1.2'),
+        () async {
+          called = true;
+        },
+      );
       expect(called, isTrue);
     });
 
     test('uses custom key extractor', () async {
       final middleware = RateLimit(
-        RateLimitOptions(maxRequests: 2, windowMs: 60000, keyExtractor: (_) => 'custom-key'),
+        RateLimitOptions(
+          maxRequests: 2,
+          windowMs: 60000,
+          keyExtractor: (_) => 'custom-key',
+        ),
         store,
       );
 
-      await middleware.handle(TestContext.get('/', remoteIp: '192.168.1.1'), () async {});
-      await middleware.handle(TestContext.get('/', remoteIp: '192.168.1.2'), () async {});
+      await middleware.handle(
+        TestContext.get('/', remoteIp: '192.168.1.1'),
+        () async {},
+      );
+      await middleware.handle(
+        TestContext.get('/', remoteIp: '192.168.1.2'),
+        () async {},
+      );
 
       var called = false;
-      await middleware.handle(TestContext.get('/', remoteIp: '192.168.1.3'), () async { called = true; });
+      await middleware.handle(
+        TestContext.get('/', remoteIp: '192.168.1.3'),
+        () async {
+          called = true;
+        },
+      );
       expect(called, isFalse);
     });
 
@@ -283,24 +342,34 @@ void main() {
     });
 
     test('resets after window expires', () async {
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 2, windowMs: 50), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 2, windowMs: 50),
+        store,
+      );
 
       await middleware.handle(TestContext.get('/'), () async {});
       await middleware.handle(TestContext.get('/'), () async {});
 
       var called = false;
-      await middleware.handle(TestContext.get('/'), () async { called = true; });
+      await middleware.handle(TestContext.get('/'), () async {
+        called = true;
+      });
       expect(called, isFalse);
 
       await Future.delayed(const Duration(milliseconds: 60));
 
       called = false;
-      await middleware.handle(TestContext.get('/'), () async { called = true; });
+      await middleware.handle(TestContext.get('/'), () async {
+        called = true;
+      });
       expect(called, isTrue);
     });
 
     test('remaining count decreases correctly', () async {
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 5, windowMs: 60000), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 5, windowMs: 60000),
+        store,
+      );
 
       for (var i = 0; i < 4; i++) {
         final ctx = TestContext.get('/');
@@ -316,7 +385,9 @@ void main() {
       await middleware.handle(TestContext.get('/'), () async {});
 
       var called = false;
-      await middleware.handle(TestContext.get('/'), () async { called = true; });
+      await middleware.handle(TestContext.get('/'), () async {
+        called = true;
+      });
       expect(called, isFalse);
     });
 
@@ -325,29 +396,40 @@ void main() {
 
       for (var i = 0; i < 3; i++) {
         var called = false;
-        await middleware.handle(TestContext.get('/'), () async { called = true; });
+        await middleware.handle(TestContext.get('/'), () async {
+          called = true;
+        });
         expect(called, isTrue);
       }
 
       var called = false;
-      await middleware.handle(TestContext.get('/'), () async { called = true; });
+      await middleware.handle(TestContext.get('/'), () async {
+        called = true;
+      });
       expect(called, isFalse);
     });
 
     test('exposes store for manual control', () async {
-      final middleware = RateLimit(const RateLimitOptions(maxRequests: 2, windowMs: 60000), store);
+      final middleware = RateLimit(
+        const RateLimitOptions(maxRequests: 2, windowMs: 60000),
+        store,
+      );
 
       await middleware.handle(TestContext.get('/'), () async {});
       await middleware.handle(TestContext.get('/'), () async {});
 
       var called = false;
-      await middleware.handle(TestContext.get('/'), () async { called = true; });
+      await middleware.handle(TestContext.get('/'), () async {
+        called = true;
+      });
       expect(called, isFalse);
 
       middleware.store.reset('127.0.0.1');
 
       called = false;
-      await middleware.handle(TestContext.get('/'), () async { called = true; });
+      await middleware.handle(TestContext.get('/'), () async {
+        called = true;
+      });
       expect(called, isTrue);
     });
   });

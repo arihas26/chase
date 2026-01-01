@@ -93,8 +93,11 @@ void main() {
       });
 
       test('includes maxAge', () {
-        final result = formatSetCookie('session', 'abc',
-            maxAge: const Duration(hours: 1));
+        final result = formatSetCookie(
+          'session',
+          'abc',
+          maxAge: const Duration(hours: 1),
+        );
         expect(result, contains('Max-Age=3600'));
       });
 
@@ -105,8 +108,12 @@ void main() {
       });
 
       test('includes domain and path', () {
-        final result =
-            formatSetCookie('session', 'abc', domain: '.example.com', path: '/api');
+        final result = formatSetCookie(
+          'session',
+          'abc',
+          domain: '.example.com',
+          path: '/api',
+        );
         expect(result, contains('Domain=.example.com'));
         expect(result, contains('Path=/api'));
       });
@@ -118,11 +125,17 @@ void main() {
 
       test('includes sameSite', () {
         expect(
-            formatSetCookie('s', 'v', sameSite: SameSite.lax), contains('SameSite=Lax'));
-        expect(formatSetCookie('s', 'v', sameSite: SameSite.strict),
-            contains('SameSite=Strict'));
-        expect(formatSetCookie('s', 'v', sameSite: SameSite.none),
-            contains('SameSite=None'));
+          formatSetCookie('s', 'v', sameSite: SameSite.lax),
+          contains('SameSite=Lax'),
+        );
+        expect(
+          formatSetCookie('s', 'v', sameSite: SameSite.strict),
+          contains('SameSite=Strict'),
+        );
+        expect(
+          formatSetCookie('s', 'v', sameSite: SameSite.none),
+          contains('SameSite=None'),
+        );
       });
 
       test('includes partitioned flag', () {
@@ -131,15 +144,21 @@ void main() {
       });
 
       test('applies __Secure- prefix', () {
-        final result =
-            formatSetCookie('session', 'abc', prefix: CookiePrefix.secure);
+        final result = formatSetCookie(
+          'session',
+          'abc',
+          prefix: CookiePrefix.secure,
+        );
         expect(result, startsWith('__Secure-session='));
         expect(result, contains('Secure'));
       });
 
       test('applies __Host- prefix with required attributes', () {
-        final result =
-            formatSetCookie('session', 'abc', prefix: CookiePrefix.host);
+        final result = formatSetCookie(
+          'session',
+          'abc',
+          prefix: CookiePrefix.host,
+        );
         expect(result, startsWith('__Host-session='));
         expect(result, contains('Path=/'));
         expect(result, contains('Secure'));
@@ -230,20 +249,16 @@ void main() {
 
       server.listen((req) async {
         final ctx = Context(req, req.response);
-        ctx.res.cookie(
-          'session',
-          'abc',
-          path: '/',
-          sameSite: SameSite.lax,
-        );
+        ctx.res.cookie('session', 'abc', path: '/', sameSite: SameSite.lax);
         await ctx.res.text('ok');
       });
 
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       final response = await request.close();
       await response.drain();
 
@@ -273,8 +288,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       final response = await request.close();
       await response.drain();
 
@@ -297,8 +313,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       final response = await request.close();
       await response.drain();
 
@@ -325,8 +342,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       final response = await request.close();
       await response.drain();
 
@@ -349,8 +367,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       final response = await request.close();
       await response.drain();
 
@@ -377,8 +396,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       request.headers.set(HttpHeaders.cookieHeader, 'userId=$signedValue');
 
       final response = await request.close();
@@ -403,10 +423,13 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
-      request.headers
-          .set(HttpHeaders.cookieHeader, 'userId=tampered.invalidsig');
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
+      request.headers.set(
+        HttpHeaders.cookieHeader,
+        'userId=tampered.invalidsig',
+      );
 
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
@@ -430,8 +453,9 @@ void main() {
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       request.headers.set(HttpHeaders.cookieHeader, 'prefs=$encodedPrefs');
 
       final response = await request.close();
@@ -451,16 +475,19 @@ void main() {
 
       server.listen((req) async {
         final ctx = Context(req, req.response);
-        final session =
-            ctx.req.signedJsonCookie<Map<String, dynamic>>('session', secret);
+        final session = ctx.req.signedJsonCookie<Map<String, dynamic>>(
+          'session',
+          secret,
+        );
         await ctx.res.json({'session': session});
       });
 
       final client = HttpClient();
       addTearDown(client.close);
 
-      final request =
-          await client.getUrl(Uri.parse('http://localhost:${server.port}/'));
+      final request = await client.getUrl(
+        Uri.parse('http://localhost:${server.port}/'),
+      );
       request.headers.set(HttpHeaders.cookieHeader, 'session=$signedValue');
 
       final response = await request.close();

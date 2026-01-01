@@ -144,10 +144,7 @@ void main() {
       test('throws when writing to closed stream', () async {
         await streaming.close();
 
-        expect(
-          () => streaming.writeBytes([1, 2, 3]),
-          throwsStateError,
-        );
+        expect(() => streaming.writeBytes([1, 2, 3]), throwsStateError);
       });
     });
 
@@ -201,10 +198,7 @@ void main() {
 
         final controller = StreamController<List<int>>();
 
-        expect(
-          () => streaming.pipe(controller.stream),
-          throwsStateError,
-        );
+        expect(() => streaming.pipe(controller.stream), throwsStateError);
       });
     });
 
@@ -219,10 +213,7 @@ void main() {
       test('prevents writes after close', () async {
         await streaming.close();
 
-        expect(
-          () => streaming.writeBytes([1, 2, 3]),
-          throwsStateError,
-        );
+        expect(() => streaming.writeBytes([1, 2, 3]), throwsStateError);
       });
 
       test('idempotent - can be called multiple times', () async {
