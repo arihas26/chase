@@ -71,3 +71,15 @@ class PrettyJson implements Middleware {
     await next();
   }
 }
+
+/// Formats JSON responses with indentation.
+///
+/// ```dart
+/// app.use(prettyJson());
+///
+/// // With condition
+/// app.use(prettyJson(condition: (ctx) => ctx.req.query('pretty') == 'true'));
+/// ```
+PrettyJson prettyJson({bool Function(Context ctx)? condition}) {
+  return PrettyJson(condition: condition);
+}

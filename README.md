@@ -209,8 +209,7 @@ app.post('/api/data')
 | `Proxy` | HTTP proxy |
 | `StaticFileHandler` | Static file serving |
 | `PrettyJson` | Format JSON with indentation |
-| `trimTrailingSlash` | Remove trailing slashes |
-| `appendTrailingSlash` | Append trailing slashes |
+| `TrailingSlash` | Normalize trailing slashes (trim/append) |
 
 ### Custom Middleware
 
