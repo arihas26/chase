@@ -28,3 +28,4 @@ export 'validation/validation.dart';
 export 'proxy/proxy.dart';
 export 'static/static_file_handler.dart';
 export 'pretty_json/pretty_json.dart';
+export 'trailing_slash/trailing_slash.dart';

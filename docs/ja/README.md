@@ -215,6 +215,8 @@ app.post('/api/data')
 | `Proxy` | HTTPプロキシ |
 | `StaticFileHandler` | 静的ファイル配信 |
 | `PrettyJson` | JSON整形出力 |
+| `trimTrailingSlash` | 末尾スラッシュ削除 |
+| `appendTrailingSlash` | 末尾スラッシュ追加 |
 
 ### カスタムミドルウェア
 
