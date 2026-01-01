@@ -200,6 +200,7 @@ app.post('/api/data')
 | `CacheControl` | Cache-Control headers |
 | `ETag` | Entity tag for caching |
 | `Timeout` | Request timeout handling |
+| `Timing` | Server-Timing headers for performance monitoring |
 | **Utilities** | |
 | `Logger` | Request/response logging |
 | `RequestId` | Unique request ID generation |

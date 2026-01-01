@@ -19,6 +19,7 @@ export 'compress/compress.dart';
 export 'cache/cache_control.dart';
 export 'etag/etag.dart';
 export 'timeout/timeout.dart';
+export 'timing/timing.dart';
 
 // Utilities
 export 'logger/request_logger.dart';

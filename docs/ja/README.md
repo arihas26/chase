@@ -208,6 +208,7 @@ app.post('/api/data')
 | `CacheControl` | Cache-Controlヘッダー |
 | `ETag` | キャッシュ用エンティティタグ |
 | `Timeout` | リクエストタイムアウト処理 |
+| `Timing` | Server-Timingヘッダーでパフォーマンス計測 |
 | **ユーティリティ** | |
 | `Logger` | リクエスト/レスポンスログ |
 | `RequestId` | ユニークリクエストID生成 |
