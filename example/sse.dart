@@ -270,7 +270,7 @@ void main() async {
 </html>
 ''';
 
-    return Response.ok().html(htmlContent);
+    return Response.html(htmlContent);
   });
 
   final port = 3001;

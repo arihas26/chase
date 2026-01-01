@@ -44,7 +44,7 @@ void main() async {
     ctx.session.set('loginTime', DateTime.now().toIso8601String());
     ctx.session.set('visits', 0);
 
-    return Response.ok().json({
+    return Response.json({
       'message': 'Logged in successfully',
       'sessionId': '${ctx.session.id.substring(0, 8)}...',
       'username': username,
@@ -65,7 +65,7 @@ void main() async {
     final visits = (ctx.session.get<int>('visits') ?? 0) + 1;
     ctx.session.set('visits', visits);
 
-    return Response.ok().json({
+    return Response.json({
       'username': username,
       'loginTime': ctx.session.get<String>('loginTime'),
       'visits': visits,
@@ -77,12 +77,12 @@ void main() async {
   app.get('/logout').handle((ctx) async {
     final username = ctx.session.get<String>('username');
     if (username == null) {
-      return Response.ok().json({'message': 'Already logged out'});
+      return Response.json({'message': 'Already logged out'});
     }
 
     ctx.destroySession();
 
-    return Response.ok().json({
+    return Response.json({
       'message': 'Logged out successfully',
       'previousUser': username,
     });
@@ -103,7 +103,7 @@ void main() async {
     ctx.regenerateSession();
     final newId = ctx.session.id.substring(0, 8);
 
-    return Response.ok().json({
+    return Response.json({
       'message': 'Session regenerated',
       'oldIdPrefix': '$oldId...',
       'newIdPrefix': '$newId...',
@@ -113,7 +113,7 @@ void main() async {
 
   // Example 5: Session info
   app.get('/session-info').handle((ctx) async {
-    return Response.ok().json({
+    return Response.json({
       'sessionId': '${ctx.session.id.substring(0, 8)}...',
       'isNew': ctx.session.isNew,
       'isModified': ctx.session.isModified,
@@ -125,7 +125,7 @@ void main() async {
   // Example 6: Clear specific data
   app.get('/clear-visits').handle((ctx) async {
     ctx.session.remove('visits');
-    return Response.ok().json({
+    return Response.json({
       'message': 'Visits counter cleared',
       'data': ctx.session.data,
     });
@@ -133,7 +133,7 @@ void main() async {
 
   // Example 7: Admin - view store stats
   app.get('/admin/sessions').handle((ctx) async {
-    return Response.ok().json({
+    return Response.json({
       'activeSessions': store.length,
     });
   });
@@ -141,7 +141,7 @@ void main() async {
   // Example 8: Shopping cart simulation
   app.get('/cart').handle((ctx) async {
     final cart = ctx.session.get<List<dynamic>>('cart') ?? [];
-    return Response.ok().json({
+    return Response.json({
       'items': cart,
       'itemCount': cart.length,
     });
@@ -160,7 +160,7 @@ void main() async {
     cart.add(item);
     ctx.session.set('cart', cart);
 
-    return Response.ok().json({
+    return Response.json({
       'message': 'Added to cart',
       'item': item,
       'itemCount': cart.length,
@@ -169,7 +169,7 @@ void main() async {
 
   app.get('/cart/clear').handle((ctx) async {
     ctx.session.remove('cart');
-    return Response.ok().json({
+    return Response.json({
       'message': 'Cart cleared',
     });
   });
@@ -335,7 +335,7 @@ curl -b cookies.txt http://localhost:6060/profile  # Should show not logged in</
 </body>
 </html>
 ''';
-    return Response.ok().html(htmlContent);
+    return Response.html(htmlContent);
   });
 
   final port = 3000;

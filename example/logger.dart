@@ -38,13 +38,13 @@ void main() async {
 
   // Health check (logging skipped, but request_id still generated)
   app.get('/health').handle((ctx) async {
-    return Response.ok().json({'status': 'ok'});
+    return Response.json({'status': 'ok'});
   });
 
   // Home page
   app.get('/').handle((ctx) {
     ctx.log.info('Home page accessed');
-    return Response.ok().text('Welcome to Chase!');
+    return Response.text('Welcome to Chase!');
   });
 
   // Demonstrates log propagation to service layer
@@ -54,7 +54,7 @@ void main() async {
     // Service uses Log.named() - request_id is automatically included
     final user = await _userService.findUser(userId);
 
-    return Response.ok().json(user);
+    return Response.json(user);
   });
 
   app.post('/users').handle((ctx) async {

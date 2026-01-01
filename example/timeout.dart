@@ -26,7 +26,7 @@ void main() async {
   // Example 2: Fast endpoint (completes before timeout)
   app.get('/fast').handle((ctx) async {
     await Future.delayed(const Duration(milliseconds: 100));
-    return Response.ok().json({
+    return Response.json({
       'message': 'Fast response',
       'duration_ms': 100,
     });
@@ -38,7 +38,7 @@ void main() async {
       .handle((ctx) async {
     // This takes longer than the 2-second timeout
     await Future.delayed(const Duration(seconds: 5));
-    return Response.ok().json({'message': 'This will never be sent'});
+    return Response.json({'message': 'This will never be sent'});
   });
 
   // Example 4: Short timeout preset
@@ -46,7 +46,7 @@ void main() async {
       .use(const Timeout(TimeoutOptions.short)) // 5 seconds
       .handle((ctx) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    return Response.ok().json({'message': 'Quick response'});
+    return Response.json({'message': 'Quick response'});
   });
 
   // Example 5: Long timeout for heavy operations
@@ -55,7 +55,7 @@ void main() async {
       .handle((ctx) async {
     // Simulate heavy processing
     await Future.delayed(const Duration(seconds: 2));
-    return Response.ok().json({'message': 'Processing complete'});
+    return Response.json({'message': 'Processing complete'});
   });
 
   // Example 6: Custom timeout handler
@@ -73,7 +73,7 @@ void main() async {
       )))
       .handle((ctx) async {
     await Future.delayed(const Duration(seconds: 3));
-    return Response.ok().json({'message': 'Never reached'});
+    return Response.json({'message': 'Never reached'});
   });
 
   // Example 7: Gateway timeout status
@@ -85,7 +85,7 @@ void main() async {
       )))
       .handle((ctx) async {
     await Future.delayed(const Duration(seconds: 5));
-    return Response.ok().json({'data': 'from upstream'});
+    return Response.json({'data': 'from upstream'});
   });
 
   // Example 8: Include duration in error
@@ -96,14 +96,14 @@ void main() async {
       )))
       .handle((ctx) async {
     await Future.delayed(const Duration(seconds: 3));
-    return Response.ok().json({'debug': true});
+    return Response.json({'debug': true});
   });
 
   // Example 9: Variable processing time
   app.get('/variable').handle((ctx) async {
     final delay = DateTime.now().second % 3; // 0, 1, or 2 seconds
     await Future.delayed(Duration(seconds: delay));
-    return Response.ok().json({
+    return Response.json({
       'message': 'Variable delay response',
       'delay_seconds': delay,
     });
@@ -119,13 +119,13 @@ void main() async {
     // Check deadline during processing
     for (var i = 0; i < 3; i++) {
       if (ctx.isExpired) {
-        return Response.ok().json({'error': 'Deadline exceeded during processing'});
+        return Response.json({'error': 'Deadline exceeded during processing'});
       }
 
       await Future.delayed(const Duration(seconds: 1));
     }
 
-    return Response.ok().json({
+    return Response.json({
       'message': 'Completed before deadline',
       'remaining_ms': ctx.remainingTime?.inMilliseconds,
     });
@@ -265,7 +265,7 @@ void main() async {
 </body>
 </html>
 ''';
-    return Response.ok().html(htmlContent);
+    return Response.html(htmlContent);
   });
 
   final port = 3000;

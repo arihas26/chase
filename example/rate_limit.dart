@@ -33,14 +33,14 @@ void main() async {
         errorMessage: 'Too many login attempts. Please try again in 15 minutes.',
       )))
       .handle((ctx) async {
-    return Response.ok().json({'message': 'Login endpoint'});
+    return Response.json({'message': 'Login endpoint'});
   });
 
   // Example 3: API endpoint with per-second limit
   app.get('/api/data')
       .use(RateLimit(const RateLimitOptions.perSecond(5)))
       .handle((ctx) async {
-    return Response.ok().json({
+    return Response.json({
       'data': 'This endpoint allows 5 requests per second',
       'timestamp': DateTime.now().toIso8601String(),
     });
@@ -50,7 +50,7 @@ void main() async {
   app.get('/api/batch')
       .use(RateLimit(const RateLimitOptions.perHour(1000)))
       .handle((ctx) async {
-    return Response.ok().json({'message': 'Batch processing endpoint'});
+    return Response.json({'message': 'Batch processing endpoint'});
   });
 
   // Example 5: Custom key extraction by API key header
@@ -69,11 +69,11 @@ void main() async {
     )));
 
     api.get('/users').handle((ctx) async {
-      return Response.ok().json({'users': [], 'limit': '100/min per API key'});
+      return Response.json({'users': [], 'limit': '100/min per API key'});
     });
 
     api.get('/products').handle((ctx) async {
-      return Response.ok().json({'products': [], 'limit': '100/min per API key'});
+      return Response.json({'products': [], 'limit': '100/min per API key'});
     });
   });
 
@@ -89,7 +89,7 @@ void main() async {
         },
       )))
       .handle((ctx) async {
-    return Response.ok().json({'message': 'Expensive operation completed'});
+    return Response.json({'message': 'Expensive operation completed'});
   });
 
   // Example 7: Rate limit without headers (hide limit info)
@@ -101,7 +101,7 @@ void main() async {
         errorMessage: 'Request limit exceeded',
       )))
       .handle((ctx) async {
-    return Response.ok().json({'status': 'ok'});
+    return Response.json({'status': 'ok'});
   });
 
   // Example 8: Per-user rate limiting (requires auth middleware first)
@@ -118,11 +118,11 @@ void main() async {
     )));
 
     user.get('/profile').handle((ctx) async {
-      return Response.ok().json({'profile': 'User profile data'});
+      return Response.json({'profile': 'User profile data'});
     });
 
     user.post('/update').handle((ctx) async {
-      return Response.ok().json({'message': 'Profile updated'});
+      return Response.json({'message': 'Profile updated'});
     });
   });
 
@@ -285,7 +285,7 @@ done</code></pre>
 </html>
 ''';
 
-    return Response.ok().html(htmlContent);
+    return Response.html(htmlContent);
   });
 
   final port = 3000;

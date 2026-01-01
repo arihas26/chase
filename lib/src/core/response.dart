@@ -171,6 +171,50 @@ class Response {
       : this(HttpStatus.gatewayTimeout, headers: headers);
 
   // ---------------------------------------------------------------------------
+  // Static Factory Methods (shorthand)
+  // ---------------------------------------------------------------------------
+
+  /// Creates a JSON response with 200 OK status (default).
+  ///
+  /// ```dart
+  /// return Response.json({'users': []});
+  /// return Response.json({'error': 'Not found'}, status: 404);
+  /// ```
+  static Response json(Object? data, {int status = HttpStatus.ok}) {
+    return Response(
+      status,
+      body: data,
+      headers: {'content-type': 'application/json; charset=utf-8'},
+    );
+  }
+
+  /// Creates an HTML response with 200 OK status (default).
+  ///
+  /// ```dart
+  /// return Response.html('<h1>Welcome</h1>');
+  /// ```
+  static Response html(String content, {int status = HttpStatus.ok}) {
+    return Response(
+      status,
+      body: content,
+      headers: {'content-type': 'text/html; charset=utf-8'},
+    );
+  }
+
+  /// Creates a plain text response with 200 OK status (default).
+  ///
+  /// ```dart
+  /// return Response.text('OK');
+  /// ```
+  static Response text(String content, {int status = HttpStatus.ok}) {
+    return Response(
+      status,
+      body: content,
+      headers: {'content-type': 'text/plain; charset=utf-8'},
+    );
+  }
+
+  // ---------------------------------------------------------------------------
   // Fluent Builder Methods
   // ---------------------------------------------------------------------------
 

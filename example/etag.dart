@@ -33,7 +33,7 @@ void main() async {
     // Check if client has current version - returns null if 304 was sent
     if (await ctx.checkEtag(etag)) return null;
 
-    return Response.ok().json(data);
+    return Response.json(data);
   });
 
   // Example 2: Content-based ETag
@@ -44,7 +44,7 @@ void main() async {
 
     if (await ctx.checkEtag(etag)) return null;
 
-    return Response.ok().json(content);
+    return Response.json(content);
   });
 
   // Example 3: Weak ETag
@@ -55,7 +55,7 @@ void main() async {
 
     if (await ctx.checkEtag(etag)) return null;
 
-    return Response.ok().json(content);
+    return Response.json(content);
   });
 
   // Example 4: Update data (invalidates ETag)
@@ -66,7 +66,7 @@ void main() async {
       'version': dataVersion,
     };
 
-    return Response.ok().json({
+    return Response.json({
       'message': 'Data updated',
       'newVersion': dataVersion,
       'newEtag': ETagHelper.fromVersion('v$dataVersion'),
@@ -87,7 +87,7 @@ void main() async {
     if (await ctx.checkEtag(etag)) {
     }
 
-    return Response.ok().json(config);
+    return Response.json(config);
   });
 
   // Example 6: Using ETag with Last-Modified
@@ -101,7 +101,7 @@ void main() async {
 
     if (await ctx.checkEtag(etag)) return null;
 
-    return Response.ok().json(content);
+    return Response.json(content);
   });
 
   // Example 7: Checking If-None-Match manually
@@ -245,7 +245,7 @@ curl -i http://localhost:6060/api/data</code></pre>
 </body>
 </html>
 ''';
-    return Response.ok().html(htmlContent);
+    return Response.html(htmlContent);
   });
 
   final port = 3000;

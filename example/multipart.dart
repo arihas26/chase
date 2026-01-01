@@ -26,7 +26,7 @@ void main() async {
     final name = data.field('name') ?? 'Unknown';
     final avatar = data.file('avatar');
 
-    return Response.ok().json({
+    return Response.json({
       'message': 'Upload successful',
       'name': name,
       'avatar': avatar != null
@@ -51,7 +51,7 @@ void main() async {
     // Filter only images
     final images = photos.where((f) => f.isImage).toList();
 
-    return Response.ok().json({
+    return Response.json({
       'totalFiles': photos.length,
       'images': images.length,
       'files': photos
@@ -72,7 +72,7 @@ void main() async {
     // Use fieldAll() for multiple values with same name
     final tags = data.fieldAll('tags');
 
-    return Response.ok().json({
+    return Response.json({
       'title': title,
       'tags': tags,
       'tagCount': tags.length,
@@ -92,7 +92,7 @@ void main() async {
     final uploadPath = 'uploads/${doc.filename}';
     await doc.saveTo(uploadPath);
 
-    return Response.ok().json({
+    return Response.json({
       'saved': true,
       'path': uploadPath,
       'size': doc.size,
@@ -103,7 +103,7 @@ void main() async {
   app.post('/info').handle((ctx) async {
     final data = await ctx.req.multipart();
 
-    return Response.ok().json({
+    return Response.json({
       'fieldNames': data.fieldNames.toList(),
       'fileNames': data.fileNames.toList(),
       'fieldCount': data.fieldCount,
