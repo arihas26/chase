@@ -1,5 +1,4 @@
 import 'package:chase/chase.dart';
-import 'package:chase/src/core/router.dart';
 import 'package:chase/src/router/trie_router/trie_match.dart';
 import 'package:chase/src/router/trie_router/trie_node.dart';
 
@@ -12,16 +11,30 @@ class TrieRouter implements Router {
 
     var node = root;
     final segments = _splitPath(path);
+    TrieNode? parentOfOptional;
+
     for (var i = 0; i < segments.length; i++) {
       final segment = segments[i];
       if (segment.startsWith('*') && i != segments.length - 1) {
         throw ArgumentError('Wildcard segment must be the last segment.');
       }
+
+      // Track parent if next segment is optional parameter
+      final isOptional = segment.startsWith(':') && segment.endsWith('?');
+      if (isOptional) {
+        parentOfOptional = node;
+      }
+
       node = _getOrCreateChild(node, segment);
       if (segment.startsWith('*')) break;
     }
 
     node.handlers[method] = handler;
+
+    // If the last segment was optional, also register handler at parent
+    if (parentOfOptional != null) {
+      parentOfOptional.handlers[method] = handler;
+    }
   }
 
   @override
@@ -49,9 +62,16 @@ class TrieRouter implements Router {
 
   TrieNode _getOrCreateChild(TrieNode node, String segment) {
     if (segment.startsWith(':')) {
-      // parameter segment
+      // parameter segment (e.g., :id or :id?)
+      final isOptional = segment.endsWith('?');
       node.paramChild ??= TrieNode();
-      node.paramName ??= segment.substring(1); // exclude ':'
+      // Extract name: remove ':' prefix and '?' suffix if present
+      node.paramName ??= isOptional
+          ? segment.substring(1, segment.length - 1)
+          : segment.substring(1);
+      if (isOptional) {
+        node.paramOptional = true;
+      }
       return node.paramChild!;
     } else if (segment.startsWith('*')) {
       // wildcard segment
@@ -64,7 +84,12 @@ class TrieRouter implements Router {
     }
   }
 
-  TrieNode? _search(TrieNode node, List<String> segments, int index, Map<String, String> params) {
+  TrieNode? _search(
+    TrieNode node,
+    List<String> segments,
+    int index,
+    Map<String, String> params,
+  ) {
     // base case
     if (index == segments.length) {
       return node.isEmptyHandler ? null : node;

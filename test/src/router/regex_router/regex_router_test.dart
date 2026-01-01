@@ -207,4 +207,58 @@ void main() {
       expect(match?.params, {'query': 'hello%20world'});
     });
   });
+
+  group('Optional Parameters', () {
+    test('matches optional parameter when provided', () {
+      router.add('GET', '/users/:id?', handler);
+
+      final match = router.match('GET', '/users/123');
+
+      expect(match?.handler, same(handler));
+      expect(match?.params, {'id': '123'});
+    });
+
+    test('matches optional parameter when omitted', () {
+      router.add('GET', '/users/:id?', handler);
+
+      final match = router.match('GET', '/users');
+
+      expect(match?.handler, same(handler));
+      expect(match?.params, isEmpty);
+    });
+
+    test('matches optional parameter at end of path', () {
+      router.add('GET', '/api/users/:id?', handler);
+
+      expect(router.match('GET', '/api/users')?.handler, same(handler));
+      expect(router.match('GET', '/api/users/456')?.params, {'id': '456'});
+    });
+
+    test('optional parameter with static prefix', () {
+      router.add('GET', '/posts/:postId/comments/:commentId?', handler);
+
+      final withComment = router.match('GET', '/posts/1/comments/2');
+      expect(withComment?.params, {'postId': '1', 'commentId': '2'});
+
+      final withoutComment = router.match('GET', '/posts/1/comments');
+      expect(withoutComment?.params, {'postId': '1'});
+    });
+
+    test('optional parameter with custom regex pattern', () {
+      router.add('GET', r'/users/:id(\d+)?', handler);
+
+      expect(router.match('GET', '/users/123')?.params, {'id': '123'});
+      expect(router.match('GET', '/users')?.handler, same(handler));
+      expect(router.match('GET', '/users/abc'), isNull);
+    });
+
+    test('static route before optional parameter route', () {
+      router.add('GET', '/users/me', staticHandler);
+      router.add('GET', '/users/:id?', handler);
+
+      expect(router.match('GET', '/users/me')?.handler, same(staticHandler));
+      expect(router.match('GET', '/users/123')?.handler, same(handler));
+      expect(router.match('GET', '/users')?.handler, same(handler));
+    });
+  });
 }

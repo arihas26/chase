@@ -71,31 +71,46 @@ class RegexRouter implements Router {
     }
 
     for (final segment in segments) {
-      buffer.write('/');
-
       if (segment.startsWith(':')) {
-        // Named parameter with optional custom pattern
-        // e.g., :id or :id(\d+)
-        final customPatternMatch = RegExp(r'^:(\w+)\((.+)\)$').firstMatch(segment);
+        // Named parameter with optional marker
+        // e.g., :id, :id?, :id(\d+), :id(\d+)?
+        final isOptional = segment.endsWith('?');
+        final segmentWithoutOptional =
+            isOptional ? segment.substring(0, segment.length - 1) : segment;
+
+        final customPatternMatch =
+            RegExp(r'^:(\w+)\((.+)\)$').firstMatch(segmentWithoutOptional);
+
+        String name;
+        String pattern;
+
         if (customPatternMatch != null) {
           // Custom pattern: :id(\d+)
-          final name = customPatternMatch.group(1)!;
-          final pattern = customPatternMatch.group(2)!;
-          paramNames.add(name);
-          buffer.write('($pattern)');
+          name = customPatternMatch.group(1)!;
+          pattern = customPatternMatch.group(2)!;
         } else {
           // Default pattern: :id
-          final name = segment.substring(1);
-          paramNames.add(name);
-          buffer.write('([^/]+)');
+          name = segmentWithoutOptional.substring(1);
+          pattern = '[^/]+';
+        }
+
+        paramNames.add(name);
+
+        if (isOptional) {
+          // Optional: make the whole /segment optional
+          buffer.write('(?:/($pattern))?');
+        } else {
+          buffer.write('/($pattern)');
         }
       } else if (segment.startsWith('*')) {
         // Wildcard parameter
+        buffer.write('/');
         final name = segment.substring(1);
         paramNames.add(name);
         buffer.write('(.*)');
       } else {
         // Static segment - escape special regex characters
+        buffer.write('/');
         buffer.write(RegExp.escape(segment));
       }
     }

@@ -4,11 +4,14 @@ class TrieNode {
   // staircase map for child nodes
   final Map<String, TrieNode> children = {};
 
-  // parameter child node (e.g., :id)
+  // parameter child node (e.g., :id or :id?)
   TrieNode? paramChild;
 
   // name of the parameter (e.g., id)
   String? paramName;
+
+  // whether the parameter is optional (e.g., :id?)
+  bool paramOptional = false;
 
   // wildcard child node (e.g., *path)
   TrieNode? wildcardChild;
