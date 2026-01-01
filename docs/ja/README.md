@@ -87,13 +87,18 @@ void main() async {
     return {'message': 'Hello, $name!'};
   });
 
+  // ステータスコード指定（Response fluent API）
+  app.post('/users').handle((ctx) async {
+    final body = await ctx.req.json();
+    return Response.created().json({'id': 1, ...body as Map});
+  });
+
   // 完全な制御のためのResponseオブジェクト
   app.get('/users/:id').handle((ctx) {
-    return Response.ok({'id': ctx.req.param('id'), 'name': 'John'});
+    return Response.ok().json({'id': ctx.req.param('id'), 'name': 'John'});
   });
 
   await app.start(port: 6060);
-  print('Server running on http://localhost:6060');
 }
 ```
 
@@ -105,7 +110,7 @@ void main() async {
 final app = Chase();
 
 // HTTPメソッド
-app.get('/users').handle((ctx) => ctx.res.json({'users': []}));
+app.get('/users').handle((ctx) => {'users': []});
 app.post('/users').handle(createUser);
 app.put('/users/:id').handle(updateUser);
 app.patch('/users/:id').handle(patchUser);
@@ -114,7 +119,7 @@ app.head('/users/:id').handle(checkUser);
 app.options('/users').handle(corsHandler);
 
 // カスタムメソッド
-app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
+app.route('CUSTOM', '/any').handle((ctx) => 'Custom method');
 ```
 
 ### ルートパラメータ
@@ -123,20 +128,20 @@ app.route('CUSTOM', '/any').handle((ctx) => ctx.res.text('Custom method'));
 // 単一パラメータ
 app.get('/users/:id').handle((ctx) {
   final id = ctx.req.param('id');
-  ctx.res.json({'id': id});
+  return {'id': id};
 });
 
 // 複数パラメータ
 app.get('/users/:userId/posts/:postId').handle((ctx) {
   final userId = ctx.req.param('userId');
   final postId = ctx.req.param('postId');
-  ctx.res.json({'userId': userId, 'postId': postId});
+  return {'userId': userId, 'postId': postId};
 });
 
 // ワイルドカード（キャッチオール）
 app.get('/files/*path').handle((ctx) {
   final path = ctx.req.param('path');  // 例: "images/photo.jpg"
-  ctx.res.text('File: $path');
+  return 'File: $path';
 });
 
 // オプショナルパラメータ
@@ -160,7 +165,7 @@ app.get('/search').handle((ctx) {
   final query = ctx.req.query('q');           // 単一値
   final tags = ctx.req.queryAll('tag');       // 複数値
   final queries = ctx.req.queries;            // 全てをMapで取得
-  ctx.res.json({'query': query, 'tags': tags});
+  return {'query': query, 'tags': tags};
 });
 ```
 
@@ -171,7 +176,7 @@ app.get('/search').handle((ctx) {
 ```dart
 // 複数パスに同じハンドラを登録
 app.get(['/hello', '/ja/hello']).handle((ctx) {
-  ctx.res.text('Hello!');
+  return 'Hello!';
 });
 
 // 全HTTPメソッドで使用可能
@@ -186,7 +191,7 @@ app.get(['/a', '/b', '/c'])
 // パスパラメータも使用可能
 app.get(['/users/:id', '/members/:id']).handle((ctx) {
   final id = ctx.req.param('id');
-  ctx.res.json({'id': id});
+  return {'id': id};
 });
 
 // all() と on() も複数パスをサポート
@@ -287,7 +292,7 @@ app.post('/users').handle((ctx) async {
   final path = ctx.req.path;
   final url = ctx.req.url;
 
-  ctx.res.json({'received': json});
+  return {'received': json};
 });
 ```
 
@@ -347,71 +352,65 @@ app.get('/json').handle((ctx) => {'message': 'Hello'});
 app.get('/list').handle((ctx) => [1, 2, 3]);
 
 // Responseオブジェクト → 完全な制御
-app.get('/custom').handle((ctx) => Response.ok({'status': 'success'}));
+app.get('/custom').handle((ctx) => Response.ok().json({'status': 'success'}));
 ```
 
 #### Responseクラス
 
 ```dart
 // 成功レスポンス（2xx）
-Response.ok('Hello')                    // 200
-Response.ok({'data': value})            // 200 JSON付き
-Response.created({'id': 1})             // 201
+Response.ok().text('Hello')             // 200 text
+Response.ok().json({'data': value})     // 200 JSON
+Response.created().json({'id': 1})      // 201
 Response.noContent()                    // 204
-Response.accepted({'status': 'pending'}) // 202
+Response.accepted().json({'status': 'pending'}) // 202
 
 // リダイレクト（3xx）
 Response.movedPermanently('/new')       // 301
-Response.found('/temp')                 // 302
+Response.redirect('/temp')              // 302
 Response.seeOther('/other')             // 303
 Response.temporaryRedirect('/temp')     // 307
 Response.permanentRedirect('/new')      // 308
 
 // クライアントエラー（4xx）
-Response.badRequest({'error': 'Invalid'})   // 400
-Response.unauthorized()                      // 401
-Response.forbidden()                         // 403
-Response.notFound({'error': 'Not found'})   // 404
-Response.conflict()                          // 409
-Response.unprocessableEntity({'errors': []}) // 422
-Response.tooManyRequests()                   // 429
+Response.badRequest().json({'error': 'Invalid'})   // 400
+Response.unauthorized()                             // 401
+Response.forbidden()                                // 403
+Response.notFound().json({'error': 'Not found'})   // 404
+Response.conflict()                                 // 409
+Response.unprocessableEntity().json({'errors': []}) // 422
+Response.tooManyRequests()                          // 429
 
 // サーバーエラー（5xx）
 Response.internalServerError()          // 500
 Response.badGateway()                   // 502
 Response.serviceUnavailable()           // 503
 
-// 便利なコンストラクタ
+// 便利なファクトリ（直接Responseを返す）
 Response.json({'key': 'value'}, status: 201)
 Response.text('Hello', status: 200)
 Response.html('<h1>Hello</h1>')
 ```
 
-#### 命令型スタイル（ctx.res）
+#### 低レベルアクセス（ctx.res）
+
+高度なユースケース向けに、`HttpResponse`に直接アクセスできます：
 
 ```dart
-app.get('/imperative').handle((ctx) {
-  // テキストレスポンス
-  ctx.res.text('Hello');
-  ctx.res.text('Not Found', status: 404);
-
-  // JSONレスポンス
-  ctx.res.json({'message': 'Hello'});
-  ctx.res.json({'error': 'Not found'}, status: 404);
-
-  // HTMLレスポンス
-  ctx.res.html('<h1>Hello</h1>');
-
-  // リダイレクト
-  ctx.res.redirect('/new-location');
-  ctx.res.redirect('/new', status: 301);  // 永続的
-
-  // ヘッダー
+app.get('/low-level').handle((ctx) async {
+  // ヘッダー直接アクセス
   ctx.res.headers.set('X-Custom', 'value');
 
   // Cookie
   ctx.res.cookie('session', 'abc123', maxAge: Duration(hours: 24));
   ctx.res.deleteCookie('session');
+
+  // ステータスコード
+  ctx.res.statusCode = 200;
+
+  // 直接書き込み
+  ctx.res.write('Hello');
+  await ctx.res.close();
 });
 ```
 
@@ -437,10 +436,10 @@ final userSchema = Schema({
 ```dart
 app.post('/users')
   .use(Validator(body: userSchema))
-  .handle((ctx) async {
+  .handle((ctx) {
     // バリデート済み＆変換済みデータにアクセス
     final data = ctx.validatedBody!;
-    ctx.res.json({'created': data});
+    return Response.created().json({'created': data});
   });
 ```
 
@@ -572,16 +571,27 @@ app.get('/ws').handle((ctx) async {
 ## Server-Sent Events
 
 ```dart
-app.get('/events').handle((ctx) async {
-  final sse = ctx.res.sse();
+app.get('/events').handle((ctx) {
+  return streamSSE(ctx, (stream) async {
+    // イベント送信
+    await stream.writeSSE(SSEMessage(
+      data: '{"count": 1}',
+      event: 'update',
+    ));
 
-  // イベント送信
-  await sse.send({'count': 1}, event: 'update');
-  await sse.send({'count': 2}, event: 'update', id: '2');
+    await stream.writeSSE(SSEMessage(
+      data: '{"count": 2}',
+      event: 'update',
+      id: '2',
+    ));
 
-  // リアルタイム更新のための接続維持
-  Timer.periodic(Duration(seconds: 1), (timer) async {
-    await sse.send({'time': DateTime.now().toIso8601String()});
+    // リアルタイム更新
+    for (var i = 0; i < 10; i++) {
+      await stream.sleep(Duration(seconds: 1));
+      await stream.writeSSE(SSEMessage(
+        data: DateTime.now().toIso8601String(),
+      ));
+    }
   });
 });
 ```
@@ -591,27 +601,26 @@ app.get('/events').handle((ctx) async {
 ### テキストストリーミング
 
 ```dart
-app.get('/stream').handle((ctx) async {
-  final stream = ctx.res.textStream();
-
-  for (var i = 0; i < 10; i++) {
-    await stream.writeln('Line $i');
-    await Future.delayed(Duration(milliseconds: 100));
-  }
-
-  await stream.close();
+app.get('/stream').handle((ctx) {
+  return streamText(ctx, (stream) async {
+    for (var i = 0; i < 10; i++) {
+      await stream.writeln('Line $i');
+      await stream.sleep(Duration(milliseconds: 100));
+    }
+  });
 });
 ```
 
 ### バイナリストリーミング
 
 ```dart
-app.get('/download').handle((ctx) async {
-  final file = File('large-file.zip');
-  final stream = ctx.res.stream();
-
-  ctx.res.headers.set('content-disposition', 'attachment; filename="file.zip"');
-  await stream.pipe(file.openRead());
+app.get('/download').handle((ctx) {
+  return stream(ctx, (s) async {
+    final file = File('large-file.zip');
+    await s.pipe(file.openRead());
+  }, headers: {
+    'content-disposition': 'attachment; filename="file.zip"',
+  });
 });
 ```
 
@@ -632,7 +641,7 @@ app.staticFiles('/assets', './public', StaticOptions(
 // またはミドルウェアを直接使用
 app.get('/files/*path')
   .use(StaticFileHandler('./uploads'))
-  .handle((ctx) => ctx.res.notFound());
+  .handle((ctx) => Response.notFound());
 ```
 
 ## セッション
@@ -650,19 +659,19 @@ app.post('/login').handle((ctx) async {
   final body = await ctx.req.json();
   ctx.session['userId'] = body['userId'];
   ctx.session['loggedIn'] = true;
-  ctx.res.json({'success': true});
+  return {'success': true};
 });
 
 app.get('/profile').handle((ctx) {
   if (ctx.session['loggedIn'] != true) {
-    return ctx.res.json({'error': 'ログインしていません'}, status: 401);
+    return Response.unauthorized().json({'error': 'ログインしていません'});
   }
-  ctx.res.json({'userId': ctx.session['userId']});
+  return {'userId': ctx.session['userId']};
 });
 
 app.post('/logout').handle((ctx) async {
   await ctx.destroySession();
-  ctx.res.json({'success': true});
+  return {'success': true};
 });
 ```
 
@@ -697,11 +706,11 @@ app.use(I18n(
 app.get('/greeting').handle((ctx) {
   final t = ctx.t;  // 翻訳関数
 
-  ctx.res.json({
+  return {
     'greeting': t('greeting'),
     'welcome': t('welcome', {'name': 'John'}),
     'locale': ctx.locale,
-  });
+  };
 });
 ```
 
@@ -716,7 +725,7 @@ app.get('/greeting').handle((ctx) {
 // 特定のロケールを強制
 app.get('/ja/greeting').handle((ctx) {
   ctx.setLocale('ja');
-  ctx.res.json({'message': ctx.t('greeting')});
+  return {'message': ctx.t('greeting')};
 });
 ```
 
@@ -737,10 +746,10 @@ void main() {
 
   setUp(() async {
     app = Chase();
-    app.get('/').handle((ctx) => ctx.res.text('Hello'));
+    app.get('/').handle((ctx) => 'Hello');
     app.post('/users').handle((ctx) async {
       final body = await ctx.req.json();
-      ctx.res.json(body, status: 201);
+      return Response.created().json(body);
     });
 
     client = await TestClient.start(app);
@@ -838,10 +847,10 @@ class HealthCheckPlugin extends Plugin {
   @override
   void onInstall(Chase app) {
     app.get('/health').handle((ctx) {
-      ctx.res.json({
+      return {
         'status': 'healthy',
         'timestamp': DateTime.now().toIso8601String(),
-      });
+      };
     });
   }
 

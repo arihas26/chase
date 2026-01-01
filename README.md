@@ -73,25 +73,24 @@ void main() async {
   // Simple string response
   app.get('/').handle((ctx) => 'Hello, World!');
 
-  // JSON response (Hono-style fluent API)
+  // JSON response (return Map directly)
   app.get('/hello/:name').handle((ctx) {
     final name = ctx.req.param('name');
-    return ctx.json({'message': 'Hello, $name!'});
+    return {'message': 'Hello, $name!'};
   });
 
-  // With status code
+  // With status code (Response fluent API)
   app.post('/users').handle((ctx) async {
     final body = await ctx.req.json();
-    return ctx.status(201).json({'id': 1, ...body});
+    return Response.created().json({'id': 1, ...body});
   });
 
   // Response object for full control
   app.get('/users/:id').handle((ctx) {
-    return Response.ok({'id': ctx.req.param('id'), 'name': 'John'});
+    return Response.ok().json({'id': ctx.req.param('id'), 'name': 'John'});
   });
 
   await app.start(port: 6060);
-  print('Server running on http://localhost:6060');
 }
 ```
 
@@ -103,7 +102,7 @@ void main() async {
 final app = Chase();
 
 // HTTP methods
-app.get('/users').handle((ctx) => ctx.json({'users': []}));
+app.get('/users').handle((ctx) => {'users': []});
 app.post('/users').handle(createUser);
 app.put('/users/:id').handle(updateUser);
 app.patch('/users/:id').handle(patchUser);
@@ -112,7 +111,7 @@ app.head('/users/:id').handle(checkUser);
 app.options('/users').handle(corsHandler);
 
 // Custom method
-app.route('CUSTOM', '/any').handle((ctx) => ctx.text('Custom method'));
+app.route('CUSTOM', '/any').handle((ctx) => 'Custom method');
 ```
 
 ### Route Parameters
@@ -121,20 +120,20 @@ app.route('CUSTOM', '/any').handle((ctx) => ctx.text('Custom method'));
 // Single parameter
 app.get('/users/:id').handle((ctx) {
   final id = ctx.req.param('id');
-  return ctx.json({'id': id});
+  return {'id': id};
 });
 
 // Multiple parameters
 app.get('/users/:userId/posts/:postId').handle((ctx) {
   final userId = ctx.req.param('userId');
   final postId = ctx.req.param('postId');
-  return ctx.json({'userId': userId, 'postId': postId});
+  return {'userId': userId, 'postId': postId};
 });
 
 // Wildcard (catch-all)
 app.get('/files/*path').handle((ctx) {
   final path = ctx.req.param('path');  // e.g., "images/photo.jpg"
-  return ctx.text('File: $path');
+  return 'File: $path';
 });
 
 // Optional parameter
@@ -158,7 +157,7 @@ app.get('/search').handle((ctx) {
   final query = ctx.req.query('q');           // Single value
   final tags = ctx.req.queryAll('tag');       // Multiple values
   final queries = ctx.req.queries;            // All as Map
-  return ctx.json({'query': query, 'tags': tags});
+  return {'query': query, 'tags': tags};
 });
 ```
 
@@ -169,7 +168,7 @@ Register the same handler for multiple paths:
 ```dart
 // Same handler for multiple paths
 app.get(['/hello', '/ja/hello']).handle((ctx) {
-  return ctx.text('Hello!');
+  return 'Hello!';
 });
 
 // Works with all HTTP methods
@@ -184,7 +183,7 @@ app.get(['/a', '/b', '/c'])
 // With path parameters
 app.get(['/users/:id', '/members/:id']).handle((ctx) {
   final id = ctx.req.param('id');
-  return ctx.json({'id': id});
+  return {'id': id};
 });
 
 // all() and on() also support multiple paths
@@ -285,7 +284,7 @@ app.post('/users').handle((ctx) async {
   final path = ctx.req.path;
   final url = ctx.req.url;
 
-  return ctx.json({'received': json});
+  return {'received': json};
 });
 ```
 
@@ -330,39 +329,9 @@ final addr = ctx.req.remoteAddress; // Direct connection IP
 
 ### Response
 
-Chase supports multiple response styles - from simple return values to the Hono-style fluent API.
+Chase supports multiple response styles - from simple return values to Response objects.
 
-#### Fluent API (Recommended)
-
-```dart
-// JSON response
-app.get('/json').handle((ctx) => ctx.json({'message': 'Hello'}));
-
-// Text response
-app.get('/text').handle((ctx) => ctx.text('Hello, World!'));
-
-// HTML response
-app.get('/html').handle((ctx) => ctx.html('<h1>Hello</h1>'));
-
-// With status code (chainable)
-app.post('/users').handle((ctx) => ctx.status(201).json({'id': 1}));
-
-// With custom headers (chainable)
-app.get('/data').handle((ctx) {
-  return ctx
-    .status(200)
-    .header('X-Custom', 'value')
-    .json({'data': 'value'});
-});
-
-// Redirect
-app.get('/old').handle((ctx) => ctx.redirect('/new'));
-
-// Not found
-app.get('/missing').handle((ctx) => ctx.notFound('Resource not found'));
-```
-
-#### Simple Return Values
+#### Simple Return Values (Recommended)
 
 ```dart
 // String → text/plain
@@ -375,41 +344,67 @@ app.get('/json').handle((ctx) => {'message': 'Hello'});
 app.get('/list').handle((ctx) => [1, 2, 3]);
 
 // Response object → full control
-app.get('/custom').handle((ctx) => Response.ok({'status': 'success'}));
+app.get('/custom').handle((ctx) => Response.ok().json({'status': 'success'}));
+```
+
+#### Response Fluent API
+
+```dart
+// JSON response with status
+app.post('/users').handle((ctx) => Response.created().json({'id': 1}));
+
+// With custom headers (chainable)
+app.get('/data').handle((ctx) {
+  return Response.ok()
+    .header('X-Custom', 'value')
+    .json({'data': 'value'});
+});
+
+// HTML response
+app.get('/html').handle((ctx) => Response.html('<h1>Hello</h1>'));
+
+// Text response
+app.get('/text').handle((ctx) => Response.text('Hello, World!'));
+
+// Redirect
+app.get('/old').handle((ctx) => Response.redirect('/new'));
+
+// Not found
+app.get('/missing').handle((ctx) => Response.notFound('Resource not found'));
 ```
 
 #### Response Class
 
 ```dart
 // Success responses (2xx)
-Response.ok('Hello')                    // 200
-Response.ok({'data': value})            // 200 with JSON
-Response.created({'id': 1})             // 201
+Response.ok().text('Hello')             // 200 text
+Response.ok().json({'data': value})     // 200 JSON
+Response.created().json({'id': 1})      // 201
 Response.noContent()                    // 204
-Response.accepted({'status': 'pending'}) // 202
+Response.accepted().json({'status': 'pending'}) // 202
 
 // Redirects (3xx)
 Response.movedPermanently('/new')       // 301
-Response.found('/temp')                 // 302
+Response.redirect('/temp')              // 302
 Response.seeOther('/other')             // 303
 Response.temporaryRedirect('/temp')     // 307
 Response.permanentRedirect('/new')      // 308
 
 // Client errors (4xx)
-Response.badRequest({'error': 'Invalid'})   // 400
-Response.unauthorized()                      // 401
-Response.forbidden()                         // 403
-Response.notFound({'error': 'Not found'})   // 404
-Response.conflict()                          // 409
-Response.unprocessableEntity({'errors': []}) // 422
-Response.tooManyRequests()                   // 429
+Response.badRequest().json({'error': 'Invalid'})   // 400
+Response.unauthorized()                             // 401
+Response.forbidden()                                // 403
+Response.notFound().json({'error': 'Not found'})   // 404
+Response.conflict()                                 // 409
+Response.unprocessableEntity().json({'errors': []}) // 422
+Response.tooManyRequests()                          // 429
 
 // Server errors (5xx)
 Response.internalServerError()          // 500
 Response.badGateway()                   // 502
 Response.serviceUnavailable()           // 503
 
-// Convenience constructors
+// Convenience factories (return Response directly)
 Response.json({'key': 'value'}, status: 201)
 Response.text('Hello', status: 200)
 Response.html('<h1>Hello</h1>')
@@ -462,7 +457,7 @@ app.post('/users')
   .handle((ctx) {
     // Access validated & transformed data
     final data = ctx.validatedBody!;
-    return ctx.status(201).json({'created': data});
+    return Response.created().json({'created': data});
   });
 ```
 
@@ -701,19 +696,19 @@ app.post('/login').handle((ctx) async {
   final body = await ctx.req.json();
   ctx.session['userId'] = body['userId'];
   ctx.session['loggedIn'] = true;
-  return ctx.json({'success': true});
+  return {'success': true};
 });
 
 app.get('/profile').handle((ctx) {
   if (ctx.session['loggedIn'] != true) {
-    return ctx.status(401).json({'error': 'Not logged in'});
+    return Response.unauthorized().json({'error': 'Not logged in'});
   }
-  return ctx.json({'userId': ctx.session['userId']});
+  return {'userId': ctx.session['userId']};
 });
 
 app.post('/logout').handle((ctx) async {
   await ctx.destroySession();
-  return ctx.json({'success': true});
+  return {'success': true};
 });
 ```
 
@@ -748,11 +743,11 @@ app.use(I18n(
 app.get('/greeting').handle((ctx) {
   final t = ctx.t;  // Translation function
   
-  return ctx.json({
+  return {
     'greeting': t('greeting'),
     'welcome': t('welcome', {'name': 'John'}),
     'locale': ctx.locale,
-  });
+  };
 });
 ```
 
@@ -767,7 +762,7 @@ Locale is detected in order:
 // Force specific locale
 app.get('/ja/greeting').handle((ctx) {
   ctx.setLocale('ja');
-  return ctx.json({'message': ctx.t('greeting')});
+  return {'message': ctx.t('greeting')};
 });
 ```
 
@@ -788,10 +783,10 @@ void main() {
 
   setUp(() async {
     app = Chase();
-    app.get('/').handle((ctx) => ctx.text('Hello'));
+    app.get('/').handle((ctx) => 'Hello');
     app.post('/users').handle((ctx) async {
       final body = await ctx.req.json();
-      return ctx.status(201).json(body);
+      return Response.created().json(body);
     });
     
     client = await TestClient.start(app);
@@ -889,10 +884,10 @@ class HealthCheckPlugin extends Plugin {
   @override
   void onInstall(Chase app) {
     app.get('/health').handle((ctx) {
-      return ctx.json({
+      return {
         'status': 'healthy',
         'timestamp': DateTime.now().toIso8601String(),
-      });
+      };
     });
   }
 
@@ -930,9 +925,9 @@ app.get('/profile').handle((ctx) {
   final requestId = ctx.get<String>('requestId');
   
   if (ctx.has('user')) {
-    return ctx.json({'user': user, 'requestId': requestId});
+    return {'user': user, 'requestId': requestId};
   }
-  return ctx.status(401).json({'error': 'Unauthorized'});
+  return Response.unauthorized().json({'error': 'Unauthorized'});
 });
 ```
 
