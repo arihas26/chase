@@ -148,6 +148,40 @@ class Req {
   /// Remote port of the client connection.
   int? get remotePort => _raw.connectionInfo?.remotePort;
 
+  /// Local port the server is listening on.
+  int? get localPort => _raw.connectionInfo?.localPort;
+
+  /// Connection information object.
+  ///
+  /// Provides structured access to connection details:
+  /// ```dart
+  /// final info = ctx.req.connInfo;
+  /// print('Remote: ${info.remote.address}:${info.remote.port}');
+  /// print('Local port: ${info.local.port}');
+  /// print('Address type: ${info.remote.addressType}');
+  /// ```
+  ConnInfo get connInfo => ConnInfo._(
+        remote: NetAddrInfo._(
+          address: remoteAddress,
+          port: remotePort,
+          addressType: _detectAddressType(remoteAddress),
+          transport: 'tcp',
+        ),
+        local: NetAddrInfo._(
+          port: localPort,
+          transport: 'tcp',
+        ),
+      );
+
+  static AddressType? _detectAddressType(String address) {
+    if (address == 'unknown') return null;
+    if (address.contains(':')) return AddressType.ipv6;
+    if (RegExp(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$').hasMatch(address)) {
+      return AddressType.ipv4;
+    }
+    return null;
+  }
+
   // ---------------------------------------------------------------------------
   // Headers
   // ---------------------------------------------------------------------------
@@ -789,4 +823,67 @@ class Req {
     ).firstMatch(header);
     return match?.group(1);
   }
+}
+
+// =============================================================================
+// Connection Info
+// =============================================================================
+
+/// Connection information for the current request.
+///
+/// Provides structured access to remote and local connection details.
+///
+/// ```dart
+/// final info = ctx.req.connInfo;
+/// print('Client: ${info.remote.address}:${info.remote.port}');
+/// print('Server port: ${info.local.port}');
+/// ```
+class ConnInfo {
+  /// Remote (client) connection information.
+  final NetAddrInfo remote;
+
+  /// Local (server) connection information.
+  final NetAddrInfo local;
+
+  const ConnInfo._({required this.remote, required this.local});
+
+  @override
+  String toString() => 'ConnInfo(remote: $remote, local: $local)';
+}
+
+/// Network address information.
+///
+/// Contains details about a network endpoint.
+class NetAddrInfo {
+  /// IP address or hostname.
+  final String? address;
+
+  /// Port number.
+  final int? port;
+
+  /// Address type (IPv4, IPv6, or unknown).
+  final AddressType? addressType;
+
+  /// Transport protocol (tcp or udp).
+  final String? transport;
+
+  const NetAddrInfo._({
+    this.address,
+    this.port,
+    this.addressType,
+    this.transport,
+  });
+
+  @override
+  String toString() =>
+      'NetAddrInfo(address: $address, port: $port, type: $addressType)';
+}
+
+/// IP address type.
+enum AddressType {
+  /// IPv4 address (e.g., 192.168.1.1)
+  ipv4,
+
+  /// IPv6 address (e.g., ::1, 2001:db8::1)
+  ipv6,
 }

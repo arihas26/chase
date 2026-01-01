@@ -273,6 +273,25 @@ final lang = ctx.req.acceptsLanguages(['en', 'ja', 'zh'], defaultValue: 'en');
 final encoding = ctx.req.acceptsEncodings(['gzip', 'br'], defaultValue: 'identity');
 ```
 
+#### Connection Info
+
+```dart
+app.get('/info').handle((ctx) {
+  final info = ctx.req.connInfo;
+
+  return {
+    'remoteAddress': info.remote.address,  // Client IP
+    'remotePort': info.remote.port,        // Client port
+    'addressType': info.remote.addressType?.name,  // 'ipv4' or 'ipv6'
+    'localPort': info.local.port,          // Server port
+  };
+});
+
+// Shorthand accessors also available
+final ip = ctx.req.ip;              // With X-Forwarded-For support
+final addr = ctx.req.remoteAddress; // Direct connection IP
+```
+
 ### Response
 
 Chase supports multiple response styles - from simple return values to full Response objects.

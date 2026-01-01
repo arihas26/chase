@@ -281,6 +281,25 @@ final lang = ctx.req.acceptsLanguages(['en', 'ja', 'zh'], defaultValue: 'en');
 final encoding = ctx.req.acceptsEncodings(['gzip', 'br'], defaultValue: 'identity');
 ```
 
+#### 接続情報
+
+```dart
+app.get('/info').handle((ctx) {
+  final info = ctx.req.connInfo;
+
+  return {
+    'remoteAddress': info.remote.address,  // クライアントIP
+    'remotePort': info.remote.port,        // クライアントポート
+    'addressType': info.remote.addressType?.name,  // 'ipv4' または 'ipv6'
+    'localPort': info.local.port,          // サーバーポート
+  };
+});
+
+// ショートカットアクセサも利用可能
+final ip = ctx.req.ip;              // X-Forwarded-For対応
+final addr = ctx.req.remoteAddress; // 直接接続IP
+```
+
 ### レスポンス
 
 Chaseはシンプルな戻り値から完全なResponseオブジェクトまで、複数のレスポンススタイルをサポートしています。
