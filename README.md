@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/chase-logo.png" alt="Chase Logo" width="400">
+  <img src="https://arihas26.github.io/chase/assets/chase-logo.png" alt="Chase Logo" width="400">
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@
 ## Performance
 
 <p align="center">
-  <img src="assets/benchmark-result.png" alt="Benchmark Results" width="600">
+  <img src="https://arihas26.github.io/chase/assets/benchmark-result.png" alt="Benchmark Results" width="600">
 </p>
 
 <p align="center">
