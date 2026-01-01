@@ -114,7 +114,7 @@ class RequestLogger implements Middleware {
   FutureOr<void> handle(Context ctx, NextFunction next) async {
     // Generate or use existing request ID
     final requestId = _getOrGenerateRequestId(ctx);
-    ctx.set('requestId', requestId);
+    ctx.set('_requestId', requestId);
 
     if (setResponseHeader) {
       ctx.res.headers.set(requestIdHeader, requestId);

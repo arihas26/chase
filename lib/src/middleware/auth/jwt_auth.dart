@@ -68,7 +68,7 @@ typedef JwtPayloadValidator = FutureOr<bool> Function(Map<String, dynamic> paylo
 ///
 /// // Accessing JWT payload in handler
 /// app.get('/profile', (ctx) async {
-///   final payload = ctx.get<Map<String, dynamic>>('jwt_payload');
+///   final payload = ctx.get<Map<String, dynamic>>('_jwt_payload');
 ///   final userId = payload?['sub'];
 ///   // ... use userId to fetch user data
 ///   await ctx.res.json({'userId': userId});
@@ -145,8 +145,8 @@ class JwtAuth implements Middleware {
       }
 
       // Store JWT data in context for use in handlers
-      ctx.set('jwt_payload', payload);
-      ctx.set('jwt_token', token);
+      ctx.set('_jwt_payload', payload);
+      ctx.set('_jwt_token', token);
 
       // Authentication successful, proceed to next middleware/handler
       await next();

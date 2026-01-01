@@ -150,7 +150,7 @@ void main() {
       await chain(ctx);
 
       expect(res.headers.value('content-encoding'), 'gzip');
-      expect(ctx.get<String>('content-encoding'), 'gzip');
+      expect(ctx.get<String>('_content_encoding'), 'gzip');
     });
 
     test('selects deflate when requested', () async {
@@ -235,7 +235,7 @@ void main() {
       await chain(ctx);
 
       expect(res.headers.value('content-encoding'), isNull);
-      expect(ctx.get<String>('content-encoding'), isNull);
+      expect(ctx.get<String>('_content_encoding'), isNull);
     });
 
     test('sets Vary header for caching', () async {
@@ -305,7 +305,7 @@ void main() {
 
       await chain(ctx);
 
-      expect(ctx.get<int>('compression-threshold'), 2048);
+      expect(ctx.get<int>('_compression_threshold'), 2048);
     });
 
     test('calls next handler', () async {
@@ -522,7 +522,7 @@ void main() {
 
       await chain(ctx);
 
-      expect(ctx.get<int>('compression-threshold'), 5000);
+      expect(ctx.get<int>('_compression_threshold'), 5000);
     });
   });
 

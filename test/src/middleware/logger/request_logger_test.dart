@@ -116,7 +116,7 @@ void main() {
 
         await RequestLogger().handle(ctx, () async {});
 
-        final requestId = ctx.get<String>('requestId');
+        final requestId = ctx.get<String>('_requestId');
         expect(requestId, isNotNull);
         expect(requestId, matches(RegExp(r'^[a-f0-9-]{36}$')));
       });
@@ -146,7 +146,7 @@ void main() {
 
         await RequestLogger().handle(ctx, () async {});
 
-        expect(ctx.get<String>('requestId'), 'existing-id-123');
+        expect(ctx.get<String>('_requestId'), 'existing-id-123');
       });
 
       test('generates new ID when useExistingRequestId is false', () async {
@@ -158,7 +158,7 @@ void main() {
         await RequestLogger(useExistingRequestId: false)
             .handle(ctx, () async {});
 
-        expect(ctx.get<String>('requestId'), isNot('existing-id-123'));
+        expect(ctx.get<String>('_requestId'), isNot('existing-id-123'));
       });
 
       test('uses custom ID generator', () async {
@@ -168,7 +168,7 @@ void main() {
         await RequestLogger(idGenerator: () => 'custom-${++counter}')
             .handle(ctx, () async {});
 
-        expect(ctx.get<String>('requestId'), 'custom-1');
+        expect(ctx.get<String>('_requestId'), 'custom-1');
       });
 
       test('does not set response header when disabled', () async {
@@ -298,7 +298,7 @@ void main() {
 
         await logger.handle(ctx, () async {});
 
-        expect(ctx.get<String>('requestId'), isNotNull);
+        expect(ctx.get<String>('_requestId'), isNotNull);
       });
 
       test('logs when skip returns false', () async {

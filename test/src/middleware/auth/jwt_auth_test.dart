@@ -165,8 +165,8 @@ void main() {
 
       expect(handlerCalled, isTrue);
       expect(res.statusCode, 200);
-      expect(ctx.get<Map<String, dynamic>>('jwt_payload'), isNotNull);
-      expect(ctx.get<String>('jwt_token'), token);
+      expect(ctx.get<Map<String, dynamic>>('_jwt_payload'), isNotNull);
+      expect(ctx.get<String>('_jwt_token'), token);
     });
 
     test('rejects request with invalid JWT signature', () async {
@@ -424,7 +424,7 @@ void main() {
 
       final auth = JwtAuth(secretKey: secretKey);
       final chain = _buildChain([auth], (ctx) async {
-        final payload = ctx.get<Map<String, dynamic>>('jwt_payload');
+        final payload = ctx.get<Map<String, dynamic>>('_jwt_payload');
         expect(payload, isNotNull);
 
         expect(payload!['sub'], 'user123');

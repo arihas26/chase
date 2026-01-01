@@ -110,8 +110,8 @@ class Compress implements Middleware {
     }
 
     // Store compression parameters for potential use
-    ctx.set('content-encoding', selectedEncoding);
-    ctx.set('compression-threshold', threshold);
+    ctx.set('_content_encoding', selectedEncoding);
+    ctx.set('_compression_threshold', threshold);
 
     // Set Content-Encoding header
     ctx.res.headers.set(HttpHeaders.contentEncodingHeader, selectedEncoding);

@@ -118,7 +118,7 @@ class RequestId implements Middleware {
     requestId ??= _generator();
 
     // Store in context (same key as RequestLogger for compatibility)
-    ctx.set('requestId', requestId);
+    ctx.set('_requestId', requestId);
 
     // Set response header if enabled
     if (options.setResponseHeader) {
@@ -177,7 +177,7 @@ extension RequestIdContextExtension on Context {
   ///
   /// Throws if neither middleware is configured.
   String get requestId {
-    final id = get<String>('requestId');
+    final id = get<String>('_requestId');
     if (id == null) {
       throw StateError(
         'Request ID not available. Did you add the RequestId or RequestLogger middleware?',
@@ -187,5 +187,5 @@ extension RequestIdContextExtension on Context {
   }
 
   /// Gets the request ID or null if not available.
-  String? get requestIdOrNull => get<String>('requestId');
+  String? get requestIdOrNull => get<String>('_requestId');
 }
