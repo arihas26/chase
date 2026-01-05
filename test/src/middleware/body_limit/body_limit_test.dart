@@ -216,13 +216,9 @@ void main() {
     test('rejects when exceeding default limit', () async {
       final ctx = TestContext.create('POST', '/', contentLength: 2097152);
       var called = false;
-      await runMiddleware(
-        BodyLimit(),
-        ctx,
-        () async {
-          called = true;
-        },
-      );
+      await runMiddleware(BodyLimit(), ctx, () async {
+        called = true;
+      });
       expect(called, isFalse);
       expect(ctx.response.statusCode, HttpStatus.requestEntityTooLarge);
     });

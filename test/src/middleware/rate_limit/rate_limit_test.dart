@@ -200,13 +200,9 @@ void main() {
 
       final ctx = TestContext.get('/');
       var called = false;
-      await runMiddleware(
-        middleware,
-        ctx,
-        () async {
-          called = true;
-        },
-      );
+      await runMiddleware(middleware, ctx, () async {
+        called = true;
+      });
       expect(called, isFalse);
       expect(ctx.response.statusCode, HttpStatus.tooManyRequests);
       expect(ctx.response.isClosed, isTrue);
