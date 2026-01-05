@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:chase/chase.dart' hide Timeout;
 import 'package:chase/src/middleware/timeout/timeout.dart';
 import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart' hide Timeout;
@@ -82,7 +82,7 @@ void main() {
         TimeoutOptions(duration: Duration(milliseconds: 100)),
       );
 
-      await middleware.handle(ctx, () async {
+      await runMiddleware(middleware, ctx, () async {
         await Future.delayed(const Duration(milliseconds: 10));
       });
 
@@ -95,7 +95,7 @@ void main() {
         TimeoutOptions(duration: Duration(milliseconds: 50)),
       );
 
-      await middleware.handle(ctx, () async {
+      await runMiddleware(middleware, ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
       });
 
@@ -113,7 +113,7 @@ void main() {
         ),
       );
 
-      await middleware.handle(ctx, () async {
+      await runMiddleware(middleware, ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
       });
 
@@ -129,7 +129,7 @@ void main() {
         ),
       );
 
-      await middleware.handle(ctx, () async {
+      await runMiddleware(middleware, ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
       });
 
@@ -145,7 +145,7 @@ void main() {
         ),
       );
 
-      await middleware.handle(ctx, () async {
+      await runMiddleware(middleware, ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
       });
 
@@ -167,7 +167,7 @@ void main() {
         ),
       );
 
-      await middleware.handle(ctx, () async {
+      await runMiddleware(middleware, ctx, () async {
         await Future.delayed(const Duration(milliseconds: 200));
       });
 
@@ -179,7 +179,7 @@ void main() {
       final ctx = TestContext.get('/');
       const middleware = Timeout();
 
-      await middleware.handle(ctx, () async {});
+      await runMiddleware(middleware, ctx, () async {});
 
       expect(ctx.response.isClosed, isFalse);
     });
@@ -188,7 +188,7 @@ void main() {
       final ctx = TestContext.get('/');
       const middleware = Timeout(TimeoutOptions.short);
 
-      await middleware.handle(ctx, () async {});
+      await runMiddleware(middleware, ctx, () async {});
 
       expect(ctx.response.isClosed, isFalse);
     });

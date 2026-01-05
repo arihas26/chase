@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:chase/src/core/response.dart';
 import 'package:zlogger/zlogger.dart';
 
 /// Function type for extracting a unique key from a request.
@@ -369,7 +370,7 @@ class RateLimit implements Middleware {
     : _store = store ?? RateLimitStore();
 
   @override
-  FutureOr<void> handle(Context ctx, NextFunction next) async {
+  FutureOr<dynamic> handle(Context ctx, NextFunction next) async {
     final key = options.keyExtractor(ctx);
     final info = _store.increment(key, options);
 
@@ -395,16 +396,17 @@ class RateLimit implements Middleware {
       final errorMsg = _buildErrorMessage(info);
       final retryAfterSeconds = (info.resetInMs / 1000).ceil();
 
-      ctx.res.statusCode = HttpStatus.tooManyRequests;
-      ctx.res.headers.contentType = ContentType.json;
-      ctx.res.headers.set('Retry-After', retryAfterSeconds.toString());
-      ctx.res.write(errorMsg);
-      await ctx.res.close();
-
-      return;
+      return Response(
+        HttpStatus.tooManyRequests,
+        body: errorMsg,
+        headers: {
+          'content-type': 'application/json',
+          'retry-after': retryAfterSeconds.toString(),
+        },
+      );
     }
 
-    await next();
+    return await next();
   }
 
   /// Adds rate limit headers to the response.

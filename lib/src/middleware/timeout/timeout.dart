@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:chase/src/core/response.dart';
 
 /// Function type for custom timeout handling.
 typedef TimeoutHandler = FutureOr<void> Function(Context ctx);
@@ -167,7 +168,7 @@ class Timeout implements Middleware {
   const Timeout([this.options = const TimeoutOptions()]);
 
   @override
-  FutureOr<void> handle(Context ctx, NextFunction next) async {
+  FutureOr<dynamic> handle(Context ctx, NextFunction next) async {
     try {
       // Race between the handler and the timeout
       final result = await Future.any<Object?>([
@@ -177,10 +178,10 @@ class Timeout implements Middleware {
 
       if (result is _TimeoutMarker) {
         // Timeout occurred
-        await _handleTimeout(ctx);
+        return _handleTimeout(ctx);
       }
     } on TimeoutException {
-      await _handleTimeout(ctx);
+      return _handleTimeout(ctx);
     }
   }
 
@@ -197,20 +198,21 @@ class Timeout implements Middleware {
   }
 
   /// Handles the timeout response.
-  Future<void> _handleTimeout(Context ctx) async {
+  Response? _handleTimeout(Context ctx) {
     // Use custom handler if provided
     if (options.onTimeout != null) {
-      await options.onTimeout!(ctx);
-      return;
+      options.onTimeout!(ctx);
+      return null; // Custom handler manages the response
     }
 
     // Build error message
     final errorMsg = _buildErrorMessage();
 
-    ctx.res.statusCode = options.statusCode;
-    ctx.res.headers.contentType = ContentType.json;
-    ctx.res.write(errorMsg);
-    await ctx.res.close();
+    return Response(
+      options.statusCode,
+      body: errorMsg,
+      headers: {'content-type': 'application/json'},
+    );
   }
 
   /// Builds the error message for timeout response.

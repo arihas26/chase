@@ -108,6 +108,137 @@ void main() {
       final res = await client.get('/');
       expect(res.status, 429);
     });
+
+    group('path() route groups with middleware', () {
+      test('CORS preflight works with path() groups', () async {
+        app = Chase();
+        final api = app.path('/api');
+        api.use(Cors());
+        // Register both GET and OPTIONS routes for CORS preflight
+        api.get('/users').handle((ctx) => {'users': []});
+        api.options('/users').handle((ctx) => null);
+
+        client = await TestClient.start(app);
+
+        // Send preflight OPTIONS request
+        final res = await client.request(
+          'OPTIONS',
+          '/api/users',
+          headers: {
+            'Origin': 'https://example.com',
+            'Access-Control-Request-Method': 'GET',
+          },
+        );
+
+        expect(res.status, 204);
+        expect(res.headers.value('access-control-allow-origin'), '*');
+      });
+
+      test('rate limit works with path() groups', () async {
+        app = Chase();
+        final api = app.path('/api');
+        api.use(
+          RateLimit(const RateLimitOptions(maxRequests: 2, windowMs: 10000)),
+        );
+        api.get('/data').handle((ctx) => 'OK');
+
+        client = await TestClient.start(app);
+
+        // First 2 requests should succeed
+        final res1 = await client.get('/api/data');
+        expect(res1.status, 200);
+
+        final res2 = await client.get('/api/data');
+        expect(res2.status, 200);
+
+        // 3rd request should be rate limited
+        final res3 = await client.get('/api/data');
+        expect(res3.status, 429);
+      });
+
+      test('body limit works with path() groups', () async {
+        app = Chase();
+        final api = app.path('/api');
+        api.use(BodyLimit(const BodyLimitOptions(maxSize: 100)));
+        api.post('/upload').handle((ctx) => 'OK');
+
+        client = await TestClient.start(app);
+
+        // Small body should succeed
+        final res1 = await client.post(
+          '/api/upload',
+          headers: {'Content-Length': '50'},
+          body: 'x' * 50,
+        );
+        expect(res1.status, 200);
+
+        // Large body should be rejected
+        final res2 = await client.post(
+          '/api/upload',
+          headers: {'Content-Length': '200'},
+          body: 'x' * 200,
+        );
+        expect(res2.status, 413);
+      });
+
+      test('exception handler works with path() groups', () async {
+        app = Chase();
+        final api = app.path('/api');
+        api.use(ExceptionHandler());
+        api.get('/error').handle((ctx) {
+          throw const NotFoundException('Resource not found');
+        });
+
+        client = await TestClient.start(app);
+
+        final res = await client.get('/api/error');
+        expect(res.status, 404);
+        expect(await res.body, contains('Resource not found'));
+      });
+
+      test('nested path() groups with middleware', () async {
+        app = Chase();
+        app.use(Cors());
+
+        final api = app.path('/api');
+        api.use(
+          RateLimit(const RateLimitOptions(maxRequests: 5, windowMs: 10000)),
+        );
+
+        final v1 = api.path('/v1');
+        v1.use(ExceptionHandler());
+        v1.get('/users').handle((ctx) => {'users': []});
+
+        client = await TestClient.start(app);
+
+        // Verify CORS headers are present
+        final res = await client.get(
+          '/api/v1/users',
+          headers: {'Origin': 'https://example.com'},
+        );
+        expect(res.status, 200);
+        expect(res.headers.value('access-control-allow-origin'), '*');
+      });
+
+      test('middleware short-circuits correctly in path() groups', () async {
+        app = Chase();
+        var handlerCalled = false;
+
+        final api = app.path('/api');
+        api.use(_AuthMiddleware('secret'));
+        api.get('/protected').handle((ctx) {
+          handlerCalled = true;
+          return 'Secret data';
+        });
+
+        client = await TestClient.start(app);
+
+        // Without auth, handler should not be called
+        final res = await client.get('/api/protected');
+        expect(res.status, 401);
+        expect(handlerCalled, false);
+      });
+    });
   });
 }
 

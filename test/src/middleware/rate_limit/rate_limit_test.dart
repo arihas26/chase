@@ -200,9 +200,13 @@ void main() {
 
       final ctx = TestContext.get('/');
       var called = false;
-      await middleware.handle(ctx, () async {
-        called = true;
-      });
+      await runMiddleware(
+        middleware,
+        ctx,
+        () async {
+          called = true;
+        },
+      );
       expect(called, isFalse);
       expect(ctx.response.statusCode, HttpStatus.tooManyRequests);
       expect(ctx.response.isClosed, isTrue);
@@ -242,7 +246,7 @@ void main() {
       await middleware.handle(TestContext.get('/'), () async {});
 
       final ctx = TestContext.get('/');
-      await middleware.handle(ctx, () async {});
+      await runMiddleware(middleware, ctx, () async {});
       expect(ctx.response.headers.value('retry-after'), isNotNull);
     });
 
@@ -258,7 +262,7 @@ void main() {
       await middleware.handle(TestContext.get('/'), () async {});
 
       final ctx = TestContext.get('/');
-      await middleware.handle(ctx, () async {});
+      await runMiddleware(middleware, ctx, () async {});
       expect(ctx.response.body, contains('Custom limit message'));
     });
 
