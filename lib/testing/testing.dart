@@ -708,7 +708,40 @@ Handler buildMiddlewareChain(
     final next = current;
     current = (ctx) => mw.handle(ctx, () => next(ctx));
   }
-  return current;
+  // Wrap to handle Response returns like Chase does
+  return (ctx) async {
+    final result = await current(ctx);
+    if (result is Response) {
+      await result.writeTo(ctx.res.$raw);
+    }
+    return result;
+  };
+}
+
+/// Runs a single middleware and handles Response returns.
+///
+/// Use this when testing a middleware directly without a full chain.
+/// This properly writes Response objects to the context like Chase does.
+///
+/// Example:
+/// ```dart
+/// final ctx = TestContext.get('/');
+/// await runMiddleware(
+///   RateLimit(options),
+///   ctx,
+///   () async {}, // next handler
+/// );
+/// expect(ctx.response.statusCode, 429);
+/// ```
+Future<void> runMiddleware(
+  Middleware middleware,
+  Context ctx,
+  Future<void> Function() next,
+) async {
+  final result = await middleware.handle(ctx, next);
+  if (result is Response) {
+    await result.writeTo(ctx.res.$raw);
+  }
 }
 
 // -----------------------------------------------------------------------------

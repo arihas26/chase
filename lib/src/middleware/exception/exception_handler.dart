@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/exception/http_exception.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:chase/src/core/response.dart';
 import 'package:zlogger/zlogger.dart';
 
 /// Middleware that catches exceptions and returns appropriate error responses.
@@ -25,9 +26,9 @@ class ExceptionHandler implements Middleware {
   static final _log = Log.named('ExceptionHandler');
 
   @override
-  FutureOr<void> handle(Context ctx, NextFunction next) async {
+  FutureOr<dynamic> handle(Context ctx, NextFunction next) async {
     try {
-      await next();
+      return await next();
     } on HttpException catch (e) {
       // HttpExceptions are intentional - log at debug level for 4xx, warn for 5xx
       if (e.statusCode >= 500) {
@@ -39,11 +40,11 @@ class ExceptionHandler implements Middleware {
         });
       }
 
-      ctx.res
-        ..statusCode = e.statusCode
-        ..headers.contentType = ContentType.json
-        ..write(jsonEncode({'error': e.message, 'statusCode': e.statusCode}));
-      await ctx.res.close();
+      return Response(
+        e.statusCode,
+        body: jsonEncode({'error': e.message, 'statusCode': e.statusCode}),
+        headers: {'content-type': 'application/json'},
+      );
     } catch (e, stackTrace) {
       // Unexpected exceptions - always log as error
       _log.error(
@@ -57,13 +58,11 @@ class ExceptionHandler implements Middleware {
         stackTrace,
       );
 
-      ctx.res
-        ..statusCode = 500
-        ..headers.contentType = ContentType.json
-        ..write(
-          jsonEncode({'error': 'Internal Server Error', 'statusCode': 500}),
-        );
-      await ctx.res.close();
+      return Response(
+        HttpStatus.internalServerError,
+        body: jsonEncode({'error': 'Internal Server Error', 'statusCode': 500}),
+        headers: {'content-type': 'application/json'},
+      );
     }
   }
 }

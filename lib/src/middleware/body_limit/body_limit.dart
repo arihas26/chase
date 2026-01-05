@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:chase/src/core/response.dart';
 import 'package:zlogger/zlogger.dart';
 
 /// Options for configuring body size limits.
@@ -130,14 +131,13 @@ class BodyLimit implements Middleware {
   BodyLimit([this.options = const BodyLimitOptions()]);
 
   @override
-  FutureOr<void> handle(Context ctx, NextFunction next) async {
+  FutureOr<dynamic> handle(Context ctx, NextFunction next) async {
     final contentLength = ctx.req.contentLength;
 
     // If Content-Length header is not present or is -1, we can't check the size
     // In production, you might want to enforce Content-Length header presence
     if (contentLength <= 0) {
-      await next();
-      return;
+      return await next();
     }
 
     // Check if content length exceeds the limit
@@ -153,15 +153,14 @@ class BodyLimit implements Middleware {
 
       final errorMsg = _buildErrorMessage(contentLength);
 
-      ctx.res.statusCode = HttpStatus.requestEntityTooLarge;
-      ctx.res.headers.contentType = ContentType.json;
-      ctx.res.write(errorMsg);
-      await ctx.res.close();
-
-      return;
+      return Response(
+        HttpStatus.requestEntityTooLarge,
+        body: errorMsg,
+        headers: {'content-type': 'application/json'},
+      );
     }
 
-    await next();
+    return await next();
   }
 
   /// Builds the error message for responses exceeding the size limit.
