@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:chase/chase.dart' hide Timeout;
 import 'package:chase/src/middleware/timeout/timeout.dart';
 import 'package:chase/testing/testing.dart';
 import 'package:test/test.dart' hide Timeout;
