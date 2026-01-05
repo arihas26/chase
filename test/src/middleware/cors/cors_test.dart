@@ -64,7 +64,7 @@ void main() {
       'X-Test',
     );
     expect(ctx.response.headers.value('access-control-max-age'), '3600');
-    expect(ctx.response.isClosed, isTrue);
+    // Note: Response is returned and will be closed by Chase's _sendResponse
   });
 
   group('Origin validation', () {

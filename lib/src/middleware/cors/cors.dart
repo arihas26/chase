@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:chase/src/core/context/context.dart';
 import 'package:chase/src/core/middleware.dart';
+import 'package:chase/src/core/response.dart';
 
 /// Callback function for dynamic origin validation.
 /// Returns true if the origin is allowed, false otherwise.
@@ -86,7 +87,7 @@ class Cors implements Middleware {
   ];
 
   @override
-  FutureOr<void> handle(Context ctx, NextFunction next) async {
+  FutureOr<dynamic> handle(Context ctx, NextFunction next) async {
     final origin = ctx.req.header('origin');
     final resolvedOrigin = _resolveOrigin(origin);
 
@@ -98,11 +99,10 @@ class Cors implements Middleware {
     }
 
     if (_isPreflight(ctx, origin)) {
-      _handlePreflight(ctx);
-      return;
+      return _handlePreflight(ctx);
     }
 
-    await next();
+    return await next();
   }
 
   /// Checks if the request is a CORS preflight request.
@@ -113,13 +113,13 @@ class Cors implements Middleware {
   }
 
   /// Handles a CORS preflight request by setting appropriate headers and returning 204.
-  void _handlePreflight(Context ctx) {
+  Response _handlePreflight(Context ctx) {
     _setAllowMethodsHeader(ctx);
     _setAllowHeadersHeader(ctx);
     _setMaxAgeHeader(ctx);
 
     ctx.res.statusCode = HttpStatus.noContent;
-    ctx.res.close();
+    return Response.noContent();
   }
 
   /// Sets the Access-Control-Allow-Origin header.
