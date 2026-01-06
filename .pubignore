@@ -8,6 +8,7 @@ packages/
 .serena/
 .claude/
 CLAUDE.md
+docs/
 
 # Test fixtures
 test/src/middleware/i18n/fixtures/
