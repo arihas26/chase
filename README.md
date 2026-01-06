@@ -59,7 +59,7 @@
 
 ```yaml
 dependencies:
-  chase: ^0.1.1
+  chase: ^0.1.2
 ```
 
 ## Quick Start
