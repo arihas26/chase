@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.2] - 2026-01-06
 
 ### Fixed
-- **CORS Middleware** - Fixed response handling to use `Response` objects instead of directly calling `ctx.res.close()`
 - **Timeout Middleware** - Fixed response handling pattern for proper middleware chain integration
 - **RateLimit Middleware** - Fixed response handling pattern for proper middleware chain integration
 - **BodyLimit Middleware** - Fixed response handling pattern for proper middleware chain integration
@@ -17,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Testing Utilities** - Added `runMiddleware` helper function for testing middleware that returns `Response` objects
 - **Integration Tests** - Added tests for middleware behavior in `path()` route groups
+
+## [0.1.1] - 2026-01-05
+
+### Fixed
+- **CORS Middleware** - Fixed response handling to use `Response` objects instead of directly calling `ctx.res.close()`
+- **Documentation** - Fixed image URLs and formatting in README
+
+### Changed
+- **Package** - Added `docs/` to `.pubignore` to reduce package size
 
 ## [0.1.0] - 2025-12-30
 
